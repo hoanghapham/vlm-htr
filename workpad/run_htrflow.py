@@ -37,10 +37,14 @@ pipe = Pipeline.from_config(config)
 image_files = list_files(input_dir, extensions=[".tif"])
 images = [str(parent / file) for (parent, file) in image_files]
 
-collection = Collection(images)
+logger.info(f"Found {len(images)} images")
 
-# Run pipeline
-logger.info("Start pipeline")
-new_collection = pipe.run(collection)
+if len(images) > 0:
 
-logger.info("End pipeline")
+    collection = Collection(images)
+
+    # Run pipeline
+    logger.info("Start pipeline")
+    new_collection = pipe.run(collection)
+
+    logger.info("End pipeline")
