@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 24:00:00
+#SBATCH -t 48:00:00
 #SBATCH -J htrflow
 #SBATCH -o logs_uppmax/htrflow.out
 #SBATCH -e logs_uppmax/htrflow.err
