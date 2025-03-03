@@ -1,0 +1,8 @@
+# Folders
+data/*
+logs/*
+output/*
+__pycache__
+.cache
+# files
+.python-version

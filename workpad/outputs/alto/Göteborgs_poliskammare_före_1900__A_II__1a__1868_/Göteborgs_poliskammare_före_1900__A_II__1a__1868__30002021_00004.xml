@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.loc.gov/standards/alto/ns-v4#" xsi:schemaLocation="http://www.loc.gov/standards/alto/ns-v4# http://www.loc.gov/standards/alto/v4/alto-4-4.xsd">
+    <Description>
+        <MeasurementUnit>pixel</MeasurementUnit>
+        <sourceImageInformation>
+            <fileName>Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004.tif</fileName>
+        </sourceImageInformation>
+        <Processing ID="general">
+            <processingDateTime>2025-03-03T14:00:03.200939</processingDateTime>
+            <processingSoftware>
+                <softwareCreator>ai@riksarkivet.se</softwareCreator>
+                <softwareName>htrflow</softwareName>
+                <softwareVersion>0.2.5</softwareVersion>
+                <applicationDescription>htrflow is developed at Riksarkivet's AI-lab as an open-source package to simplify HTR</applicationDescription>
+            </processingSoftware>
+        </Processing>
+        <Processing ID="step1">
+            <processingStepDescription>Segmentation</processingStepDescription>
+            <processingStepSettings>
+                model: Riksarkivet/yolov9-regions-1
+                model_class: YOLO
+                model_version: f9ff30d206dd20aad4f5ccc3d89798075fdbb879
+            </processingStepSettings>
+        </Processing>
+        <Processing ID="step2">
+            <processingStepDescription>Segmentation</processingStepDescription>
+            <processingStepSettings>
+                model: Riksarkivet/yolov9-lines-within-regions-1
+                model_class: YOLO
+                model_version: f19c1cf3fdb9d96d1cbe6a5ccef08d32ef929b2e
+            </processingStepSettings>
+        </Processing>
+        <Processing ID="step3">
+            <processingStepDescription>TextRecognition</processingStepDescription>
+            <processingStepSettings>
+                model: Riksarkivet/trocr-base-handwritten-hist-swe-2
+                model_class: WordLevelTrOCR
+                model_version: 5aeb066486e54870751f17bbd8eec7ac7b722b1d
+                processor: Riksarkivet/trocr-base-handwritten-hist-swe-2
+                processor_version: 5aeb066486e54870751f17bbd8eec7ac7b722b1d
+            </processingStepSettings>
+        </Processing>
+    </Description>
+    <ReadingOrder>
+        <OrderedGroup ID="ro">
+            <OrderedGroup ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0">
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0" />
+            </OrderedGroup>
+            <OrderedGroup ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1">
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10" />
+            <ElementRef ID="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11" REF="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11" />
+            </OrderedGroup>
+        </OrderedGroup>
+    </ReadingOrder>
+    <Layout>
+        <Page WIDTH="5099" HEIGHT="4118" PC="0.9750" PHYSICAL_IMG_NR="0" ID="_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004">
+            <TopMargin />
+            <LeftMargin />
+            <RightMargin />
+            <BottomMargin />
+            <PrintSpace>
+                
+                <TextBlock ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0" HPOS="4158" VPOS="258" HEIGHT="215" WIDTH="407" CS="false">
+                    <Shape>
+                        <Polygon POINTS="4158,258 4158,473 4565,473 4565,258"/>
+                    </Shape>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0"  HPOS="4210" VPOS="287" HEIGHT="140" WIDTH="264">
+                        <Shape>
+                            <Polygon POINTS="4474,300 4454,287 4438,287 4436,293 4444,301 4382,303 4330,295 4249,317 4210,319 4210,420 4253,427 4276,418 4298,420 4367,409 4402,413 4428,404 4464,402 4474,397"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0_node0"  HPOS="4210" VPOS="287" HEIGHT="140" WIDTH="209" CONTENT="No" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0_node1"  HPOS="4419" VPOS="287" HEIGHT="140" WIDTH="55" CONTENT="1" />
+                    </TextLine>
+                </TextBlock>
+                <TextBlock ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1" HPOS="2852" VPOS="2170" HEIGHT="1522" WIDTH="2223" CS="false">
+                    <Shape>
+                        <Polygon POINTS="2852,2170 2852,3692 5019,3692 5075,3588 5075,2170"/>
+                    </Shape>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0"  HPOS="2928" VPOS="2187" HEIGHT="146" WIDTH="2094">
+                        <Shape>
+                            <Polygon POINTS="2928,2215 2928,2312 3286,2319 3369,2281 4585,2326 4821,2302 4897,2333 5022,2309 5022,2222 4953,2208 4776,2239 4581,2205 4015,2232 3848,2187 3737,2222 3122,2215 3091,2187"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node0"  HPOS="2928" VPOS="2187" HEIGHT="146" WIDTH="610" CONTENT="Ynglingen" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node1"  HPOS="3538" VPOS="2187" HEIGHT="146" WIDTH="262" CONTENT="Carl" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node2"  HPOS="3800" VPOS="2187" HEIGHT="146" WIDTH="349" CONTENT="Johan" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node3"  HPOS="4149" VPOS="2187" HEIGHT="146" WIDTH="611" CONTENT="Christiansson" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node4"  HPOS="4760" VPOS="2187" HEIGHT="146" WIDTH="262" CONTENT="tolf" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1"  HPOS="2886" VPOS="2423" HEIGHT="101" WIDTH="2095">
+                        <Shape>
+                            <Polygon POINTS="2886,2423 2886,2521 4981,2524 4953,2482 4581,2458 3682,2455 3643,2423 3265,2423 3143,2455 3084,2423"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node0"  HPOS="2886" VPOS="2423" HEIGHT="101" WIDTH="261" CONTENT="Johan" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node1"  HPOS="3147" VPOS="2423" HEIGHT="101" WIDTH="786" CONTENT="Christiansson," />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node2"  HPOS="3933" VPOS="2423" HEIGHT="101" WIDTH="349" CONTENT="boende" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node3"  HPOS="4282" VPOS="2423" HEIGHT="101" WIDTH="262" CONTENT="uti" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node4"  HPOS="4544" VPOS="2423" HEIGHT="101" WIDTH="437" CONTENT="Bagaren" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2"  HPOS="2886" VPOS="2535" HEIGHT="135" WIDTH="2091">
+                        <Shape>
+                            <Polygon POINTS="2886,2535 2886,2614 4640,2670 4925,2670 4977,2632 4956,2594 4863,2576 4699,2597 4039,2555 3786,2576 3626,2535 3574,2566 3390,2535 3327,2562"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node0"  HPOS="2886" VPOS="2535" HEIGHT="135" WIDTH="609" CONTENT="Håkanssons" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node1"  HPOS="3495" VPOS="2535" HEIGHT="135" WIDTH="262" CONTENT="hus" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node2"  HPOS="3757" VPOS="2535" HEIGHT="135" WIDTH="174" CONTENT="i" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node3"  HPOS="3931" VPOS="2535" HEIGHT="135" WIDTH="784" CONTENT="Landalabergen," />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node4"  HPOS="4715" VPOS="2535" HEIGHT="135" WIDTH="262" CONTENT="har" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3"  HPOS="2900" VPOS="2646" HEIGHT="128" WIDTH="2150">
+                        <Shape>
+                            <Polygon POINTS="2900,2646 2900,2715 5050,2774 5050,2726 4373,2673 3883,2687 3518,2646"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node0"  HPOS="2900" VPOS="2646" HEIGHT="128" WIDTH="268" CONTENT="den" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node1"  HPOS="3168" VPOS="2646" HEIGHT="128" WIDTH="90" CONTENT="2" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node2"  HPOS="3258" VPOS="2646" HEIGHT="128" WIDTH="179" CONTENT="och" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node3"  HPOS="3437" VPOS="2646" HEIGHT="128" WIDTH="90" CONTENT="4" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node4"  HPOS="3527" VPOS="2646" HEIGHT="128" WIDTH="358" CONTENT="dennes" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node5"  HPOS="3885" VPOS="2646" HEIGHT="128" WIDTH="627" CONTENT="anträffats" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node6"  HPOS="4512" VPOS="2646" HEIGHT="128" WIDTH="538" CONTENT="innehafvan" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4"  HPOS="2914" VPOS="2757" HEIGHT="118" WIDTH="2108">
+                        <Shape>
+                            <Polygon POINTS="2914,2764 2914,2819 3623,2861 5022,2875 5002,2830 4772,2830 4595,2785 4171,2809 3564,2757"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node0"  HPOS="2914" VPOS="2757" HEIGHT="118" WIDTH="175" CONTENT="de" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node1"  HPOS="3089" VPOS="2757" HEIGHT="118" WIDTH="352" CONTENT="diverse" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node2"  HPOS="3441" VPOS="2757" HEIGHT="118" WIDTH="439" CONTENT="tomma" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node3"  HPOS="3880" VPOS="2757" HEIGHT="118" WIDTH="527" CONTENT="bouteljer," />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node4"  HPOS="4407" VPOS="2757" HEIGHT="118" WIDTH="263" CONTENT="för" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node5"  HPOS="4670" VPOS="2757" HEIGHT="118" WIDTH="352" CONTENT="hvilket" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5"  HPOS="2928" VPOS="2868" HEIGHT="122" WIDTH="1900">
+                        <Shape>
+                            <Polygon POINTS="2928,2882 2928,2934 4262,2990 4828,2976 4779,2941 3595,2906 3539,2868"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node0"  HPOS="2928" VPOS="2868" HEIGHT="122" WIDTH="475" CONTENT="åtkomst" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node1"  HPOS="3403" VPOS="2868" HEIGHT="122" WIDTH="237" CONTENT="han" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node2"  HPOS="3640" VPOS="2868" HEIGHT="122" WIDTH="238" CONTENT="icke" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node3"  HPOS="3878" VPOS="2868" HEIGHT="122" WIDTH="475" CONTENT="kunnat" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node4"  HPOS="4353" VPOS="2868" HEIGHT="122" WIDTH="475" CONTENT="redogöra." />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6"  HPOS="2928" VPOS="2979" HEIGHT="149" WIDTH="2053">
+                        <Shape>
+                            <Polygon POINTS="2928,2979 2928,3049 4498,3094 4658,3128 4981,3090 4963,3049"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node0"  HPOS="2928" VPOS="2979" HEIGHT="149" WIDTH="513" CONTENT="Sedan" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node1"  HPOS="3441" VPOS="2979" HEIGHT="149" WIDTH="1026" CONTENT="Wärdshusidkerskan" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node2"  HPOS="4467" VPOS="2979" HEIGHT="149" WIDTH="514" CONTENT="Josefina" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7"  HPOS="2900" VPOS="3076" HEIGHT="118" WIDTH="2122">
+                        <Shape>
+                            <Polygon POINTS="2900,3076 2900,3146 5022,3194 5022,3135 4915,3111 3491,3104 3456,3076 3338,3101"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node0"  HPOS="2900" VPOS="3076" HEIGHT="118" WIDTH="442" CONTENT="Molitor," />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node1"  HPOS="3342" VPOS="3076" HEIGHT="118" WIDTH="442" CONTENT="boende" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node2"  HPOS="3784" VPOS="3076" HEIGHT="118" WIDTH="265" CONTENT="uti" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node3"  HPOS="4049" VPOS="3076" HEIGHT="118" WIDTH="265" CONTENT="huset" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node4"  HPOS="4314" VPOS="3076" HEIGHT="118" WIDTH="177" CONTENT="No" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node5"  HPOS="4491" VPOS="3076" HEIGHT="118" WIDTH="88" CONTENT="21" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node6"  HPOS="4579" VPOS="3076" HEIGHT="118" WIDTH="266" CONTENT="vid" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node7"  HPOS="4845" VPOS="3076" HEIGHT="118" WIDTH="177" CONTENT="Skol" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8"  HPOS="2914" VPOS="3188" HEIGHT="121" WIDTH="2108">
+                        <Shape>
+                            <Polygon POINTS="2914,3208 2914,3278 3852,3267 3973,3309 4116,3267 5022,3278 4998,3205 4661,3222 4526,3188 3984,3215 3956,3188"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node0"  HPOS="2914" VPOS="3188" HEIGHT="121" WIDTH="351" CONTENT="gatan" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node1"  HPOS="3265" VPOS="3188" HEIGHT="121" WIDTH="263" CONTENT="och" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node2"  HPOS="3528" VPOS="3188" HEIGHT="121" WIDTH="264" CONTENT="Ogifta" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node3"  HPOS="3792" VPOS="3188" HEIGHT="121" WIDTH="527" CONTENT="Josefina" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node4"  HPOS="4319" VPOS="3188" HEIGHT="121" WIDTH="527" CONTENT="Folkesson," />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node5"  HPOS="4846" VPOS="3188" HEIGHT="121" WIDTH="176" CONTENT="bo" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9"  HPOS="2900" VPOS="3313" HEIGHT="93" WIDTH="2122">
+                        <Shape>
+                            <Polygon POINTS="2900,3313 2900,3372 4380,3379 4408,3406 5022,3386 5022,3344 4592,3313"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node0"  HPOS="2900" VPOS="3313" HEIGHT="93" WIDTH="265" CONTENT="ende" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node1"  HPOS="3165" VPOS="3313" HEIGHT="93" WIDTH="265" CONTENT="uti" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node2"  HPOS="3430" VPOS="3313" HEIGHT="93" WIDTH="354" CONTENT="huset" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node3"  HPOS="3784" VPOS="3313" HEIGHT="93" WIDTH="177" CONTENT="No" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node4"  HPOS="3961" VPOS="3313" HEIGHT="93" WIDTH="176" CONTENT="23" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node5"  HPOS="4137" VPOS="3313" HEIGHT="93" WIDTH="177" CONTENT="vid" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node6"  HPOS="4314" VPOS="3313" HEIGHT="93" WIDTH="708" CONTENT="Kungsgatan" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10"  HPOS="2900" VPOS="3438" HEIGHT="52" WIDTH="511">
+                        <Shape>
+                            <Polygon POINTS="2900,3438 2900,3483 3282,3490 3411,3479 3411,3438"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10_node0"  HPOS="2900" VPOS="3438" HEIGHT="52" WIDTH="511" CONTENT="anmält:" />
+                    </TextLine>
+                    <TextLine ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11"  HPOS="2914" VPOS="3507" HEIGHT="122" WIDTH="2122">
+                        <Shape>
+                            <Polygon POINTS="2914,3524 2914,3590 3109,3590 3098,3629 3112,3594 4262,3587 4383,3629 5036,3590 5015,3552 4821,3507 4501,3542 4265,3507 4098,3535 3894,3507"/>
+                        </Shape>
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node0"  HPOS="2914" VPOS="3507" HEIGHT="122" WIDTH="176" CONTENT="den" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node1"  HPOS="3090" VPOS="3507" HEIGHT="122" WIDTH="266" CONTENT="förre" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node2"  HPOS="3356" VPOS="3507" HEIGHT="122" WIDTH="176" CONTENT="att" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node3"  HPOS="3532" VPOS="3507" HEIGHT="122" WIDTH="177" CONTENT="sex" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node4"  HPOS="3709" VPOS="3507" HEIGHT="122" WIDTH="442" CONTENT="henne" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node5"  HPOS="4151" VPOS="3507" HEIGHT="122" WIDTH="531" CONTENT="tillhörige" />
+                        <String ID="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node6"  HPOS="4682" VPOS="3507" HEIGHT="122" WIDTH="354" CONTENT="tomma" />
+                    </TextLine>
+                </TextBlock>
+            </PrintSpace>
+        </Page>
+    </Layout>
+</alto>

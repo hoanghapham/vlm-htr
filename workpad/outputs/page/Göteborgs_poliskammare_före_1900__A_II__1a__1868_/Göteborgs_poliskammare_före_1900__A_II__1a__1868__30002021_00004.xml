@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15/pagecontent.xsd">
+    <Metadata>
+        <Creator>ai@riksarkivet.se</Creator>
+        <Created>2025-03-03T14:00:03.205332</Created>
+        <LastChange>2025-03-03T14:00:03.205332</LastChange>
+    </Metadata>
+    <Page imageFilename="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004.tif" imageWidth="5099" imageHeight="4118">
+        <ReadingOrder>
+            <OrderedGroup id='ro'>
+            <OrderedGroupIndexed id="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0" index="0">
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0" index="0"/>
+            </OrderedGroupIndexed>
+            <OrderedGroupIndexed id="ro_Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1" index="1">
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0" index="0"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1" index="1"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2" index="2"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3" index="3"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4" index="4"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5" index="5"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6" index="6"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7" index="7"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8" index="8"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9" index="9"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10" index="10"/>
+            <RegionRefIndexed regionRef="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11" index="11"/>
+            </OrderedGroupIndexed>
+            </OrderedGroup>
+        </ReadingOrder>
+        
+        <TextRegion id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0">
+            <Coords points="4158,258 4158,473 4565,473 4565,258" />
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0">
+            <Coords points="4474,300 4454,287 4438,287 4436,293 4444,301 4382,303 4330,295 4249,317 4210,319 4210,420 4253,427 4276,418 4298,420 4367,409 4402,413 4428,404 4464,402 4474,397" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0_node0">
+                    <Coords points="4418,302 4379,303 4329,295 4250,317 4210,319 4210,420 4256,426 4275,418 4301,420 4364,409 4403,413 4417,408" />
+                    <TextEquiv conf="0.9075305902714547">
+                        <Unicode>No</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node0_node0_node1">
+                    <Coords points="4454,287 4438,287 4436,293 4442,301 4419,302 4419,407 4427,404 4465,402 4473,398 4473,299" />
+                    <TextEquiv conf="0.9075305902714547">
+                        <Unicode>1</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+        </TextRegion>
+        <TextRegion id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1">
+            <Coords points="2852,2170 2852,3692 5019,3692 5075,3588 5075,2170" />
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0">
+            <Coords points="2928,2215 2928,2312 3286,2319 3369,2281 4585,2326 4821,2302 4897,2333 5022,2309 5022,2222 4953,2208 4776,2239 4581,2205 4015,2232 3848,2187 3737,2222 3122,2215 3091,2187" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node0">
+                    <Coords points="2928,2215 2928,2312 3287,2319 3368,2281 3537,2287 3537,2220 3122,2215 3091,2187" />
+                    <TextEquiv conf="0.9957311124356006">
+                        <Unicode>Ynglingen</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node1">
+                    <Coords points="3799,2202 3738,2222 3538,2220 3538,2287 3799,2297" />
+                    <TextEquiv conf="0.9957311124356006">
+                        <Unicode>Carl</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node2">
+                    <Coords points="3800,2202 3800,2297 4148,2310 4148,2226 4014,2232 3849,2187" />
+                    <TextEquiv conf="0.9957311124356006">
+                        <Unicode>Johan</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node3">
+                    <Coords points="4759,2236 4583,2205 4152,2225 4149,2310 4589,2326 4757,2309" />
+                    <TextEquiv conf="0.9957311124356006">
+                        <Unicode>Christiansson</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node0_node4">
+                    <Coords points="5021,2222 4951,2208 4778,2239 4760,2236 4760,2308 4822,2302 4894,2332 5019,2310" />
+                    <TextEquiv conf="0.9957311124356006">
+                        <Unicode>tolf</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1">
+            <Coords points="2886,2423 2886,2521 4981,2524 4953,2482 4581,2458 3682,2455 3643,2423 3265,2423 3143,2455 3084,2423" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node0">
+                    <Coords points="2886,2423 2886,2521 3146,2521 3146,2454 3084,2423" />
+                    <TextEquiv conf="0.9954145287541856">
+                        <Unicode>Johan</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node1">
+                    <Coords points="3147,2454 3147,2521 3932,2522 3932,2456 3682,2455 3643,2423 3264,2423" />
+                    <TextEquiv conf="0.9954145287541856">
+                        <Unicode>Christiansson,</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node2">
+                    <Coords points="3933,2456 3934,2523 4281,2523 4281,2457" />
+                    <TextEquiv conf="0.9954145287541856">
+                        <Unicode>boende</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node3">
+                    <Coords points="4282,2457 4282,2523 4543,2523 4543,2458" />
+                    <TextEquiv conf="0.9954145287541856">
+                        <Unicode>uti</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node1_node4">
+                    <Coords points="4544,2458 4544,2523 4980,2523 4953,2482" />
+                    <TextEquiv conf="0.9954145287541856">
+                        <Unicode>Bagaren</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2">
+            <Coords points="2886,2535 2886,2614 4640,2670 4925,2670 4977,2632 4956,2594 4863,2576 4699,2597 4039,2555 3786,2576 3626,2535 3574,2566 3390,2535 3327,2562" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node0">
+                    <Coords points="2886,2535 2886,2614 3494,2633 3493,2552 3392,2535 3328,2562" />
+                    <TextEquiv conf="0.9958895700728922">
+                        <Unicode>Håkanssons</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node1">
+                    <Coords points="3495,2553 3497,2634 3756,2642 3756,2568 3627,2535 3574,2566" />
+                    <TextEquiv conf="0.9958895700728922">
+                        <Unicode>hus</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node2">
+                    <Coords points="3930,2564 3792,2576 3757,2569 3757,2642 3930,2647" />
+                    <TextEquiv conf="0.9958895700728922">
+                        <Unicode>i</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node3">
+                    <Coords points="3931,2564 3936,2648 4714,2669 4714,2595 4046,2555" />
+                    <TextEquiv conf="0.9958895700728922">
+                        <Unicode>Landalabergen,</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node2_node4">
+                    <Coords points="4976,2630 4956,2594 4865,2576 4715,2595 4715,2669 4927,2669" />
+                    <TextEquiv conf="0.9958895700728922">
+                        <Unicode>har</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3">
+            <Coords points="2900,2646 2900,2715 5050,2774 5050,2726 4373,2673 3883,2687 3518,2646" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node0">
+                    <Coords points="2900,2646 2900,2715 3167,2722 3167,2646" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>den</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node1">
+                    <Coords points="3168,2646 3168,2722 3257,2725 3257,2646" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>2</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node2">
+                    <Coords points="3258,2646 3258,2725 3436,2730 3436,2646" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>och</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node3">
+                    <Coords points="3437,2646 3437,2730 3526,2732 3526,2647" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>4</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node4">
+                    <Coords points="3527,2647 3527,2732 3884,2742 3884,2687" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>dennes</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node5">
+                    <Coords points="4511,2684 4356,2673 3885,2687 3885,2742 4511,2759" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>anträffats</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node3_node6">
+                    <Coords points="4512,2684 4512,2759 5049,2773 5043,2725" />
+                    <TextEquiv conf="0.9573531135930441">
+                        <Unicode>innehafvan</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4">
+            <Coords points="2914,2764 2914,2819 3623,2861 5022,2875 5002,2830 4772,2830 4595,2785 4171,2809 3564,2757" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node0">
+                    <Coords points="3088,2762 2914,2764 2914,2819 3088,2829" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>de</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node1">
+                    <Coords points="3440,2758 3089,2762 3089,2829 3440,2850" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>diverse</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node2">
+                    <Coords points="3441,2758 3441,2850 3615,2861 3879,2864 3879,2784 3569,2757" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>tomma</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node3">
+                    <Coords points="3880,2784 3880,2864 4406,2869 4406,2796 4166,2809" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>bouteljer,</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node4">
+                    <Coords points="4669,2804 4596,2785 4410,2795 4407,2869 4669,2871" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>för</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node4_node5">
+                    <Coords points="4670,2804 4673,2872 5021,2874 5002,2830 4771,2830" />
+                    <TextEquiv conf="0.9535335408350817">
+                        <Unicode>hvilket</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5">
+            <Coords points="2928,2882 2928,2934 4262,2990 4828,2976 4779,2941 3595,2906 3539,2868" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node0">
+                    <Coords points="3402,2871 2928,2882 2928,2934 3402,2954" />
+                    <TextEquiv conf="0.9830503509981164">
+                        <Unicode>åtkomst</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node1">
+                    <Coords points="3403,2871 3403,2954 3639,2964 3639,2907 3595,2906 3539,2868" />
+                    <TextEquiv conf="0.9830503509981164">
+                        <Unicode>han</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node2">
+                    <Coords points="3640,2907 3640,2964 3877,2974 3877,2914" />
+                    <TextEquiv conf="0.9830503509981164">
+                        <Unicode>icke</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node3">
+                    <Coords points="3878,2914 3878,2974 4352,2988 4352,2928" />
+                    <TextEquiv conf="0.9830503509981164">
+                        <Unicode>kunnat</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node5_node4">
+                    <Coords points="4353,2928 4353,2988 4827,2976 4779,2941" />
+                    <TextEquiv conf="0.9830503509981164">
+                        <Unicode>redogöra.</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6">
+            <Coords points="2928,2979 2928,3049 4498,3094 4658,3128 4981,3090 4963,3049" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node0">
+                    <Coords points="2928,2979 2928,3049 3440,3064 3436,2996" />
+                    <TextEquiv conf="0.9765667388751079">
+                        <Unicode>Sedan</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node1">
+                    <Coords points="3441,2997 3441,3064 4466,3093 4466,3032" />
+                    <TextEquiv conf="0.9765667388751079">
+                        <Unicode>Wärdshusidkerskan</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node6_node2">
+                    <Coords points="4467,3032 4467,3093 4651,3127 4980,3090 4963,3049" />
+                    <TextEquiv conf="0.9765667388751079">
+                        <Unicode>Josefina</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7">
+            <Coords points="2900,3076 2900,3146 5022,3194 5022,3135 4915,3111 3491,3104 3456,3076 3338,3101" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node0">
+                    <Coords points="2900,3076 2900,3146 3341,3156 3341,3100" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>Molitor,</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node1">
+                    <Coords points="3342,3100 3342,3156 3783,3166 3783,3105 3491,3104 3456,3076" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>boende</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node2">
+                    <Coords points="3784,3105 3784,3166 4048,3172 4048,3107" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>uti</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node3">
+                    <Coords points="4049,3107 4049,3172 4313,3178 4313,3108" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>huset</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node4">
+                    <Coords points="4314,3108 4314,3178 4490,3182 4490,3109" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>No</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node5">
+                    <Coords points="4491,3109 4491,3182 4578,3184 4578,3109" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>21</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node6">
+                    <Coords points="4579,3109 4579,3184 4844,3190 4844,3111" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>vid</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node7_node7">
+                    <Coords points="4845,3111 4845,3190 5021,3193 5019,3134 4917,3111" />
+                    <TextEquiv conf="0.9766250595816377">
+                        <Unicode>Skol</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8">
+            <Coords points="2914,3208 2914,3278 3852,3267 3973,3309 4116,3267 5022,3278 4998,3205 4661,3222 4526,3188 3984,3215 3956,3188" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node0">
+                    <Coords points="3264,3201 2914,3208 2914,3278 3264,3274" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>gatan</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node1">
+                    <Coords points="3527,3196 3265,3201 3265,3274 3527,3271" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>och</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node2">
+                    <Coords points="3791,3191 3528,3196 3528,3271 3791,3268" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>Ogifta</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node3">
+                    <Coords points="3792,3191 3792,3268 3853,3267 3969,3308 4115,3267 4318,3269 4318,3198 3984,3215 3956,3188" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>Josefina</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node4">
+                    <Coords points="4319,3198 4322,3270 4845,3276 4845,3213 4660,3222 4527,3188" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>Folkesson,</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node8_node5">
+                    <Coords points="5021,3278 4998,3205 4846,3213 4846,3276" />
+                    <TextEquiv conf="0.9625913845754507">
+                        <Unicode>bo</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9">
+            <Coords points="2900,3313 2900,3372 4380,3379 4408,3406 5022,3386 5022,3344 4592,3313" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node0">
+                    <Coords points="2900,3313 2900,3372 3164,3373 3164,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>ende</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node1">
+                    <Coords points="3165,3313 3165,3373 3429,3375 3429,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>uti</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node2">
+                    <Coords points="3430,3313 3430,3375 3783,3376 3783,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>huset</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node3">
+                    <Coords points="3784,3313 3784,3376 3960,3377 3960,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>No</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node4">
+                    <Coords points="3961,3313 3961,3377 4136,3378 4136,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>23</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node5">
+                    <Coords points="4137,3313 4137,3378 4313,3379 4313,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>vid</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node9_node6">
+                    <Coords points="4314,3313 4314,3379 4380,3379 4407,3405 5021,3386 5015,3343 4598,3313" />
+                    <TextEquiv conf="0.9774095793921138">
+                        <Unicode>Kungsgatan</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10">
+            <Coords points="2900,3438 2900,3483 3282,3490 3411,3479 3411,3438" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node10_node0">
+                    <Coords points="2900,3438 2900,3483 3299,3489 3410,3479 3410,3438" />
+                    <TextEquiv conf="0.9999095678069024">
+                        <Unicode>anmält:</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+            <TextLine id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11">
+            <Coords points="2914,3524 2914,3590 3109,3590 3098,3629 3112,3594 4262,3587 4383,3629 5036,3590 5015,3552 4821,3507 4501,3542 4265,3507 4098,3535 3894,3507" />
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node0">
+                    <Coords points="3089,3521 2914,3524 2914,3590 3089,3590" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>den</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node1">
+                    <Coords points="3355,3516 3090,3521 3090,3590 3109,3591 3098,3628 3113,3594 3355,3593" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>förre</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node2">
+                    <Coords points="3531,3513 3356,3516 3356,3593 3531,3591" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>att</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node3">
+                    <Coords points="3708,3510 3532,3513 3532,3591 3708,3590" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>sex</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node4">
+                    <Coords points="3709,3510 3709,3590 4150,3588 4150,3526 4095,3535 3897,3507" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>henne</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node5">
+                    <Coords points="4151,3526 4151,3588 4263,3587 4379,3628 4681,3611 4681,3522 4505,3542 4268,3507" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>tillhörige</Unicode>
+                    </TextEquiv>
+                </Word>
+                <Word id="Göteborgs_poliskammare_före_1900__A_II__1a__1868__30002021_00004_node1_node11_node6">
+                    <Coords points="4682,3522 4682,3611 5035,3590 5015,3552 4823,3507" />
+                    <TextEquiv conf="0.9929699451380481">
+                        <Unicode>tomma</Unicode>
+                    </TextEquiv>
+                </Word>
+            </TextLine>
+        </TextRegion>
+      
+    </Page>
+</PcGts>
