@@ -20,4 +20,4 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/run_htrflow.py --input_dir $INPUT_DIR
+python workpad/run_htrflow.py --input_dir $INPUT_DIR --config_path config/htr_conf.yaml

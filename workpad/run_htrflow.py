@@ -14,8 +14,8 @@ from src.utils.file_tools import list_files
 from src.utils.logger import CustomLogger
 
 parser = ArgumentParser()
-parser.add_argument("--input_dir", "-i")
-parser.add_argument("--config_path", "-c")
+parser.add_argument("--input_dir", "-i", required=True)
+parser.add_argument("--config_path", "-c", required=True)
 args = parser.parse_args()
 
 logger = CustomLogger("HTRFlow", log_to_local=True)
