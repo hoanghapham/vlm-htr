@@ -34,17 +34,22 @@ with open(config_path, "r") as f:
 pipe = Pipeline.from_config(config)
 
 # Create collection
+
 image_files = list_files(input_dir, extensions=[".tif"])
-images = [str(parent / file) for (parent, file) in image_files]
+parents: list[Path] = list(set([tup[0] for tup in image_files]))
 
-logger.info(f"Found {len(images)} images")
+logger.info(f"Found {len(parents)} parent dirs")
 
-if len(images) > 0:
+# Iterate through parents and list images
+for parent in parents:
+    images = [str(path) for path in parent.glob("**/*.tif")]
+    logger.info(f"Folder {parent.stem}: {len(images)} images")
+    
+    if len(images) > 0:
 
-    collection = Collection(images)
+        logger.info("Create collection")
+        collection = Collection(images)
 
-    # Run pipeline
-    logger.info("Start pipeline")
-    new_collection = pipe.run(collection)
+        logger.info("Run pipeline")
+        new_collection = pipe.run(collection)
 
-    logger.info("End pipeline")
