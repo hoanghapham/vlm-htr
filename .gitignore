@@ -2,7 +2,9 @@
 data/*
 logs/*
 output/*
+outputs/*
 __pycache__
 .cache
+
 # files
 .python-version
