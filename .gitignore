@@ -5,6 +5,7 @@ output/*
 outputs/*
 __pycache__
 .cache
+logs*
 
 # files
 .python-version
