@@ -59,14 +59,13 @@ for i in range(total_images // batch_size):
     
     if len(images) > 0:
 
-        logger.info("Create collection")
         t0 = time.time()
         collection = Collection(images)
-        logger.info(f"Create collection: {(time.time()-t0) / 60} minutes")
+        logger.info(f"Create collection: {(time.time()-t0) / 60:.2f} minutes")
 
         logger.info("Run pipeline")
         t0 = time.time()
         new_collection = pipe.run(collection)
-        logger.info(f"Inference time: {(time.time()-t0) / 60} minutes")
+        logger.info(f"Inference time: {(time.time()-t0) / 60:.2f} minutes")
 
 
