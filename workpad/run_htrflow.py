@@ -6,6 +6,7 @@ import yaml
 from pathlib import Path
 from argparse import ArgumentParser
 import sys
+import time
 
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -34,22 +35,38 @@ with open(config_path, "r") as f:
 pipe = Pipeline.from_config(config)
 
 # Create collection
-
 image_files = list_files(input_dir, extensions=[".tif"])
 parents: list[Path] = list(set([tup[0] for tup in image_files]))
+existing_xml_files = [name for (_, name) in list_files(PROJECT_DIR / "output", extensions=[".xml"])]
 
-logger.info(f"Found {len(parents)} parent dirs")
+logger.info(f"Found {len(parents)} parent dirs, {len(image_files)} images")
 
-# Iterate through parents and list images
-for parent in parents:
-    images = [str(path) for path in parent.glob("**/*.tif")]
-    logger.info(f"Folder {parent.stem}: {len(images)} images")
+# Iterate through n images at a time
+
+batch_size = 100
+total_images = len(image_files)
+
+for i in range(total_images // batch_size):
+    start = i * batch_size
+    end = min((i+1) * batch_size, total_images)
+
+    images = [
+        str(parent / file) for parent, file in image_files[start:end] 
+        if str(Path(file).with_suffix(".xml")) not in existing_xml_files
+    ]
+
+    logger.info(f"Process images {start} - {end}")
     
     if len(images) > 0:
 
         logger.info("Create collection")
+        t0 = time.time()
         collection = Collection(images)
+        logger.info(f"Create collection: {(time.time()-t0) / 60} minutes")
 
         logger.info("Run pipeline")
+        t0 = time.time()
         new_collection = pipe.run(collection)
+        logger.info(f"Inference time: {(time.time()-t0) / 60} minutes")
+
 
