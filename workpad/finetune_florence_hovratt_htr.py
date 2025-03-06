@@ -40,9 +40,9 @@ data = load_dataset("Riksarkivet/gota_hovratt_seg", trust_remote_code=True, name
 total_samples = len(data["train"])
 np.random.seed(42)
 train_idx = np.random.choice(range(total_samples), size=int(0.8 * total_samples), replace=False)
-test_idx = np.array([i for i in range(total_samples) if i not in train_idx])
+val_idx = np.array([i for i in range(total_samples) if i not in train_idx])
 
-assert len(train_idx) + len(test_idx) == total_samples, "Mismatch subset sizes after splitting"
+assert len(train_idx) + len(val_idx) == total_samples, "Mismatch subset sizes after splitting"
 
 class HTRDataset(Dataset):
 
@@ -71,7 +71,7 @@ def collate_fn(batch):
 
 # Subset train & validate set
 train_dataset = HTRDataset(data['train'].select(train_idx))
-val_dataset = HTRDataset(data['validation'].select(test_idx))
+val_dataset = HTRDataset(data['train'].select(val_idx))
 
 batch_size = 10
 num_workers = 0
