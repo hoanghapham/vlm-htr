@@ -73,7 +73,7 @@ def collate_fn(batch):
 train_dataset = HTRDataset(data['train'].select(train_idx))
 val_dataset = HTRDataset(data['train'].select(val_idx))
 
-batch_size = 10
+batch_size = 2
 num_workers = 0
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size,
