@@ -68,7 +68,7 @@ def collate_fn(batch):
 # Subset train & validate set
 train_dataset = DocVQADataset(data['train'].select(range(1000)))
 val_dataset = DocVQADataset(data['validation'].select(range(100)))
-batch_size = 6
+batch_size = 2
 num_workers = 0
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size,
