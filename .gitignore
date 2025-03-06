@@ -9,3 +9,5 @@ logs*
 
 # files
 .python-version
+.env
+.DS_Store
