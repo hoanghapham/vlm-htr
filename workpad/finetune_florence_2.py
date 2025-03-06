@@ -3,15 +3,15 @@
 # !pip install datasets
 
 import torch
-from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoProcessor
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-from transformers import get_scheduler
 from torch.optim import AdamW
+from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
+from datasets import load_dataset
+from tqdm import tqdm
 
-
+from pathlib import Path
+PROJECT_DIR = Path(__file__).parent.parent
 
 # Load model
 print("Load model")
@@ -29,7 +29,7 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code=True, revision='refs/pr/6'
 )
 
-# Unfreeze
+# Unfreeze vision params
 for param in model.vision_tower.parameters():
   param.is_trainable = True
 
@@ -66,8 +66,8 @@ def collate_fn(batch):
 
 
 # Subset train & validate set
-train_dataset = DocVQADataset(data['train'].select(range(100)))
-val_dataset = DocVQADataset(data['validation'].select(range(10)))
+train_dataset = DocVQADataset(data['train'].select(range(1000)))
+val_dataset = DocVQADataset(data['validation'].select(range(100)))
 batch_size = 1
 num_workers = 0
 
@@ -90,11 +90,9 @@ lr_scheduler = get_scheduler(name="linear", optimizer=optimizer,
 for epoch in range(epochs):
     model.train()
     train_loss = 0
-    i = -1
 
     # Inputs is the processed tuple (text, image)
     for inputs, answers in tqdm(train_loader, desc=f"Training Epoch {epoch + 1}/{epochs}"):
-        i += 1
 
         # Get input (text tokens and )
         input_ids = inputs["input_ids"]
@@ -133,5 +131,15 @@ with torch.no_grad():
         loss = outputs.loss
         val_loss += loss.item()
 
-print(val_loss / len(val_loader))
+print("Average Validation Loss: ", val_loss / len(val_loader))
 
+
+
+# Save model
+print("Save model")
+model_out_dir = PROJECT_DIR / "models/florence-2-base-ft-vqa"
+
+if not model_out_dir.exists():
+    model_out_dir.mkdir(parents=True)
+
+model.save_pretrained(model_out_dir, from_pt=True)
