@@ -28,7 +28,7 @@ if not OUT_DATA_DIR.exists():
     OUT_DATA_DIR.mkdir(parents=True)
 
 
-logger = CustomLogger("florence_htr_page")
+logger = CustomLogger("florence_htr_page", log_to_local=True)
 
 # Load model
 logger.info("Load model")
