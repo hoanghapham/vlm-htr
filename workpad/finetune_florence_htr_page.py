@@ -17,18 +17,25 @@ PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.utils import gen_split_indices
+from src.logger import CustomLogger
 
 
 env_dict = dotenv_values(PROJECT_DIR / ".env")
 DATA_DIR = Path(env_dict["POLIS_DATA_DIR"])
 OUT_DATA_DIR = PROJECT_DIR / "data/poliskammare_page"
 
+if not OUT_DATA_DIR.exists():
+    OUT_DATA_DIR.mkdir(parents=True)
+
+
+logger = CustomLogger("florence_htr_page")
+
 # Load model
-print("Load model")
+logger.info("Load model")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = "microsoft/Florence-2-base-ft"
 
-print("Use device:", device)
+logger.info("Use device:", device)
 
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
@@ -56,6 +63,7 @@ assert len(all_img_paths) == len(all_xml_paths) > 0, \
 
 
 # Splits
+logger.info("Split data")
 ttl_samples = len(all_img_paths)
 train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
 
@@ -79,7 +87,7 @@ def create_transcription(xml_path):
 
     return "\n".join(line_text)
 
-
+logger.info("Create transcriptions")
 transcriptions = []
 for xml_path in tqdm(all_xml_paths, unit="file", total=ttl_samples, desc="Create transcriptions"):
     trans = create_transcription(xml_path)
@@ -99,7 +107,7 @@ class HTRDataset(Dataset):
 
     def __getitem__(self, idx):
         image_path, answer = self.data[idx]
-        question = "<SwedishHTR>Print out the text in this image"
+        question = "<SwedishHTR>logger.info out the text in this image"
         image = Image.open(image_path).convert("RGB")
         return question, answer, image
 
@@ -135,6 +143,8 @@ lr_scheduler = get_scheduler(name="linear", optimizer=optimizer,
                               num_warmup_steps=0, num_training_steps=num_training_steps,)
 
 
+logger.info("Train model")
+
 for epoch in range(epochs):
     model.train()
     train_loss = 0
@@ -163,7 +173,7 @@ for epoch in range(epochs):
         train_loss += loss.item()
 
     avg_train_loss = train_loss / len(train_loader)
-    print(f"Average Training Loss: {avg_train_loss}")
+    logger.info(f"Average Training Loss: {avg_train_loss}")
 
 
 # Check validation loss
@@ -179,11 +189,11 @@ with torch.no_grad():
         loss = outputs.loss
         val_loss += loss.item()
 
-print("Average Validation Loss: ", val_loss / len(val_loader))
+logger.info("Average Validation Loss: ", val_loss / len(val_loader))
 
 
 # Save model
-print("Save model")
+logger.info("Save model")
 model_out_dir = PROJECT_DIR / "models/florence-2-base-ft-hovratt-htr-page"
 
 if not model_out_dir.exists():
