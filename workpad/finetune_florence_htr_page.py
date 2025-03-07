@@ -4,17 +4,31 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from datasets import load_dataset
 from tqdm import tqdm
-import numpy as np
+from dotenv import dotenv_values
+from pagexml.parser import parse_pagexml_file
+import sys
+import json
+
+from PIL import Image
 
 from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent
+sys.path.append(str(PROJECT_DIR))
+
+from src.utils import gen_split_indices
+
+
+env_dict = dotenv_values(PROJECT_DIR / ".env")
+DATA_DIR = Path(env_dict["POLIS_DATA_DIR"])
+OUT_DATA_DIR = PROJECT_DIR / "data/poliskammare_page"
 
 # Load model
 print("Load model")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = "microsoft/Florence-2-base-ft"
+
+print("Use device:", device)
 
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
@@ -29,20 +43,51 @@ processor = AutoProcessor.from_pretrained(
 
 # Unfreeze vision params
 for param in model.vision_tower.parameters():
-  param.is_trainable = True
+    param.is_trainable = True
 
 
-# Create VQA Dataset
-# Load data
-print("Load data")
-data = load_dataset("Riksarkivet/gota_hovratt_seg", trust_remote_code=True, name="text_recognition")
+# Create Dataset
+# Collect paths
+all_img_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "images", pattern="**/*.tif"))]
+all_xml_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "page_xmls", pattern="**/*.xml"))]
 
-total_samples = len(data["train"])
-np.random.seed(42)
-train_idx = np.random.choice(range(total_samples), size=int(0.8 * total_samples), replace=False)
-val_idx = np.array([i for i in range(total_samples) if i not in train_idx])
+assert len(all_img_paths) == len(all_xml_paths) > 0, \
+    f"Length invalid: {len(all_img_paths)}, {len(all_xml_paths)}"
 
-assert len(train_idx) + len(val_idx) == total_samples, "Mismatch subset sizes after splitting"
+
+# Splits
+ttl_samples = len(all_img_paths)
+train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
+
+splits = {
+    "train": [(all_img_paths[idx], all_xml_paths[idx]) for idx in train_indices],
+    "validation": [(all_img_paths[idx], all_xml_paths[idx]) for idx in val_indices],
+    "test": [(all_img_paths[idx], all_xml_paths[idx]) for idx in test_indices]
+}
+
+with open(OUT_DATA_DIR / "splits_info.json", "w") as f:
+    json.dump(splits, f)
+
+
+# Create transcriptions
+def create_transcription(xml_path):
+    data = parse_pagexml_file(xml_path)
+    line_text = []
+    for line in data.get_lines():
+        if line.text:
+            line_text.append(line.text)
+
+    return "\n".join(line_text)
+
+
+transcriptions = []
+for xml_path in tqdm(all_xml_paths, unit="file", total=ttl_samples, desc="Create transcriptions"):
+    trans = create_transcription(xml_path)
+    transcriptions.append(trans)
+
+
+raw_data = list(zip(all_img_paths, transcriptions))
+
 
 class HTRDataset(Dataset):
 
@@ -53,10 +98,9 @@ class HTRDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        example = self.data[idx]
-        question = "<HTR>Print out the text in this image"
-        answer = example["transcription"]
-        image = example['image'].convert("RGB")
+        image_path, answer = self.data[idx]
+        question = "<SwedishHTR>Print out the text in this image"
+        image = Image.open(image_path).convert("RGB")
         return question, answer, image
 
 
@@ -68,10 +112,9 @@ def collate_fn(batch):
     return inputs, answers
 
 
-
 # Subset train & validate set
-train_dataset = HTRDataset(data['train'].select(train_idx))
-val_dataset = HTRDataset(data['train'].select(val_idx))
+train_dataset = HTRDataset([raw_data[idx] for idx in train_indices])
+val_dataset = HTRDataset([raw_data[idx] for idx in val_indices])
 
 batch_size = 2
 num_workers = 0
@@ -83,7 +126,7 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size,
 
 
 # Train
-epochs = 5
+epochs = 10
 optimizer = AdamW(model.parameters(), lr=1e-6)
 num_training_steps = epochs * len(train_loader)
 
@@ -139,10 +182,9 @@ with torch.no_grad():
 print("Average Validation Loss: ", val_loss / len(val_loader))
 
 
-
 # Save model
 print("Save model")
-model_out_dir = PROJECT_DIR / "models/florence-2-base-ft-hovratt-htr"
+model_out_dir = PROJECT_DIR / "models/florence-2-base-ft-hovratt-htr-page"
 
 if not model_out_dir.exists():
     model_out_dir.mkdir(parents=True)
