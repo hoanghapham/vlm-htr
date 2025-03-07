@@ -35,7 +35,7 @@ logger.info("Load model")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = "microsoft/Florence-2-base-ft"
 
-logger.info("Use device:", device)
+logger.info(f"Use device: {device}")
 
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
@@ -107,7 +107,7 @@ class HTRDataset(Dataset):
 
     def __getitem__(self, idx):
         image_path, answer = self.data[idx]
-        question = "<SwedishHTR>logger.info out the text in this image"
+        question = "<SwedishHTR>Print out the text in this image"
         image = Image.open(image_path).convert("RGB")
         return question, answer, image
 
@@ -189,7 +189,9 @@ with torch.no_grad():
         loss = outputs.loss
         val_loss += loss.item()
 
-logger.info("Average Validation Loss: ", val_loss / len(val_loader))
+
+avg_val_loss = val_loss / len(val_loader)
+logger.info(f"Average Validation Loss: {avg_val_loss}")
 
 
 # Save model
