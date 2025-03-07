@@ -1,13 +1,16 @@
 # Folders
-data/*
+**/data/*
 logs/*
 output/*
 outputs/*
 __pycache__
 .cache
 logs*
+models/*
+
 
 # files
 .python-version
 .env
 .DS_Store
+*.lock
