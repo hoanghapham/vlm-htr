@@ -5,6 +5,7 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
+#SBATCH -C mem512GB
 #SBATCH -J create_line_dataset
 #SBATCH -o logs_uppmax/create_line_dataset.out
 #SBATCH -e logs_uppmax/create_line_dataset.err

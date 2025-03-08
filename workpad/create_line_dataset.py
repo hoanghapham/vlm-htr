@@ -13,6 +13,7 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.image_tools.poliskammare import LineDataset
 from src.utils import gen_split_indices
+from src.logger import CustomLogger
 
 
 # Setup
@@ -22,6 +23,8 @@ OUTPUT_DIR = PROJECT_DIR / "data/poliskammare_line"
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
+
+logger = CustomLogger("create_line_dataset")
 
 #%%
 line_dataset = LineDataset(name="line")
@@ -39,22 +42,22 @@ imgs_xmls = list(zip(
 )
 
 ttl_samples = len(all_img_paths)
-train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
+# train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
 
 #%%
 
-subsets = [
-    ("train", train_indices), 
-    ("validation", val_indices),
-    ("test", test_indices)
-]
+# subsets = [
+#     ("train", train_indices), 
+#     ("validation", val_indices),
+#     ("test", test_indices)
+# ]
 
-splits = {}
+# splits = {}
 
-for subset_name, indices in subsets:
-    print(f"Process {subset_name} set:")
-    imgs_xmls_subset = [imgs_xmls[idx] for idx in indices]
-    splits[subset_name] = imgs_xmls_subset
+for idx, (img_path, xml_path) in enumerate(imgs_xmls):
+    logger.info(f"Process page {idx}/{ttl_samples}")
+
+    page_name = Path(img_path).stem
         
     dataset_obj = Dataset.from_list(
         [
@@ -62,12 +65,12 @@ for subset_name, indices in subsets:
                 "id": data[0],
                 "image": data[1]["image"],
                 "transcription": data[1]["transcription"]
-            } for data in line_dataset.text_recognition(imgs_xmls_subset)
+            } for data in line_dataset.text_recognition([(img_path, xml_path)])
         ]
     )
 
-    dataset_obj.save_to_disk(OUTPUT_DIR / subset_name)
+    dataset_obj.save_to_disk(OUTPUT_DIR / page_name)
     
 
-with open(OUTPUT_DIR / "split_info.json", "w") as f:
-    json.dump(splits, f)
+# with open(OUTPUT_DIR / "split_info.json", "w") as f:
+#     json.dump(splits, f)

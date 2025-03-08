@@ -1,16 +1,17 @@
+#%%
+import sys
+import json
 
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
+from PIL import Image
+
 from tqdm import tqdm
 from dotenv import dotenv_values
 from pagexml.parser import parse_pagexml_file
-import sys
-import json
-
-from PIL import Image
 
 from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent
@@ -20,6 +21,7 @@ from src.utils import gen_split_indices
 from src.logger import CustomLogger
 
 
+# Setup
 env_dict = dotenv_values(PROJECT_DIR / ".env")
 DATA_DIR = Path(env_dict["POLIS_DATA_DIR"])
 OUT_DATA_DIR = PROJECT_DIR / "data/poliskammare_page"
@@ -27,8 +29,32 @@ OUT_DATA_DIR = PROJECT_DIR / "data/poliskammare_page"
 if not OUT_DATA_DIR.exists():
     OUT_DATA_DIR.mkdir(parents=True)
 
-
 logger = CustomLogger("florence_htr_page", log_to_local=True)
+
+# Define helpers
+def create_transcription(xml_path):
+    data = parse_pagexml_file(xml_path)
+    line_text = []
+    for line in data.get_lines():
+        if line.text:
+            line_text.append(line.text)
+
+    return "\n".join(line_text)
+
+
+class HTRDataset(Dataset):
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        image_path, answer = self.data[idx]
+        question = "<SwedishHTR>Print out the text in this image"
+        image = Image.open(image_path).convert("RGB")
+        return question, answer, image
+
 
 # Load model
 logger.info("Load model")
@@ -78,15 +104,6 @@ with open(OUT_DATA_DIR / "splits_info.json", "w") as f:
 
 
 # Create transcriptions
-def create_transcription(xml_path):
-    data = parse_pagexml_file(xml_path)
-    line_text = []
-    for line in data.get_lines():
-        if line.text:
-            line_text.append(line.text)
-
-    return "\n".join(line_text)
-
 logger.info("Create transcriptions")
 transcriptions = []
 for xml_path in tqdm(all_xml_paths, unit="file", total=ttl_samples, desc="Create transcriptions"):
@@ -96,21 +113,7 @@ for xml_path in tqdm(all_xml_paths, unit="file", total=ttl_samples, desc="Create
 
 raw_data = list(zip(all_img_paths, transcriptions))
 
-
-class HTRDataset(Dataset):
-
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        image_path, answer = self.data[idx]
-        question = "<SwedishHTR>Print out the text in this image"
-        image = Image.open(image_path).convert("RGB")
-        return question, answer, image
-
+#%%
 
 # Create train loader & validate loader
 # Processor comes from when loading the model
