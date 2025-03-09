@@ -2,9 +2,7 @@
 import sys
 from pathlib import Path
 
-from datasets import Dataset, DatasetDict
-from collections import defaultdict
-from tqdm import tqdm
+from datasets import Dataset
 import json
 from dotenv import dotenv_values
 
@@ -19,12 +17,12 @@ from src.logger import CustomLogger
 # Setup
 env_dict = dotenv_values(PROJECT_DIR / ".env")
 DATA_DIR = Path(env_dict["POLIS_DATA_DIR"])
-OUTPUT_DIR = PROJECT_DIR / "data/poliskammare_line"
+OUTPUT_DIR = PROJECT_DIR / "data/poliskammare_region"
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
-logger = CustomLogger("create_line_dataset")
+logger = CustomLogger("create_region_dataset")
 
 #%%
 builder = ImageDatasetBuilder()
@@ -42,35 +40,40 @@ imgs_xmls = list(zip(
 )
 
 ttl_samples = len(all_img_paths)
-# train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
+train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
 
 #%%
 
-# subsets = [
-#     ("train", train_indices), 
-#     ("validation", val_indices),
-#     ("test", test_indices)
-# ]
+split_info = {
+    "train": [all_img_paths[idx] for idx in train_indices],
+    "validation": [all_img_paths[idx] for idx in val_indices],
+    "test": [all_img_paths[idx] for idx in test_indices]
+}
 
-# splits = {}
 
-for idx, (img_path, xml_path) in enumerate(imgs_xmls):
-    logger.info(f"Process page {idx}/{ttl_samples}")
+with open(OUTPUT_DIR / "split_info.json", "w") as f:
+    json.dump(split_info, f)
 
-    page_name = Path(img_path).stem
-        
+
+subsets = [
+    ("train", [imgs_xmls[idx] for idx in train_indices]),
+    ("validation", [imgs_xmls[idx] for idx in val_indices]),
+    ("test", [imgs_xmls[idx] for idx in test_indices])
+]
+
+for subset_name, pairs in subsets:
+
+    logger.info(f"Process {subset_name}")
+
     dataset_obj = Dataset.from_list(
         [
             {
                 "id": data[0],
                 "image": data[1]["image"],
                 "transcription": data[1]["transcription"]
-            } for data in builder.create_line_dataset([(img_path, xml_path)])
-        ]
+            } for data in builder.create_region_dataset(pairs)
+        ]   
     )
 
-    dataset_obj.save_to_disk(OUTPUT_DIR / page_name)
+    dataset_obj.save_to_disk(OUTPUT_DIR / subset_name)
     
-
-# with open(OUTPUT_DIR / "split_info.json", "w") as f:
-#     json.dump(splits, f)

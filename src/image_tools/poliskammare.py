@@ -4,6 +4,14 @@ import xml.etree.ElementTree as ET
 from glob import glob
 from pathlib import Path, PurePath
 
+from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
+from pagexml.parser import parse_pagexml_file
+
+
+from shapely.ops import unary_union
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.linestring import LineString
+
 import cv2
 import numpy as np
 from datasets import (
@@ -30,43 +38,155 @@ class HTRDatasetConfig(BuilderConfig):
         self.features = features
 
 
+def create_lower_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
+    # lower bound points: select lower points of the last line. 
+    lower_bound = []
+    max_x = 0
+    for point in line_list[-1].coords.points:
+        if point[0] > max_x:
+            lower_bound.append(point)
+            max_x = point[0]
+        else:
+            break
+    
+    # If the next-last line is longer than the last line, then select some points of the next-last line
+    # for point in line_list[-2].coords.points:
+    #     if point[0] >= lower_bound[-1][0]:
+    #         lower_bound.append(point)
+    #         max_x = point[0]
+    #     else:
+    #         break
+    return lower_bound
 
 
-class LineDataset(GeneratorBasedBuilder):
+def create_right_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
+    # Right bound: For each line, select n rightmost point
+    n_candidates = 2
+    right_bound = []
+
+    for line in reversed(line_list):
+        # sort points by x to get the top n x-farthest points
+        # Picking n candidates, sort them from bottom to top
+        ordered_points = sorted(line.coords.points, key= lambda x: x[0], reverse=True)
+        rightmost_candidates = sorted(ordered_points[:n_candidates], key = lambda x: x[1], reverse=True)
+        right_bound += rightmost_candidates
+
+    return right_bound
+
+
+def create_upper_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
+    # Upper bound: select upper points of the first line.
+    
+    upper_bound = []
+    max_x = 0
+    for point in reversed(line_list[0].coords.points):
+        if point[0] > max_x:
+            upper_bound.append(point)
+            max_x = point[0]
+    
+    upper_bound = list(reversed(upper_bound))
+    return upper_bound
+
+
+def create_left_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
+    # Left bound: for each line, select n leftmost point
+    left_bound = []
+    n_candidates = 2
+
+    for line in line_list:
+        ordered_points = sorted(line.coords.points, key= lambda x: x[0], reverse=False)
+        leftmost_candidates = sorted(ordered_points[:n_candidates], key = lambda x: x[1], reverse=False)
+        left_bound += leftmost_candidates
+    
+    return left_bound
+
+
+def merge_polys(line_list: list[PageXMLTextLine]):
+    # Need to dedup points as well
+
+    lower_bound = create_lower_bound(line_list)
+    right_bound = create_right_bound(line_list)
+    upper_bound = create_upper_bound(line_list)
+    left_bound = create_left_bound(line_list)
+    
+
+    cleaned_right_bound = []
+    rb_x = [point[0] for point in right_bound]
+    rb_x_mean = np.mean(rb_x)
+    for point in right_bound:
+        if point[0] < rb_x_mean - 2 * np.std(rb_x):
+            continue
+        cleaned_right_bound.append(point)
+
+    
+    cleaned_left_bound = []
+    lb_x = [point[0] for point in left_bound]
+    lb_x_mean = np.mean(lb_x)
+    for point in left_bound:
+        if point[0] > lb_x_mean + 2 * np.std(lb_x):
+            continue
+        cleaned_left_bound.append(point)
+
+
+
+    # Construct region poly: points go in counter-clockwise , starting from lower bound
+    region_poly = lower_bound + cleaned_right_bound + upper_bound + cleaned_left_bound
+    
+    return region_poly
+
+
+# Group lines into regions within a char limit
+
+def split_regions(xml_data: PageXMLPage, region_chars_limit=1024) -> list[list[PageXMLTextLine]]:
+
+    regions = []
+    for region_data in xml_data.get_all_text_regions():
+
+        current_group = []
+        current_length = 0
+
+        # If region is within char limit, add region's line, then move to the next
+        if region_data.text is not None and len(region_data.text) <= region_chars_limit:
+            regions += [region_data.get_lines()]
+        else:
+            for line_idx, line_data in enumerate(region_data.get_lines()):
+
+                if (line_idx == len(region_data.get_lines()) - 1):
+                    current_group.append(line_data)
+                    regions.append(current_group)
+
+                if line_data.text is not None or line_data.text > 0:
+
+                    # If adding the current line will exceed the char limit, select the current line groups, then reset the list
+                    if (current_length + len(line_data.text) > region_chars_limit):
+                        regions.append(current_group)
+
+                        # Reset
+                        current_group = [line_data]
+                        current_length = len(line_data.text)
+                    
+                    else:
+
+                        # If not, continue to add line to the group
+                        current_group.append(line_data)
+                        current_length += len(line_data.text)
+    return regions
+
+
+
+def join_transcriptions(line_list: list[PageXMLTextLine]):
+    texts = []
+    for line in line_list:
+        if line.text:
+            texts.append(line.text)
+    
+    return "\n".join(texts)
+
+
+class ImageDatasetBuilder():
     # Define feature structures for each dataset type
-    text_recognition_features = Features(
-        {
-            "image": Image(),
-            "transcription": Value("string"),
-        }
-    )
 
-
-    BUILDER_CONFIGS = [
-        HTRDatasetConfig(
-            name="text_recognition",
-            description="textline dataset for text recognition of historical Swedish",
-            process_func="text_recognition",
-            features=text_recognition_features,
-        ),
-    ]
-
-    def _info(self):
-        return DatasetInfo(features=self.config.features)
-
-
-    def _collect_file_paths(self, folders, extensions):
-        """Collects file paths recursively from specified folders."""
-        files_nested = [
-            glob(os.path.join(folder, "**", ext), recursive=True) for ext in extensions for folder in folders
-        ]
-        return [file for sublist in files_nested for file in sublist]
-
-    def _generate_examples(self, imgs_xmls):
-        process_func = getattr(self, self.config.process_func)
-        return process_func(imgs_xmls)
-
-    def text_recognition(self, imgs_xmls):
+    def create_line_dataset(self, imgs_xmls):
         """Process for line dataset with cropped images and transcriptions."""
         for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
             img_filename, volume = self._extract_filename_and_volume(img, xml)
@@ -74,7 +194,7 @@ class LineDataset(GeneratorBasedBuilder):
             image_array = cv2.imread(img)
 
             for i, line in enumerate(lines_data):
-                line_id = str(i).zfill(4)
+                region_id = str(i).zfill(4)
                 try:
                     cropped_image = self.crop_line_image(image_array, line["coords"])
                 except Exception as e:
@@ -88,9 +208,42 @@ class LineDataset(GeneratorBasedBuilder):
                     print(f"Invalid transcription: {transcription}")
                     continue
 
-                unique_key = f"{volume}_{img_filename}_{line_id}"
+                unique_key = f"{volume}_{img_filename}_{region_id}"
                 yield unique_key, {"image": cropped_image, "transcription": transcription}
 
+
+    def create_region_dataset(self, imgs_xmls):
+        for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
+            img_filename, volume = self._extract_filename_and_volume(img, xml)
+            xml_data = parse_pagexml_file(xml)
+            image_array = cv2.imread(img)
+
+            regions = split_regions(xml_data)
+
+            for i, region in enumerate(regions):
+                # mask = merge_polys(region)
+                # polys = [Polygon(list(line.coords.points)) for line in region]
+                # merged_poly = unary_union(polys)
+
+                # if isinstance(merged_poly.boundary, LineString):
+                #     mask = [(int(x), int(y)) for x, y in merged_poly.boundary.coords]
+                # elif isinstance(merged_poly.boundary, MultiLineString):
+                #     mask = [(int(x), int(y)) for geom in merged_poly.boundary.geoms for x, y in geom.coords]
+
+                mask = merge_polys(region)
+
+                transcription = join_transcriptions(region)
+                try:
+                    cropped_image = self.crop_line_image(image_array, mask)
+                except Exception as e:
+                    print("Error image:", img_filename)
+                    print(e)
+                    continue
+
+
+                region_id = str(i).zfill(4)
+                unique_key = f"{volume}_{img_filename}_{region_id}"
+                yield unique_key, {"image": cropped_image, "transcription": transcription}
 
 
     def _extract_filename_and_volume(self, img, xml):
@@ -242,10 +395,10 @@ class LineDataset(GeneratorBasedBuilder):
         for region in root.findall(".//ns:TextRegion", namespaces):
             for line in region.findall(".//ns:TextLine", namespaces):
                 try:
-                    line_id = line.get("id")
+                    region_id = line.get("id")
                     coords = self._get_polygon(line, namespaces)
                     transcription = line.find("ns:TextEquiv/ns:Unicode", namespaces).text or ""
-                    lines_data.append({"line_id": line_id, "coords": coords, "transcription": transcription})
+                    lines_data.append({"region_id": region_id, "coords": coords, "transcription": transcription})
                 except Exception as e:
                     print(f"Error parsing line: {e}")
         return lines_data
