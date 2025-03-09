@@ -155,7 +155,7 @@ def split_regions(xml_data: PageXMLPage, region_chars_limit=1024) -> list[list[P
                     current_group.append(line_data)
                     regions.append(current_group)
 
-                if line_data.text is not None or line_data.text > 0:
+                if line_data.text is not None and line_data.text > 0:
 
                     # If adding the current line will exceed the char limit, select the current line groups, then reset the list
                     if (current_length + len(line_data.text) > region_chars_limit):
