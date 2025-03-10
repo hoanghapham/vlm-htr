@@ -41,7 +41,7 @@ processor = AutoProcessor.from_pretrained(
 
 # Unfreeze vision params
 for param in model.vision_tower.parameters():
-  param.is_trainable = True
+    param.is_trainable = True
 
 
 #%%
@@ -126,7 +126,7 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size,
 
 #%%
 # Train
-epochs = 2
+epochs = 10
 optimizer = AdamW(model.parameters(), lr=1e-6)
 num_training_steps = epochs * len(train_loader)
 lr_scheduler = get_scheduler(name="linear", optimizer=optimizer,
