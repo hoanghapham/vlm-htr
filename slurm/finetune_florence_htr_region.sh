@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J finetune_florence_htr_page
-#SBATCH -o logs_uppmax/finetune_florence_htr_page.out
-#SBATCH -e logs_uppmax/finetune_florence_htr_page.err
+#SBATCH -J finetune_florence_htr_region
+#SBATCH -o logs_uppmax/finetune_florence_htr_region.out
+#SBATCH -e logs_uppmax/finetune_florence_htr_region.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,4 +19,4 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/finetune_florence_htr_page.py
+python workpad/finetune_florence_htr_region.py --epochs 1 --use-batch-pct 1 --batch-size 2
