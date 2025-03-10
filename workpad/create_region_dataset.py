@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from datasets import Dataset
+from datasets import Dataset, load_from_disk
 import json
 from dotenv import dotenv_values
 
@@ -40,30 +40,31 @@ imgs_xmls = list(zip(
 )
 
 ttl_samples = len(all_img_paths)
-train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
+# train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
 
 #%%
 
-split_info = {
-    "train": [all_img_paths[idx] for idx in train_indices],
-    "validation": [all_img_paths[idx] for idx in val_indices],
-    "test": [all_img_paths[idx] for idx in test_indices]
-}
+# split_info = {
+#     "train": [all_img_paths[idx] for idx in train_indices],
+#     "validation": [all_img_paths[idx] for idx in val_indices],
+#     "test": [all_img_paths[idx] for idx in test_indices]
+# }
 
 
-with open(OUTPUT_DIR / "split_info.json", "w") as f:
-    json.dump(split_info, f)
+# with open(OUTPUT_DIR / "split_info.json", "w") as f:
+#     json.dump(split_info, f)
 
 
-subsets = [
-    ("train", [imgs_xmls[idx] for idx in train_indices]),
-    ("validation", [imgs_xmls[idx] for idx in val_indices]),
-    ("test", [imgs_xmls[idx] for idx in test_indices])
-]
+# subsets = [
+#     ("train", [imgs_xmls[idx] for idx in train_indices]),
+#     ("validation", [imgs_xmls[idx] for idx in val_indices]),
+#     ("test", [imgs_xmls[idx] for idx in test_indices])
+# ]
 
-for subset_name, pairs in subsets:
+for idx, (img_path, xml_path) in enumerate(imgs_xmls):
 
-    logger.info(f"Process {subset_name}")
+    logger.info(f"Process image {idx}/{ttl_samples}")
+    file_name = Path(img_path).stem
 
     dataset_obj = Dataset.from_list(
         [
@@ -71,9 +72,10 @@ for subset_name, pairs in subsets:
                 "id": data[0],
                 "image": data[1]["image"],
                 "transcription": data[1]["transcription"]
-            } for data in builder.create_region_dataset(pairs)
+            } for data in builder.create_smooth_region_dataset([(img_path, xml_path)])
         ]   
     )
 
-    dataset_obj.save_to_disk(OUTPUT_DIR / subset_name)
+    dataset_obj.save_to_disk(OUTPUT_DIR / file_name)
     
+

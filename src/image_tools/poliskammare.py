@@ -8,9 +8,7 @@ from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextReg
 from pagexml.parser import parse_pagexml_file
 
 
-from shapely.ops import unary_union
-from shapely.geometry.multilinestring import MultiLineString
-from shapely.geometry.linestring import LineString
+from shapely import MultiPoint, convex_hull
 
 import cv2
 import numpy as np
@@ -49,13 +47,6 @@ def create_lower_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
         else:
             break
     
-    # If the next-last line is longer than the last line, then select some points of the next-last line
-    # for point in line_list[-2].coords.points:
-    #     if point[0] >= lower_bound[-1][0]:
-    #         lower_bound.append(point)
-    #         max_x = point[0]
-    #     else:
-    #         break
     return lower_bound
 
 
@@ -109,25 +100,23 @@ def merge_polys(line_list: list[PageXMLTextLine]):
     upper_bound = create_upper_bound(line_list)
     left_bound = create_left_bound(line_list)
     
-
+    # Remove outliners
     cleaned_right_bound = []
     rb_x = [point[0] for point in right_bound]
-    rb_x_mean = np.mean(rb_x)
+    rb_x_mean = np.median(rb_x)
     for point in right_bound:
-        if point[0] < rb_x_mean - 2 * np.std(rb_x):
+        if point[0] < rb_x_mean - 1 * np.std(rb_x):
             continue
         cleaned_right_bound.append(point)
 
-    
+    # Remove outliers
     cleaned_left_bound = []
     lb_x = [point[0] for point in left_bound]
-    lb_x_mean = np.mean(lb_x)
+    lb_x_mean = np.median(lb_x)
     for point in left_bound:
-        if point[0] > lb_x_mean + 2 * np.std(lb_x):
+        if point[0] > lb_x_mean + 1 * np.std(lb_x):
             continue
         cleaned_left_bound.append(point)
-
-
 
     # Construct region poly: points go in counter-clockwise , starting from lower bound
     region_poly = lower_bound + cleaned_right_bound + upper_bound + cleaned_left_bound
@@ -212,7 +201,7 @@ class ImageDatasetBuilder():
                 yield unique_key, {"image": cropped_image, "transcription": transcription}
 
 
-    def create_region_dataset(self, imgs_xmls):
+    def create_smooth_region_dataset(self, imgs_xmls):
         for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
             img_filename, volume = self._extract_filename_and_volume(img, xml)
             xml_data = parse_pagexml_file(xml)
@@ -221,14 +210,61 @@ class ImageDatasetBuilder():
             regions = split_regions(xml_data)
 
             for i, region in enumerate(regions):
-                # mask = merge_polys(region)
-                # polys = [Polygon(list(line.coords.points)) for line in region]
-                # merged_poly = unary_union(polys)
+                
+                # Create mask
+                merged_lines = merge_polys(region)
+                hull = convex_hull(MultiPoint(merged_lines))  # Find minimal convex hull that cover the merged lines
+                mask = [(int(x), int(y)) for x, y in hull.boundary.coords]
+                
+                # Join transcription
+                transcription = join_transcriptions(region)
 
-                # if isinstance(merged_poly.boundary, LineString):
-                #     mask = [(int(x), int(y)) for x, y in merged_poly.boundary.coords]
-                # elif isinstance(merged_poly.boundary, MultiLineString):
-                #     mask = [(int(x), int(y)) for geom in merged_poly.boundary.geoms for x, y in geom.coords]
+                try:
+                    cropped_image = self.crop_line_image(image_array, mask)
+                except Exception as e:
+                    print("Error image:", img_filename)
+                    print(e)
+                    continue
+
+                region_id = str(i).zfill(4)
+                unique_key = f"{volume}_{img_filename}_{region_id}"
+                yield unique_key, {"image": cropped_image, "transcription": transcription}
+
+
+    def create_wiggly_region_dataset(self, imgs_xmls):
+        for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
+            img_filename, volume = self._extract_filename_and_volume(img, xml)
+            xml_data = parse_pagexml_file(xml)
+            image_array = cv2.imread(img)
+
+            regions = split_regions(xml_data)
+
+            for i, region in enumerate(regions):
+
+                mask = merge_polys(region)
+
+                transcription = join_transcriptions(region)
+                try:
+                    cropped_image = self.crop_line_image(image_array, mask)
+                except Exception as e:
+                    print("Error image:", img_filename)
+                    print(e)
+                    continue
+
+                region_id = str(i).zfill(4)
+                unique_key = f"{volume}_{img_filename}_{region_id}"
+                yield unique_key, {"image": cropped_image, "transcription": transcription}
+
+
+    def create_poly_region_dataset(self, imgs_xmls):
+        for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
+            img_filename, volume = self._extract_filename_and_volume(img, xml)
+            xml_data = parse_pagexml_file(xml)
+            image_array = cv2.imread(img)
+
+            regions = split_regions(xml_data)
+
+            for i, region in enumerate(regions):
 
                 mask = merge_polys(region)
 
