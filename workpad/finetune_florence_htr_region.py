@@ -24,7 +24,7 @@ parser = ArgumentParser()
 parser.add_argument("--epochs", default=1)
 parser.add_argument("--use-batch-pct", default=0.5)
 parser.add_argument("--batch-size", default=2)
-args = parser.parse_args([])
+args = parser.parse_args()
 
 # Vars
 EPOCHS = int(args.epochs)
@@ -195,16 +195,15 @@ for epoch in range(EPOCHS):
     logger.info(f"Average Training Loss: {avg_train_loss}")
 
 
-#%%
-# Check validation loss
-model.eval()
-val_loss = 0
-with torch.no_grad():
-    for batch in tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}/{epochs}"):
-        outputs = model(**batch)
-        loss = outputs.loss
-        val_loss += loss.item()
+    # Check validation loss
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for batch in tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}/{EPOCHS}"):
+            outputs = model(**batch)
+            loss = outputs.loss
+            val_loss += loss.item()
 
 
-avg_val_loss = val_loss / len(val_loader)
-logger.info(f"Average Validation Loss: , {avg_val_loss}")
+    avg_val_loss = val_loss / len(val_loader)
+    logger.info(f"Average Validation Loss: , {avg_val_loss}")
