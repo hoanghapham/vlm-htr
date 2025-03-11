@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 4-00:00
+#SBATCH -t 2-00:00
 #SBATCH -J finetune_florence_htr_region
 #SBATCH -o logs_uppmax/finetune_florence_htr_region.out
 #SBATCH -e logs_uppmax/finetune_florence_htr_region.err
