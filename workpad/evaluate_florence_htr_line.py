@@ -16,6 +16,7 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 from src.logger import CustomLogger
 from src.utils import load_best_checkpoint
+from src.file_tools import write_json_file, write_list_to_text_file
 
 #%%
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -141,9 +142,7 @@ metrics_aggr = {
 }
 
 
-with open(OUTPUT_DIR / "metrics_aggr.json", "w") as f:
-    json.dump(metrics_aggr, f)
-
+write_json_file(metrics_aggr, OUTPUT_DIR / "metrics_aggr.json")
 
 # Detailed results
 
@@ -154,18 +153,11 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-with open(OUTPUT_DIR / "metrics_lists.json", "w") as f:
-    json.dump(metrics_lists, f)
+write_json_file(metrics_lists, OUTPUT_DIR / "metrics_lists.json")
 
 # Predicted text
-with open(OUTPUT_DIR / "transcription_gt.txt", "w") as f:
-    for line in transcr_gt_list:
-        f.write(line)
-        f.write("\n")
+write_list_to_text_file(transcr_gt_list, OUTPUT_DIR / "transcription_gt.txt")
 
-with open(OUTPUT_DIR / "transcr_pred.txt", "w") as f:
-    for line in transcr_pred_list:
-        f.write(line["<SwedishHTR>"])
-        f.write("\n")
+pred_list = [line["<SwedishHTR>"] for line in transcr_pred_list]
+write_list_to_text_file(pred_list , OUTPUT_DIR / "transcription_gt.txt")
 
-# %%

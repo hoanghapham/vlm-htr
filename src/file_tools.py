@@ -133,11 +133,21 @@ def read_lines(input_file: Path | str) -> list[str]:
         lines = [line.strip() for line in f.readlines()]
     return lines
 
+
 def read_text_file(input_file: Path | str) -> str:
     with open(input_file, "r", encoding="utf-8") as f:
         text = "".join(list(f.readlines()))
     return text
 
+
 def write_text_file(text: str, output_file: Path | str) -> None:
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(text)
+
+
+def write_list_to_text_file(lst: list[str], output_file: Path | str, linebreak=True) -> None:
+    with open(output_file, "w", encoding="utf-8") as f:
+        for line in lst:
+            f.write(line)
+            if linebreak:
+                f.write("\n")
