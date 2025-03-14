@@ -19,6 +19,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 cd $PROJECT_DIR
 
 python workpad/finetune_florence_htr_region.py \
-    --epochs 10 \
+    --train-epochs 10 \
     --use-data-pct 1 \
     --batch-size 2
