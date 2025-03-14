@@ -22,9 +22,8 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--train-epochs", default=5)
 parser.add_argument("--batch-size", default=2)
-# args = parser.parse_args()
-
-args = parser.parse_args([])
+parser.add_argument("--use-data-pct", default=0.5)
+args = parser.parse_args()
 
 logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
 
@@ -101,7 +100,7 @@ if not MODEL_DIR.exists():
 
 TRAIN_EPOCHS = int(args.train_epochs)
 START_EPOCH = 0
-BREAK_IDX = int(0.5 * len(train_loader))
+BREAK_IDX = int(float(args.use_data_pct) * len(train_loader))
 num_training_steps = TRAIN_EPOCHS * len(train_loader)
 
 optimizer = AdamW(model.parameters(), lr=1e-6)
