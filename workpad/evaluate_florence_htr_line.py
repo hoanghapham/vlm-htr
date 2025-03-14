@@ -1,7 +1,6 @@
 #%%
 import sys
 import json
-import subprocess
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
@@ -10,32 +9,49 @@ sys.path.append(str(PROJECT_DIR))
 import torch
 import matplotlib.pyplot as plt
 from transformers import AutoModelForCausalLM, AutoProcessor
-from datasets import load_dataset, load_from_disk, concatenate_datasets
+from datasets import load_from_disk, concatenate_datasets
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
-
 from src.logger import CustomLogger
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LOCAL_MODEL_PATH = PROJECT_DIR / "models/florence-2-base-ft-htr-line/"
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
-logger = CustomLogger("eval_florence_ft_line")
+logger = CustomLogger("eval_florence_ft_line", log_to_local=True)
 
 # Load model
 logger.info("Load model")
-processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True)
+processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
-# Load checkpoint
-checkpoint_path = PROJECT_DIR / "models/florence-2-base-ft-htr-line/checkpoint_epoch_000.pt"
-model_info = torch.load(checkpoint_path, weights_only=True, map_location=torch.device(DEVICE))
+# Load best checkpoint
 
-model.load_state_dict(model_info["model_state_dict"])
+checkpoint_paths = sorted((PROJECT_DIR / "models/florence-2-base-ft-htr-line").glob("*.pt"))
+first_cp_info = torch.load(checkpoint_paths[0], weights_only=True, map_location=torch.device(DEVICE))
+
+best_epoch = first_cp_info["epoch"]
+best_loss = first_cp_info["loss"].item()
+best_state = first_cp_info["model_state_dict"]
+
+for cp_path in checkpoint_paths:
+    cp_info = torch.load(cp_path, weights_only=True, map_location=torch.device(DEVICE))
+    if cp_info["loss"].item() < best_loss:
+        best_epoch = cp_info["epoch"]
+        best_loss = cp_info["loss"].item()
+        best_state = cp_info["model_state_dict"]
+
+model.load_state_dict(best_state)
+logger.info(f"Load best checkpoint: epoch {best_epoch}, loss: {best_loss:.4f}")
+
+# Set model to evaluation mode
 model.eval()
 
+#%%
+
 # Load split info
-logger.info("Load data")
+logger.info("Load test data")
 DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
 
 with open(DATA_DIR / "split_info.json", "r") as f:
@@ -66,6 +82,8 @@ wer = WER()
 bow = BagOfWords()
 
 prompt = "<SwedishHTR>Print out the text in this image"
+
+logger.info(f"Test user prompt: {prompt}")
 
 cer_list = []
 wer_list = []
@@ -110,13 +128,18 @@ avg_wer = float(sum(wer_list))
 avg_bow_hits = float(sum(bow_hits_list))
 avg_bow_extras = float(sum(bow_extras_list))
 
-logger.info(f"Avg. CER: {avg_cer:.4f}")
-logger.info(f"Avg. WER: {avg_wer:.4f}")
-logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}")
-logger.info(f"Avg. BoW extrs: {avg_bow_extras:.4f}")
+logger.info(f"Avg. CER: {avg_cer:.4f}, Avg. WER: {avg_wer:.4f}")
+logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extrs: {avg_bow_extras:.4f}")
+
 
 # Save results
 # Avg metrics
+OUTPUT_DIR = PROJECT_DIR / "output/florence-2-base-ft-htr-line/"
+if not OUTPUT_DIR.exists():
+    OUTPUT_DIR.mkdir(parents=True)
+
+logger.info(f"Save result to {OUTPUT_DIR}")
+
 metrics_aggr = {
     "cer": avg_cer,
     "wer": avg_wer,
@@ -124,10 +147,6 @@ metrics_aggr = {
     "bow_extras": avg_bow_extras
 }
 
-OUTPUT_DIR = PROJECT_DIR / "output/florence-2-base-ft-htr-line/"
-
-if not OUTPUT_DIR.exists():
-    OUTPUT_DIR.mkdir(parents=True)
 
 with open(OUTPUT_DIR / "metrics_aggr.json", "w") as f:
     json.dump(metrics_aggr, f)
