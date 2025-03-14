@@ -1,4 +1,9 @@
 #%%
+import sys
+from pathlib import Path
+PROJECT_DIR = Path(__file__).parent.parent
+sys.path.append(str(PROJECT_DIR))
+
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
@@ -7,18 +12,10 @@ from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from datasets import load_from_disk, concatenate_datasets
 from tqdm import tqdm
 
-import json
-
-import sys
-from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.logger import CustomLogger
-from src.utils import gen_split_indices
 from src.htr_tools import HTRDataset, create_dset_from_paths
-from src.model_tools import load_last_checkpoint
 from src.file_tools import read_json_file, write_json_file
+from src.utils import gen_split_indices, load_last_checkpoint
+from src.logger import CustomLogger
 
 
 #%%

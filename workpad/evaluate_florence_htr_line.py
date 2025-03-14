@@ -1,7 +1,6 @@
 #%%
 import sys
 import json
-import typing
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
@@ -16,7 +15,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 from src.logger import CustomLogger
-from model_tools import load_best_checkpoint
+from src.utils import load_best_checkpoint
 
 #%%
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
