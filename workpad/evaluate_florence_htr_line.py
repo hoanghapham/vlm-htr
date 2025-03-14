@@ -20,13 +20,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LOCAL_MODEL_PATH = PROJECT_DIR / "models/florence-2-base-ft-htr-line/"
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
-logger = CustomLogger("eval_florence_2_ft_line")
+logger = CustomLogger("eval_florence_ft_line")
 
 # Load model
+logger.info("Load model")
 processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True)
 
-#%%
 # Load checkpoint
 checkpoint_path = PROJECT_DIR / "models/florence-2-base-ft-htr-line/checkpoint_epoch_000.pt"
 model_info = torch.load(checkpoint_path, weights_only=True, map_location=torch.device(DEVICE))
@@ -34,8 +34,8 @@ model_info = torch.load(checkpoint_path, weights_only=True, map_location=torch.d
 model.load_state_dict(model_info["model_state_dict"])
 model.eval()
 
-#%%
 # Load split info
+logger.info("Load data")
 DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
 
 with open(DATA_DIR / "split_info.json", "r") as f:
@@ -60,7 +60,6 @@ test_data = concatenate_datasets(test_data_list)
 
 logger.info(f"Test samples: {len(test_data)}")
 
-#%%
 # Evaluate
 cer = CER()
 wer = WER()
@@ -106,20 +105,16 @@ for line_data in tqdm(test_data, unit="line", total=len(test_data), desc="Evalua
     transcr_pred_list.append(transcr_pred)
 
 
-#%%
-
 avg_cer = float(sum(cer_list))
 avg_wer = float(sum(wer_list))
 avg_bow_hits = float(sum(bow_hits_list))
 avg_bow_extras = float(sum(bow_extras_list))
-
 
 logger.info(f"Avg. CER: {avg_cer:.4f}")
 logger.info(f"Avg. WER: {avg_wer:.4f}")
 logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}")
 logger.info(f"Avg. BoW extrs: {avg_bow_extras:.4f}")
 
-#%%
 # Save results
 # Avg metrics
 metrics_aggr = {
@@ -138,7 +133,6 @@ with open(OUTPUT_DIR / "metrics_aggr.json", "w") as f:
     json.dump(metrics_aggr, f)
 
 
-#%%
 # Detailed results
 
 metrics_lists = {
@@ -151,7 +145,6 @@ metrics_lists = {
 with open(OUTPUT_DIR / "metrics_lists.json", "w") as f:
     json.dump(metrics_lists, f)
 
-#%%
 # Predicted text
 with open(OUTPUT_DIR / "transcription_gt.txt", "w") as f:
     for line in transcr_gt_list:

@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 1-00:00
+#SBATCH -t 24:00:00
 #SBATCH -J eval_florence_htr_line
 #SBATCH -o logs_uppmax/eval_florence_htr_line.out
 #SBATCH -e logs_uppmax/eval_florence_htr_line.err
@@ -14,9 +14,7 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
-
 cd $PROJECT_DIR
 
 python workpad/evaluate_florence_htr_line.py
