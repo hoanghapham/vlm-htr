@@ -4,28 +4,33 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from argparse import ArgumentParser
+
 import torch
-from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from datasets import load_from_disk, concatenate_datasets
 from tqdm import tqdm
 
-from src.htr_tools import HTRDataset, create_dset_from_paths
+from src.htr_tools import create_dset_from_paths
 from src.file_tools import read_json_file, write_json_file
 from src.utils import gen_split_indices, load_last_checkpoint
 from src.logger import CustomLogger
 
 
 #%%
+parser = ArgumentParser()
+parser.add_argument("--train-epochs", default=5)
+parser.add_argument("--batch-size", default=2)
+args = parser.parse_args()
 
 logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
 
 # Load model
-logger.info("Load model")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
+
+logger.info(f"Load model. Use device: {DEVICE}")
 
 model = AutoModelForCausalLM.from_pretrained(
     REMOTE_MODEL_PATH,
@@ -89,13 +94,13 @@ train_dataset = create_dset_from_paths(split_info["train"])
 val_dataset = create_dset_from_paths(split_info["validation"])
 
 # Create data loader
-batch_size = 2
-num_workers = 0
+BATCH_SIZE = int(args.batch_size)
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                          collate_fn=collate_fn, num_workers=num_workers, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                          collate_fn=collate_fn, num_workers=num_workers)
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
+                          collate_fn=collate_fn, num_workers=0, shuffle=True)
+
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
+                          collate_fn=collate_fn, num_workers=0)
 
 
 #%%
@@ -105,7 +110,7 @@ MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
 if not MODEL_DIR.exists():
     MODEL_DIR.mkdir(parents=True)
 
-TRAIN_EPOCHS = 5
+TRAIN_EPOCHS = int(args.train_epochs)
 START_EPOCH = 0
 BREAK_IDX = int(0.5 * len(train_loader))
 num_training_steps = TRAIN_EPOCHS * len(train_loader)
