@@ -36,7 +36,7 @@ model.eval()
 
 #%%
 # Load split info
-DATA_DIR = PROJECT_DIR / "data/poliskammare_line_test"
+DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
 
 with open(DATA_DIR / "split_info.json", "r") as f:
     split_info = json.load(f)
