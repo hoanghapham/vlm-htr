@@ -19,4 +19,4 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/evaluate_florence_ft_line.py
+python workpad/evaluate_florence_htr_line.py
