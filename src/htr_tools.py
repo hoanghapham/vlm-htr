@@ -29,8 +29,7 @@ def create_dset_from_paths(path_list: list[str | Path]):
     for path in path_list:
         dsets.append(load_from_disk(path))
     data = concatenate_datasets(dsets)
-    return data
-    # return HTRDataset(data)
+    return HTRDataset(data)
 
 
 def create_collate_fn(processor, device):

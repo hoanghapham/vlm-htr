@@ -12,7 +12,7 @@ from torch.optim import AdamW
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from tqdm import tqdm
 
-from src.htr_tools import create_dset_from_paths
+from src.htr_tools import create_dset_from_paths, create_collate_fn
 from src.file_tools import read_json_file, write_json_file
 from src.utils import gen_split_indices, load_last_checkpoint
 from src.logger import CustomLogger
@@ -22,7 +22,9 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--train-epochs", default=5)
 parser.add_argument("--batch-size", default=2)
-args = parser.parse_args()
+# args = parser.parse_args()
+
+args = parser.parse_args([])
 
 logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
 
@@ -54,33 +56,19 @@ logger.info("Load data")
 DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
 
 # Collect page lists
-page_list = [str(path) for path in DATA_DIR.glob("*") if path.is_dir()]
+page_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
 
 # Create dataset
-
-# Create train loader & validate loader
-# Processor comes from when loading the model
-def collate_fn(batch):
-    questions, answers, images = zip(*batch)
-    inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
-    labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
-    return dict(
-        input_ids=inputs["input_ids"], 
-        pixel_values=inputs["pixel_values"], 
-        labels=labels
-    )
-
-
 # Subset train & validate set
 
 split_info_path = DATA_DIR / "split_info.json"
 
 if not split_info_path.exists():
-    train_indices, val_indices, test_indices = gen_split_indices(len(page_list), seed=42)
+    train_indices, val_indices, test_indices = gen_split_indices(len(page_path_list), seed=42)
     split_info = {
-        "train": [page_list[idx] for idx in train_indices],
-        "validation": [page_list[idx] for idx in val_indices],
-        "test": [page_list[idx] for idx in test_indices]
+        "train": [page_path_list[idx].stem for idx in train_indices],
+        "validation": [page_path_list[idx].stem for idx in val_indices],
+        "test": [page_path_list[idx].stem for idx in test_indices]
     }
 
     write_json_file(split_info, split_info_path)
@@ -88,14 +76,16 @@ if not split_info_path.exists():
 else:
     split_info = read_json_file(split_info_path)
 
+train_paths = [path for path in page_path_list if path.stem in split_info["train"]]
+val_paths = [path for path in page_path_list if path.stem in split_info["validation"]]
 
 # Create dataset object
-train_dataset = create_dset_from_paths(split_info["train"])
-val_dataset = create_dset_from_paths(split_info["validation"])
+train_dataset = create_dset_from_paths(train_paths)
+val_dataset = create_dset_from_paths(val_paths)
 
 # Create data loader
 BATCH_SIZE = int(args.batch_size)
-
+collate_fn = create_collate_fn(processor, DEVICE)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
 
@@ -104,7 +94,6 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 
 #%%
-# Train
 MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
 
 if not MODEL_DIR.exists():
@@ -133,6 +122,7 @@ if last_checkpoint is not None:
     logger.info(f"Last epoch: {START_EPOCH + 1}, loss: {last_loss}")
 
 #%%
+# Train
 for epoch in range(START_EPOCH, TRAIN_EPOCHS):
     model.train()
     train_loss = 0
