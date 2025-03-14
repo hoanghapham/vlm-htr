@@ -1,6 +1,7 @@
 #%%
 import sys
 import json
+import typing
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
@@ -10,11 +11,14 @@ import torch
 import matplotlib.pyplot as plt
 from transformers import AutoModelForCausalLM, AutoProcessor
 from datasets import load_from_disk, concatenate_datasets
+from torch.utils.data import DataLoader, Dataset
+
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 from src.logger import CustomLogger
+from model_tools import load_best_checkpoint
 
-
+#%%
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LOCAL_MODEL_PATH = PROJECT_DIR / "models/florence-2-base-ft-htr-line/"
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
@@ -28,22 +32,9 @@ model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_cod
 
 # Load best checkpoint
 
-checkpoint_paths = sorted((PROJECT_DIR / "models/florence-2-base-ft-htr-line").glob("*.pt"))
-first_cp_info = torch.load(checkpoint_paths[0], weights_only=True, map_location=torch.device(DEVICE))
-
-best_epoch = first_cp_info["epoch"]
-best_loss = first_cp_info["loss"].item()
-best_state = first_cp_info["model_state_dict"]
-
-for cp_path in checkpoint_paths:
-    cp_info = torch.load(cp_path, weights_only=True, map_location=torch.device(DEVICE))
-    if cp_info["loss"].item() < best_loss:
-        best_epoch = cp_info["epoch"]
-        best_loss = cp_info["loss"].item()
-        best_state = cp_info["model_state_dict"]
-
-model.load_state_dict(best_state)
-logger.info(f"Load best checkpoint: epoch {best_epoch}, loss: {best_loss:.4f}")
+best_state = load_best_checkpoint(PROJECT_DIR / "models/florence-2-base-ft-htr-line", DEVICE)
+model.load_state_dict(best_state["model_state_dict"])
+logger.info(f"Load best checkpoint: epoch {best_state["epoch"]}, loss: {best_state["loss"]:.4f}")
 
 # Set model to evaluation mode
 model.eval()
@@ -93,6 +84,9 @@ transcr_gt_list = []
 transcr_pred_list = []
 
 
+#%%
+# Can only process one image at a time due to post_process_generation task requiring image size,
+# but image size varies
 for line_data in tqdm(test_data, unit="line", total=len(test_data), desc="Evaluate"):
 
     image = line_data["image"].convert("RGB")
@@ -107,8 +101,8 @@ for line_data in tqdm(test_data, unit="line", total=len(test_data), desc="Evalua
         num_beams=3,
     )
 
-    output_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
-    transcr_pred = processor.post_process_generation(output_text, task="<SwedishHTR>", image_size=(image.width, image.height))
+    output_text = processor.batch_decode(generated_ids, skip_special_tokens=False)
+    transcr_pred = processor.post_process_generation(output_text, task="<SwedishHTR>", image_size=image.size)
 
     cer_value = cer.compute(transcr_pred["<SwedishHTR>"], transcription_gt)["cer"]
     wer_value = wer.compute(transcr_pred["<SwedishHTR>"], transcription_gt)["wer"]

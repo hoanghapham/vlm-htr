@@ -8,7 +8,6 @@ from datasets import load_from_disk, concatenate_datasets
 from tqdm import tqdm
 
 import json
-import typing
 
 import sys
 from pathlib import Path
@@ -17,25 +16,28 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
 from src.utils import gen_split_indices
+from src.htr_tools import HTRDataset, create_dset_from_paths
+from src.model_tools import load_last_checkpoint
+from src.file_tools import read_json_file, write_json_file
 
 
 #%%
 
-logger = CustomLogger("ft_florence_htr_line")
+logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
 
 # Load model
 logger.info("Load model")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = "microsoft/Florence-2-base-ft"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
 model = AutoModelForCausalLM.from_pretrained(
-    model_path,
+    REMOTE_MODEL_PATH,
     trust_remote_code=True,
     revision='refs/pr/6'
-).to(device)
+).to(DEVICE)
 
 processor = AutoProcessor.from_pretrained(
-    model_path,
+    REMOTE_MODEL_PATH,
     trust_remote_code=True, revision='refs/pr/6'
 )
 
@@ -53,34 +55,6 @@ DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
 page_list = [str(path) for path in DATA_DIR.glob("*") if path.is_dir()]
 
 # Create dataset
-class HTRDataset(Dataset):
-
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        example = self.data[idx]
-        question = "<SwedishHTR>Print out the text in this image"
-        answer = example["transcription"]
-        image = example['image'].convert("RGB")
-        return question, answer, image
-    
-    def select(self, indices: typing.Iterable):
-        subset = [self.data[int(idx)] for idx in indices]
-        return HTRDataset(subset)
-
-
-def create_dataset(path_list: list[str | Path]) -> HTRDataset:
-    dsets = []
-    for path in path_list:
-        dsets.append(load_from_disk(path))
-    data = concatenate_datasets(dsets)
-
-    return HTRDataset(data)
-
 
 # Create train loader & validate loader
 # Processor comes from when loading the model
@@ -97,22 +71,25 @@ def collate_fn(batch):
 
 # Subset train & validate set
 
-train_indices, val_indices, test_indices = gen_split_indices(len(page_list), seed=42)
-split_info = {
-    "train": [page_list[idx] for idx in train_indices],
-    "validation": [page_list[idx] for idx in val_indices],
-    "test": [page_list[idx] for idx in test_indices]
-}
+split_info_path = DATA_DIR / "split_info.json"
 
-with open(DATA_DIR / "split_info.json", "w") as f:
-    json.dump(split_info, f)
+if not split_info_path.exists():
+    train_indices, val_indices, test_indices = gen_split_indices(len(page_list), seed=42)
+    split_info = {
+        "train": [page_list[idx] for idx in train_indices],
+        "validation": [page_list[idx] for idx in val_indices],
+        "test": [page_list[idx] for idx in test_indices]
+    }
+
+    write_json_file(split_info, split_info_path)
+
+else:
+    split_info = read_json_file(split_info_path)
 
 
-train_pages = [page_list[idx] for idx in train_indices]
-val_pages = [page_list[idx] for idx in val_indices]
-
-train_dataset = create_dataset(train_pages)
-val_dataset = create_dataset(val_pages)
+# Create dataset object
+train_dataset = create_dset_from_paths(split_info["train"])
+val_dataset = create_dset_from_paths(split_info["validation"])
 
 # Create data loader
 batch_size = 2
@@ -126,31 +103,45 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size,
 
 #%%
 # Train
-epochs = 10
-optimizer = AdamW(model.parameters(), lr=1e-6)
-num_training_steps = epochs * len(train_loader)
-lr_scheduler = get_scheduler(name="linear", optimizer=optimizer,
-                              num_warmup_steps=0, num_training_steps=num_training_steps,)
-
-break_idx = int(0.5 * len(train_loader))
-
 MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
 
 if not MODEL_DIR.exists():
     MODEL_DIR.mkdir(parents=True)
 
+TRAIN_EPOCHS = 5
+START_EPOCH = 0
+BREAK_IDX = int(0.5 * len(train_loader))
+num_training_steps = TRAIN_EPOCHS * len(train_loader)
+
+optimizer = AdamW(model.parameters(), lr=1e-6)
+lr_scheduler = get_scheduler(
+    name="linear", optimizer=optimizer,
+    num_warmup_steps=0, num_training_steps=num_training_steps,
+)
+
+# Load state
+last_checkpoint = load_last_checkpoint(MODEL_DIR, DEVICE)
+
+if last_checkpoint is not None:
+    model.load_state_dict(last_checkpoint["model_state_dict"])
+    optimizer = AdamW(model.parameters(), lr=1e-6)
+    optimizer.load_state_dict(last_checkpoint["optimizer_state_dict"])
+    START_EPOCH = last_checkpoint["epoch"]
+    last_loss = last_checkpoint["loss"]
+    logger.info(f"Last epoch: {START_EPOCH + 1}, loss: {last_loss}")
+
 #%%
-for epoch in range(epochs):
+for epoch in range(START_EPOCH, TRAIN_EPOCHS):
     model.train()
     train_loss = 0
 
     # Inputs is the processed tuple (text, image)
-    iterator = tqdm(train_loader, desc=f"Training Epoch {epoch + 1}/{epochs}")
+    iterator = tqdm(train_loader, desc=f"Training Epoch {epoch + 1}/{TRAIN_EPOCHS}", total=BREAK_IDX, unit="batch")
 
     for batch_idx, batch_data in enumerate(iterator):
         
         # Skip half of the batches
-        if batch_idx > break_idx:
+        if batch_idx > BREAK_IDX:
             break
 
         # Predict output
@@ -160,7 +151,7 @@ for epoch in range(epochs):
         loss = outputs.loss
         loss.backward()
 
-        # Then step
+        # Then step to update weights
         optimizer.step()
         lr_scheduler.step()
 
@@ -187,11 +178,10 @@ for epoch in range(epochs):
     model.eval()
     val_loss = 0
     with torch.no_grad():
-        for batch in tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}/{epochs}"):
+        for batch in tqdm(val_loader, desc=f"Validation Epoch {epoch + 1}/{TRAIN_EPOCHS}"):
             outputs = model(**batch)
             loss = outputs.loss
             val_loss += loss.item()
-
 
     avg_val_loss = val_loss / len(val_loader)
     logger.info(f"Average Validation Loss: , {avg_val_loss}")

@@ -91,7 +91,8 @@ class suppress_stdout_stderr(object):
         self.outnull_file.close()
         self.errnull_file.close()
 
-def read_json(input_path: Path | str) -> list[dict]:
+
+def read_ndjson_file(input_path: Path | str) -> list[dict]:
     if not isinstance(input_path, Path):
         input_path = Path(input_path)
 
@@ -101,6 +102,12 @@ def read_json(input_path: Path | str) -> list[dict]:
         for line in f.readlines():
             data.append(json.loads(line))
 
+    return data
+
+
+def read_json_file(input_path: Path | str) -> dict:
+    with open(input_path, "r") as f:
+        data = json.load(f)
     return data
 
 
