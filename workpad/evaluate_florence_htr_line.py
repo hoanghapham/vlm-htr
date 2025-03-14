@@ -1,20 +1,20 @@
 #%%
-import torch
-from transformers import AutoModelForCausalLM, AutoProcessor
-from datasets import load_dataset, load_from_disk, concatenate_datasets
-from tqdm import tqdm
-from PIL import Image
-import matplotlib.pyplot as plt
-from htrflow.evaluate import CER, WER, BagOfWords
-from pathlib import Path
+import sys
 import json
 import subprocess
-import sys
+from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.logger import CustomLogger()
+import torch
+import matplotlib.pyplot as plt
+from transformers import AutoModelForCausalLM, AutoProcessor
+from datasets import load_dataset, load_from_disk, concatenate_datasets
+from tqdm import tqdm
+from htrflow.evaluate import CER, WER, BagOfWords
+
+from src.logger import CustomLogger
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LOCAL_MODEL_PATH = PROJECT_DIR / "models/florence-2-base-ft-htr-line/"
