@@ -101,7 +101,7 @@ for line_data in tqdm(test_data, unit="line", total=len(test_data), desc="Evalua
         num_beams=3,
     )
 
-    output_text = processor.batch_decode(generated_ids, skip_special_tokens=False)
+    output_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
     transcr_pred = processor.post_process_generation(output_text, task="<SwedishHTR>", image_size=image.size)
 
     cer_value = cer.compute(transcr_pred["<SwedishHTR>"], transcription_gt)["cer"]

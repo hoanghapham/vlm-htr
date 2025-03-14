@@ -24,16 +24,16 @@ class HTRDataset(Dataset):
         return HTRDataset(subset)
 
 
-def create_dset_from_paths(path_list: list[str | Path]) -> HTRDataset:
+def create_dset_from_paths(path_list: list[str | Path]):
     dsets = []
     for path in path_list:
         dsets.append(load_from_disk(path))
     data = concatenate_datasets(dsets)
+    return data
+    # return HTRDataset(data)
 
-    return HTRDataset(data)
 
-
-def create_collate_fn(processor):
+def create_collate_fn(processor, device):
     def func(batch):
         questions, answers, images = zip(*batch)
         inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
@@ -41,7 +41,7 @@ def create_collate_fn(processor):
         return dict(
             input_ids=inputs["input_ids"], 
             pixel_values=inputs["pixel_values"], 
-            labels=labels
+            labels=labels,
         )
 
     return func
