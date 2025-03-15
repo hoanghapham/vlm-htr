@@ -22,4 +22,5 @@ cd $PROJECT_DIR
 
 python workpad/create_region_dataset.py \
     --input-dir $INPUT_DIR \
-    --output-dir $OUTPUT_DIR
+    --output-dir $OUTPUT_DIR \
+    --img-extension .jpg

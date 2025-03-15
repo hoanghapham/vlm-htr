@@ -14,6 +14,7 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--output-dir", required=True)
+parser.add_argument("--img-extension", default=".tif")
 args = parser.parse_args()
 
 # Setup
@@ -29,7 +30,7 @@ logger = CustomLogger("create_region_dataset")
 logger.info(f"Create region dataset for {INPUT_DIR}")
 builder = ImageDatasetBuilder()
 
-all_img_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "images", pattern="**/*.tif"))]
+all_img_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "images", pattern="**/*" + args.img_extension))]
 all_xml_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "page_xmls", pattern="**/*.xml"))]
 
 assert len(all_img_paths) == len(all_xml_paths) > 0, \
