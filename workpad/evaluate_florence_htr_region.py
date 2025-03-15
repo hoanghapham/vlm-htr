@@ -31,13 +31,13 @@ LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
 INPUT_DIR = Path(args.input_dir)
-OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME
+OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
 # Logger
-logger = CustomLogger("eval_florence_ft_line", log_to_local=True)
+logger = CustomLogger(f"eval__{MODEL_NAME}__{INPUT_DIR.stem}", log_to_local=True)
 
 # Load model
 logger.info("Load model")

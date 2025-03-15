@@ -20,5 +20,5 @@ cd $PROJECT_DIR
 
 python workpad/create_line_dataset.py \
     --input-dir $INPUT_DIR \
-    --output-dir $PROJECT_DIR/data/hovratt \
+    --output-dir $PROJECT_DIR/data/hovratt_line \
     --img-extension .jpg
