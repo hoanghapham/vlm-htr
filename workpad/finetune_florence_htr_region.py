@@ -177,4 +177,3 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS):
     avg_val_loss = val_loss / len(val_loader)
     logger.info(f"Average Validation Loss: , {avg_val_loss}")
 
-# %%

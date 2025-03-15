@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from pathlib import Path
+from file_tools import read_json_file
 
 
 def gen_split_indices(total_samples: int, seed: int = 42):
@@ -23,28 +24,35 @@ def gen_split_indices(total_samples: int, seed: int = 42):
     return train_indices, val_indices, test_inidices
 
 def load_best_checkpoint(path: Path, device: str) -> dict:
-    checkpoint_paths = sorted(path.glob("*.pt"))
-    first_cp_info = torch.load(checkpoint_paths[0], weights_only=True, map_location=torch.device(device))
+    cp_metric_paths = sorted(path.glob("*.json"))
+    cp_state_paths = sorted(path.glob("*.pt"))
 
-    best_loss = first_cp_info["loss"].item()
-    best_state = first_cp_info
+    best_loss = float("inf")
+    best_epoch = 0
 
-    for cp_path in checkpoint_paths:
-        cp_info = torch.load(cp_path, weights_only=True, map_location=torch.device(device))
-        if cp_info["loss"].item() < best_loss:
-            best_loss = cp_info["loss"].item()
-            best_state = cp_info
+    for cp_path in cp_metric_paths:
+        cp_metric = read_json_file(cp_path)
+        if cp_metric["loss"].item() < best_loss:
+            best_loss = cp_metric["loss"]
+            best_epoch = cp_metric["epoch"]
+    
+    best_state = torch.load(cp_state_paths[best_epoch], weights_only=True, map_location=torch.device(device))
+    best_state['epoch'] = best_epoch
+    best_state["loss"] = best_loss
 
     return best_state
     
 
 def load_last_checkpoint(path: Path, device: str) -> dict:
 
-    last_cp_paths = list(reversed(sorted(path.glob("*.pt"))))
-    if last_cp_paths:
-        last_cp_path = last_cp_paths[0]
+    last_cp_state_path = list(reversed(sorted(path.glob("*.pt"))))
+    last_cp_metric_path = list(reversed(sorted(path.glob("*.json"))))
 
-        last_cp_info = torch.load(last_cp_path, weights_only=True, map_location=torch.device(device))
-        return last_cp_info
+    if last_cp_state_path:
+        last_cp_path = last_cp_state_path[0]
+        last_cp_metric = read_json_file(last_cp_metric_path[0])
+        last_cp_state = torch.load(last_cp_path, weights_only=True, map_location=torch.device(device))
+        last_cp_state.update(last_cp_metric)
+        return last_cp_state
     else:
         return None
