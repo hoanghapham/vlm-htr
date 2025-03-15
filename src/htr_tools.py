@@ -17,7 +17,11 @@ class HTRDataset(Dataset):
         question = "<SwedishHTR>Print out the text in this image"
         answer = example["transcription"]
         image = example['image'].convert("RGB")
-        return question, answer, image
+        return dict(
+            question=question, 
+            answer=answer, 
+            image=image
+        )
     
     def select(self, indices: typing.Iterable):
         subset = [self.data[int(idx)] for idx in indices]
