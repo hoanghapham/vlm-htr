@@ -1,23 +1,24 @@
 #%%
 import sys
 from pathlib import Path
-
-from datasets import Dataset, load_from_disk
-import json
-from dotenv import dotenv_values
-
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from argparse import ArgumentParser
+from datasets import Dataset
+
 from src.image_tools.poliskammare import ImageDatasetBuilder
-from src.utils import gen_split_indices
 from src.logger import CustomLogger
 
 
+parser = ArgumentParser()
+parser.add_argument("--input-dir", required=True)
+parser.add_argument("--output-dir", required=True)
+args = parser.parse_args()
+
 # Setup
-env_dict = dotenv_values(PROJECT_DIR / ".env")
-DATA_DIR = Path(env_dict["POLIS_DATA_DIR"])
-OUTPUT_DIR = PROJECT_DIR / "data/poliskammare_region"
+INPUT_DIR = Path(args.input_dir)
+OUTPUT_DIR = Path(args.output_dir)
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
@@ -25,10 +26,11 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger("create_region_dataset")
 
 #%%
+logger.info(f"Create region dataset for {INPUT_DIR}")
 builder = ImageDatasetBuilder()
 
-all_img_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "images", pattern="**/*.tif"))]
-all_xml_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "page_xmls", pattern="**/*.xml"))]
+all_img_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "images", pattern="**/*.tif"))]
+all_xml_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "page_xmls", pattern="**/*.xml"))]
 
 assert len(all_img_paths) == len(all_xml_paths) > 0, \
     f"Invalid length, or mismatch: {len(all_img_paths)} - {len(all_xml_paths)}"
@@ -40,26 +42,6 @@ imgs_xmls = list(zip(
 )
 
 ttl_samples = len(all_img_paths)
-# train_indices, val_indices, test_indices = gen_split_indices(ttl_samples, seed=42)
-
-#%%
-
-# split_info = {
-#     "train": [all_img_paths[idx] for idx in train_indices],
-#     "validation": [all_img_paths[idx] for idx in val_indices],
-#     "test": [all_img_paths[idx] for idx in test_indices]
-# }
-
-
-# with open(OUTPUT_DIR / "split_info.json", "w") as f:
-#     json.dump(split_info, f)
-
-
-# subsets = [
-#     ("train", [imgs_xmls[idx] for idx in train_indices]),
-#     ("validation", [imgs_xmls[idx] for idx in val_indices]),
-#     ("test", [imgs_xmls[idx] for idx in test_indices])
-# ]
 
 for idx, (img_path, xml_path) in enumerate(imgs_xmls):
 
@@ -78,6 +60,3 @@ for idx, (img_path, xml_path) in enumerate(imgs_xmls):
 
     dataset_obj.save_to_disk(OUTPUT_DIR / file_name)
     
-
-
-# %%
