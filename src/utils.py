@@ -1,3 +1,6 @@
+import os, sys
+sys.path.append(os.path.dirname(__file__))
+
 import numpy as np
 import torch
 from pathlib import Path
