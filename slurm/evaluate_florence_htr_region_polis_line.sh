@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 60:00:00
+#SBATCH -t 24:00:00
 #SBATCH -J eval_florence2_htr_region_polis_line
 #SBATCH -o logs_uppmax/eval_florence2_htr_region_polis_line.out
 #SBATCH -e logs_uppmax/eval_florence2_htr_region_polis_line.err
