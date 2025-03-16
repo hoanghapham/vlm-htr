@@ -79,8 +79,8 @@ train_paths = [path for path in page_path_list if path.stem in split_info["train
 val_paths = [path for path in page_path_list if path.stem in split_info["validation"]]
 
 # Create dataset object
-train_dataset = create_dset_from_paths(train_paths).select(range(2))
-val_dataset = create_dset_from_paths(val_paths).select(range(2))
+train_dataset = create_dset_from_paths(train_paths)
+val_dataset = create_dset_from_paths(val_paths)
 
 # Create data loader
 BATCH_SIZE = int(args.batch_size)
