@@ -205,8 +205,14 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS + 1):
     model.eval()
     val_loss = 0
     with torch.no_grad():
-        for batch in tqdm(val_loader, desc=f"Validate epoch {epoch}/{TRAIN_EPOCHS}"):
-            outputs = model(**batch)
+        iterator = tqdm(val_loader, desc=f"Validate epoch {epoch}/{TRAIN_EPOCHS}")
+        for batch_idx, batch_data in enumerate(iterator):
+            
+            if args.demo == "true":
+                if batch_idx > USE_NBATCH:
+                    break
+
+            outputs = model(**batch_data)
             loss = outputs.loss
             val_loss += loss.item()
 
