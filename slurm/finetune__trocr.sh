@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 2-00:00
+#SBATCH -t 3-00:00
 #SBATCH -J finetune__trocr
 #SBATCH -o logs_uppmax/finetune__trocr.out
 #SBATCH -e logs_uppmax/finetune__trocr.err
@@ -21,5 +21,4 @@ cd $PROJECT_DIR
 python workpad/finetune_trocr.py \
     --train-epochs 5 \
     --use-data-pct 0.5 \
-    --batch-size 15 \
-    --demo true
+    --batch-size 15

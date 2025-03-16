@@ -20,5 +20,5 @@ cd $PROJECT_DIR
 
 python workpad/finetune_florence_htr_line.py \
     --train-epochs 5 \
-    --use-data-pct 0.0004 \
-    --batch-size 10
+    --use-data-pct 0.5 \
+    --batch-size 2
