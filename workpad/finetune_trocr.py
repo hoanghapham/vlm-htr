@@ -26,6 +26,7 @@ parser = ArgumentParser()
 parser.add_argument("--train-epochs", default=10)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-data-pct", default=0.5)
+parser.add_argument("--demo", default="false")
 args = parser.parse_args()
 
 #%%
@@ -109,7 +110,10 @@ if not MODEL_DIR.exists():
 torch.manual_seed(42)
 TRAIN_EPOCHS = int(args.train_epochs)
 START_EPOCH = 1
-BREAK_IDX = int(float(args.use_data_pct) * len(train_loader))
+USE_NBATCH = int(float(args.use_data_pct) * len(train_loader))
+
+if args.demo == "true":
+    USE_NBATCH = 2
 
 # Set optimizer & scheduler
 # Scheduler & optimizer config: https://github.com/microsoft/unilm/tree/master/trocr#fine-tuning-on-iam
@@ -152,12 +156,12 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS + 1):
     train_loss = 0
     
     # Inputs is the processed tuple (text, image)
-    iterator = tqdm(train_loader, desc=f"Train epoch {epoch}/{TRAIN_EPOCHS}")
+    iterator = tqdm(train_loader, desc=f"Train epoch {epoch}/{TRAIN_EPOCHS}", total=USE_NBATCH)
 
     for batch_idx, batch_data in enumerate(iterator):
         
         # Skip a portion of the batches
-        if batch_idx > BREAK_IDX:
+        if batch_idx > USE_NBATCH:
             break
 
         # Predict output
