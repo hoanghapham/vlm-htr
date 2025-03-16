@@ -10,10 +10,11 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("--batch-size", default=4)
+parser.add_argument("--take", default=100)
 args = parser.parse_args()
 
 BATCH_SIZE = int(args.batch_size)
-
+TAKE = int(args.take)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -40,8 +41,8 @@ train_subset_stream = load_dataset("oscar-corpus/OSCAR-2201",
                         split="train",
                         trust_remote_code=True) # optional, but the dataset only has a train split
 
-train_subset = train_subset_stream.take(20)
-eval_subset = train_subset_stream.shuffle().take(20)
+train_subset = train_subset_stream.take(TAKE)
+eval_subset = train_subset_stream.shuffle().take(TAKE)
 
 #%%
 # Tokenizer

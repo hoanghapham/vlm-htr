@@ -18,4 +18,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/finetune_gpt2.py --batch-size 10
+python workpad/finetune_gpt2.py \
+    --take 2000 \
+    --batch-size 1000
