@@ -79,8 +79,8 @@ train_paths = [path for path in page_path_list if path.stem in split_info["train
 val_paths = [path for path in page_path_list if path.stem in split_info["validation"]]
 
 # Create dataset object
-train_dataset = create_dset_from_paths(train_paths)
-val_dataset = create_dset_from_paths(val_paths)
+train_dataset = create_dset_from_paths(train_paths).select(range(2))
+val_dataset = create_dset_from_paths(val_paths).select(range(2))
 
 # Create data loader
 BATCH_SIZE = int(args.batch_size)
@@ -123,11 +123,13 @@ if last_checkpoint is not None:
 #%%
 # Train
 for epoch in range(START_EPOCH, TRAIN_EPOCHS):
+    logger.info(f"Epoch {epoch + 1}/{TRAIN_EPOCHS}")
+
     model.train()
     train_loss = 0
-
+    
     # Inputs is the processed tuple (text, image)
-    iterator = tqdm(train_loader, desc=f"Training Epoch {epoch + 1}/{TRAIN_EPOCHS}", total=BREAK_IDX, unit="batch")
+    iterator = tqdm(train_loader, desc="Train", total=BREAK_IDX, unit="batch")
 
     for batch_idx, batch_data in enumerate(iterator):
         
