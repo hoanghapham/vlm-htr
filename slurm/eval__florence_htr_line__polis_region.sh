@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval__florence_htr_line__polis_line
-#SBATCH -o logs_uppmax/eval__florence_htr_line.out__polis_line
-#SBATCH -e logs_uppmax/eval__florence_htr_line.err__polis_line
+#SBATCH -J eval__florence_htr_line__polis_region
+#SBATCH -o logs_uppmax/eval__florence_htr_line.out__polis_region
+#SBATCH -e logs_uppmax/eval__florence_htr_line.err__polis_region
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
