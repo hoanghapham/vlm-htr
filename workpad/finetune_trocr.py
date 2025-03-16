@@ -97,6 +97,8 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0)
 
+logger.info(f"Total samples: {len(train_dataset)}, batch size: {BATCH_SIZE}, total batches: {len(train_loader)}")
+
 
 #%%
 # Setup training
