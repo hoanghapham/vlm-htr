@@ -1,8 +1,10 @@
 import torch
 from pathlib import Path
 import sys
-sys.path.append(str(Path.cwd().parent))
+sys.path.append(str(Path(__file__).parent.parent))
+
 from argparse import ArgumentParser
+from tqdm import tqdm
 
 from src.file_tools import write_json_file
 
@@ -15,7 +17,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 cp_state_paths = sorted(MODEL_DIR.glob("*.pt"))
 
-for path in cp_state_paths:
+for path in tqdm(cp_state_paths, total=len(cp_state_paths)):
     info = torch.load(path, weights_only=True, map_location=torch.device(DEVICE))
 
     cp_metrics = dict(epoch=info["epoch"], loss=info["loss"].item())
