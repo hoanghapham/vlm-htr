@@ -153,13 +153,19 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS):
         iterator.set_postfix({"loss": loss.item()})
     
     # Save checkpoint
-    model_info = {
+    # Save checkpoint
+    checkpoint_metrics = {
         'epoch': epoch,
+        'loss': loss.item(),
+    }
+
+    checkpoint_states = {
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'loss': loss,
     }
-    torch.save(model_info, MODEL_DIR / f"checkpoint_epoch_{epoch:03d}.pt")
+
+    write_json_file(checkpoint_metrics, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.json")
+    torch.save(checkpoint_states, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.pt")
 
     avg_train_loss = train_loss / len(train_loader)
     logger.info(f"Average Training Loss: {avg_train_loss}")
