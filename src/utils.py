@@ -35,7 +35,7 @@ def load_best_checkpoint(path: Path, device: str) -> dict:
 
     for cp_path in cp_metric_paths:
         cp_metric = read_json_file(cp_path)
-        if cp_metric["loss"].item() < best_loss:
+        if cp_metric["loss"] < best_loss:
             best_loss = cp_metric["loss"]
             best_epoch = cp_metric["epoch"]
     
