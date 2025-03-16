@@ -52,7 +52,7 @@ for param in model.vision_tower.parameters():
 #%%
 # Load data
 logger.info("Load data")
-DATA_DIR = PROJECT_DIR / "data/poliskammare_line"
+DATA_DIR = PROJECT_DIR / "data/polis_line"
 
 # Collect page lists
 page_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
