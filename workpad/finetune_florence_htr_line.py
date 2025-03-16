@@ -167,8 +167,8 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS):
         'optimizer_state_dict': optimizer.state_dict(),
     }
 
-    write_json_file(checkpoint_metrics, MODEL_DIR / f"checkpoint_epoch_{epoch:03d}.json")
-    torch.save(checkpoint_states, MODEL_DIR / f"checkpoint_epoch_{epoch:03d}.pt")
+    write_json_file(checkpoint_metrics, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.json")
+    torch.save(checkpoint_states, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.pt")
 
     avg_train_loss = train_loss / len(train_loader)
     logger.info(f"Average Training Loss: {avg_train_loss}")
