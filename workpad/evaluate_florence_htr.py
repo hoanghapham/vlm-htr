@@ -23,12 +23,12 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 # parser.add_argument("--output-dir", required=True)
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--model-name", "florence-2-base-ft-htr-line",
-    "--input-dir", str(PROJECT_DIR/"data/poliskammare_line")
-])
+# args = parser.parse_args([
+#     "--model-name", "florence-2-base-ft-htr-line",
+#     "--input-dir", str(PROJECT_DIR/"data/poliskammare_line")
+# ])
 
 # Setup paths
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
