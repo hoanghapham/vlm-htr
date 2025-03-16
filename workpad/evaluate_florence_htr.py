@@ -14,7 +14,7 @@ from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.logger import CustomLogger
 from src.utils import load_best_checkpoint
-from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
+from src.file_tools import write_json_file, write_list_to_text_file, read_json_file, write_ndjson_file
 from src.htr_tools import create_dset_from_paths
 
 #%%
@@ -166,10 +166,10 @@ metrics_lists = {
 write_json_file(metrics_lists, OUTPUT_DIR / "metrics_lists.json")
 
 # Predicted text
-write_list_to_text_file(transcr_gt_list, OUTPUT_DIR / "transcription_gt.txt")
+write_ndjson_file(transcr_gt_list, OUTPUT_DIR / "ground_truth.json")
 
 pred_list = [line["<SwedishHTR>"] for line in transcr_pred_list]
-write_list_to_text_file(pred_list, OUTPUT_DIR / "transcription_gt.txt")
+write_ndjson_file(pred_list, OUTPUT_DIR / "prediction.txt")
 
 
 # %%
