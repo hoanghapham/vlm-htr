@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 2-00:00
-#SBATCH -J finetune_florence_htr_line
-#SBATCH -o logs_uppmax/finetune_florence_htr_line.out
-#SBATCH -e logs_uppmax/finetune_florence_htr_line.err
+#SBATCH -J finetune__florence_htr_line
+#SBATCH -o logs_uppmax/finetune__florence_htr_line.out
+#SBATCH -e logs_uppmax/finetune__florence_htr_line.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -20,5 +20,5 @@ cd $PROJECT_DIR
 
 python workpad/finetune_florence_htr_line.py \
     --train-epochs 5 \
-    --use-data-pct 0.5 \
-    --batch-size 2
+    --use-data-pct 0.0004 \
+    --batch-size 10

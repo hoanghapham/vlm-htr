@@ -9,10 +9,13 @@ from argparse import ArgumentParser
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
-from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
+from torch.utils.tensorboard import SummaryWriter
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
+
 from tqdm import tqdm
 
-from src.htr_tools import create_dset_from_paths, create_collate_fn
+
+from src.htr_tools import create_dset_from_paths, create_trocr_collate_fn
 from src.file_tools import read_json_file, write_json_file
 from src.utils import gen_split_indices, load_last_checkpoint
 from src.logger import CustomLogger
@@ -20,32 +23,33 @@ from src.logger import CustomLogger
 
 #%%
 parser = ArgumentParser()
-parser.add_argument("--train-epochs", default=5)
+parser.add_argument("--train-epochs", default=10)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-data-pct", default=0.5)
 args = parser.parse_args()
 
-logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
+#%%
+
+logger = CustomLogger("ft_trocr", log_to_local=True, log_path=PROJECT_DIR / "logs")
+writer = SummaryWriter(log_dir=PROJECT_DIR / "logs_tensorboard/ft_trocr")
 
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
+REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
 
 logger.info(f"Load model. Use device: {DEVICE}")
 
-model = AutoModelForCausalLM.from_pretrained(
-    REMOTE_MODEL_PATH,
-    trust_remote_code=True,
-    revision='refs/pr/6'
-).to(DEVICE)
+processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
+model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
 
-processor = AutoProcessor.from_pretrained(
-    REMOTE_MODEL_PATH,
-    trust_remote_code=True, revision='refs/pr/6'
-)
+# Config model
+model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
+model.config.pad_token_id = processor.tokenizer.pad_token_id
+model.config.vocab_size = model.config.decoder.vocab_size
 
-# Unfreeze vision params
-for param in model.vision_tower.parameters():
+
+# Unfreeze params for training
+for param in model.parameters():
     param.is_trainable = True
 
 
@@ -84,7 +88,8 @@ val_dataset = create_dset_from_paths(val_paths)
 
 # Create data loader
 BATCH_SIZE = int(args.batch_size)
-collate_fn = create_collate_fn(processor, DEVICE)
+
+collate_fn = create_trocr_collate_fn(processor, DEVICE)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
 
@@ -93,48 +98,65 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 
 #%%
-logger.info("Start training")
+# Setup training
 
-MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
+MODEL_DIR = PROJECT_DIR / "models/trocr-htr-line"
 
 if not MODEL_DIR.exists():
     MODEL_DIR.mkdir(parents=True)
 
-TRAIN_EPOCHS = int(args.train_epochs)
-START_EPOCH = 0
-BREAK_IDX = int(float(args.use_data_pct) * len(train_loader))
-num_training_steps = TRAIN_EPOCHS * len(train_loader)
 
-optimizer = AdamW(model.parameters(), lr=1e-6)
-lr_scheduler = get_scheduler(
-    name="linear", optimizer=optimizer,
-    num_warmup_steps=0, num_training_steps=num_training_steps,
+torch.manual_seed(42)
+TRAIN_EPOCHS = int(args.train_epochs)
+START_EPOCH = 1
+BREAK_IDX = int(float(args.use_data_pct) * len(train_loader))
+
+# Set optimizer & scheduler
+# Scheduler & optimizer config: https://github.com/microsoft/unilm/tree/master/trocr#fine-tuning-on-iam
+
+optimizer = AdamW(
+    model.parameters(), 
+    lr=2e-5, 
+    weight_decay=0.0001,
 )
 
+lr_scheduler = get_scheduler(
+    name="inverse_sqrt", 
+    optimizer=optimizer,
+    num_warmup_steps=0, 
+    num_training_steps=TRAIN_EPOCHS * len(train_loader),
+    
+    # inverse_sqrt params. See https://github.com/facebookresearch/fairseq/blob/main/fairseq/optim/lr_scheduler/inverse_squa
+    scheduler_specific_kwargs=dict(
+        warmup_init_lr=1e-8,
+        warmup_updates=500
+    )
+)
 # Load state
+logger.info("Find last checkpoint")
 last_checkpoint = load_last_checkpoint(MODEL_DIR, DEVICE)
 
 if last_checkpoint is not None:
     model.load_state_dict(last_checkpoint["model_state_dict"])
     optimizer = AdamW(model.parameters(), lr=1e-6)
     optimizer.load_state_dict(last_checkpoint["optimizer_state_dict"])
-    START_EPOCH = last_checkpoint["epoch"]
     last_loss = last_checkpoint["loss"]
-    logger.info(f"Last epoch: {START_EPOCH + 1}, loss: {last_loss}")
+    START_EPOCH = last_checkpoint["epoch"] + 1
+    logger.info(f"Last epoch: {START_EPOCH}, loss: {last_loss}")
 
-#%%
 # Train
-for epoch in range(START_EPOCH, TRAIN_EPOCHS):
+
+for epoch in range(START_EPOCH, TRAIN_EPOCHS + 1):
 
     model.train()
     train_loss = 0
     
     # Inputs is the processed tuple (text, image)
-    iterator = tqdm(train_loader, desc=f"Train epoch {epoch + 1}/{TRAIN_EPOCHS}")
+    iterator = tqdm(train_loader, desc=f"Train epoch {epoch}/{TRAIN_EPOCHS}")
 
     for batch_idx, batch_data in enumerate(iterator):
         
-        # Skip half of the batches
+        # Skip a portion of the batches
         if batch_idx > BREAK_IDX:
             break
 
@@ -155,6 +177,7 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS):
 
         iterator.set_postfix({"loss": loss.item()})
     
+
     # Save checkpoint
     checkpoint_metrics = {
         'epoch': epoch,
@@ -171,16 +194,19 @@ for epoch in range(START_EPOCH, TRAIN_EPOCHS):
 
     avg_train_loss = train_loss / len(train_loader)
     logger.info(f"Average Training Loss: {avg_train_loss:.4f}")
+    writer.add_scalar("Train loss", avg_train_loss, epoch)
 
-
+    
     # Check validation loss
     model.eval()
     val_loss = 0
     with torch.no_grad():
-        for batch in tqdm(val_loader, desc=f"Validate epoch {epoch + 1}/{TRAIN_EPOCHS}"):
+        for batch in tqdm(val_loader, desc=f"Validate epoch {epoch}/{TRAIN_EPOCHS}"):
             outputs = model(**batch)
             loss = outputs.loss
             val_loss += loss.item()
 
     avg_val_loss = val_loss / len(val_loader)
     logger.info(f"Average Validation Loss: {avg_val_loss:.4f}")
+    writer.add_scalar("Val loss", avg_val_loss, epoch)
+#%%

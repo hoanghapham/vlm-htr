@@ -26,22 +26,23 @@ def gen_split_indices(total_samples: int, seed: int = 42):
 
     return train_indices, val_indices, test_inidices
 
+
 def load_best_checkpoint(path: Path, device: str) -> dict:
     cp_metric_paths = sorted(path.glob("*.json"))
     cp_state_paths = sorted(path.glob("*.pt"))
 
     best_loss = float("inf")
-    best_epoch = 0
+    best_metrics = {}
+    best_epoch_idx = 0
 
-    for cp_path in cp_metric_paths:
+    for idx, cp_path in enumerate(cp_metric_paths):
         cp_metric = read_json_file(cp_path)
         if cp_metric["loss"] < best_loss:
-            best_loss = cp_metric["loss"]
-            best_epoch = cp_metric["epoch"]
+            best_metrics = cp_metric
+            best_epoch_idx = idx
     
-    best_state = torch.load(cp_state_paths[best_epoch], weights_only=True, map_location=torch.device(device))
-    best_state['epoch'] = best_epoch
-    best_state["loss"] = best_loss
+    best_state = torch.load(cp_state_paths[best_epoch_idx], weights_only=True, map_location=torch.device(device))
+    best_state.update(best_metrics)
 
     return best_state
     
