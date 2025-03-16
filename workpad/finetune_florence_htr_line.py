@@ -93,6 +93,8 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 
 #%%
+logger.info("Start training")
+
 MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
 
 if not MODEL_DIR.exists():
