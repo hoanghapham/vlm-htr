@@ -21,5 +21,5 @@ cd $PROJECT_DIR
 python workpad/finetune_trocr.py \
     --train-epochs 5 \
     --use-data-pct 0.5 \
-    --batch-size 20 \
+    --batch-size 15 \
     --demo true

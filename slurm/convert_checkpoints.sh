@@ -18,4 +18,4 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/convert_checkpoints.py --model-dir models/florence-2-base-ft-htr-line
+python workpad/convert_checkpoints.py --model-dir models/florence-2-base-ft-htr-region
