@@ -30,6 +30,8 @@ torch.cuda.empty_cache()
 
 from datasets import load_dataset
 
+from huggingface_hub import login
+login()
 
 train_subset_stream = load_dataset("oscar-corpus/OSCAR-2201",
                         # use_auth_token=True, # required
