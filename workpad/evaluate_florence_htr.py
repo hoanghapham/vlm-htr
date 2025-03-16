@@ -145,6 +145,8 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 logger.info(f"Save result to {OUTPUT_DIR}")
 
 metrics_aggr = {
+    "best_epoch": best_epoch,
+    "best_loss": best_loss,
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
