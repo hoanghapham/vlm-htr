@@ -38,7 +38,10 @@ def create_dset_from_paths(path_list: list[str | Path]):
 
 def create_collate_fn(processor, device):
     def func(batch):
-        questions, answers, images = zip(*batch)
+        questions = [data["question"] for data in batch]
+        answers = [data["answer"] for data in batch]
+        images = [data["image"] for data in batch]
+        
         inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
         labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
         return dict(
