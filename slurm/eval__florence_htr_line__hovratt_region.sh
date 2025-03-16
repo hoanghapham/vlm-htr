@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python workpad/evaluate_florence_htr.py \
     --model-name florence-2-base-ft-htr-line \
-    --input-dir $PROJECT_DIR/data/polis_line
+    --input-dir $PROJECT_DIR/data/polis_region

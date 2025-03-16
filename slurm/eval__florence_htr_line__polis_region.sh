@@ -6,8 +6,8 @@
 #SBATCH -N 1
 #SBATCH -t 24:00:00
 #SBATCH -J eval__florence_htr_line__polis_line
-#SBATCH -o logs_uppmax/eval__florence_htr_line__polis_line.out
-#SBATCH -e logs_uppmax/eval__florence_htr_line__polis_line.err
+#SBATCH -o logs_uppmax/eval__florence_htr_line.out__polis_line
+#SBATCH -e logs_uppmax/eval__florence_htr_line.err__polis_line
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python workpad/evaluate_florence_htr.py \
     --model-name florence-2-base-ft-htr-line \
-    --input-dir $PROJECT_DIR/data/polis_line
+    --input-dir $PROJECT_DIR/data/polis_region
