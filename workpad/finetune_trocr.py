@@ -147,8 +147,9 @@ if last_checkpoint is not None:
     optimizer = AdamW(model.parameters(), lr=1e-6)
     optimizer.load_state_dict(last_checkpoint["optimizer_state_dict"])
     last_loss = last_checkpoint["loss"]
-    START_EPOCH = last_checkpoint["epoch"] + 1
-    logger.info(f"Last epoch: {START_EPOCH}, loss: {last_loss}")
+    last_epoch = last_checkpoint["epoch"]
+    logger.info(f"Last epoch: {last_epoch}, loss: {last_loss}")
+    START_EPOCH = last_epoch + 1
 
 # Train
 
