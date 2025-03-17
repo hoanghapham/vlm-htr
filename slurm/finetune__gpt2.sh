@@ -20,4 +20,4 @@ cd $PROJECT_DIR
 
 python workpad/finetune_gpt2.py \
     --take 2000 \
-    --batch-size 1000
+    --batch-size 10
