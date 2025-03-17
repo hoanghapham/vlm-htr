@@ -153,6 +153,7 @@ if last_checkpoint is not None:
 # Train
 
 for epoch in range(START_EPOCH, TRAIN_EPOCHS + 1):
+    torch.cuda.empty_cache()
 
     model.train()
     train_loss = 0
