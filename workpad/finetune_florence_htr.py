@@ -124,7 +124,7 @@ if last_cp is not None:
 
 #%%
 # Train
-logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader)}, max train steps: {MAX_TRAIN_STEPS}")
+logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 logger.info(f"Start training")
 
 trainer = Trainer(
