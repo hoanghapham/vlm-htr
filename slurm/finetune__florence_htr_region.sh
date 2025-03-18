@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 
 cd $PROJECT_DIR
 
-python workpad/finetune_florence_htr_region.py \
+python workpad/finetune_florence_htr.py \
     --data-dir $PROJECT_DIR/data/polis_region \
     --model-name florence-2-base-ft-htr-region \
     --train-epochs 30 \
