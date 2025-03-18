@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J finetune/trocr
-#SBATCH -o logs_uppmax/finetune/trocr.out
-#SBATCH -e logs_uppmax/finetune/trocr.err
+#SBATCH -J finetune/trocr_base
+#SBATCH -o logs_uppmax/finetune/trocr_base/finetune__trocr_base__ft_htr_line.out
+#SBATCH -e logs_uppmax/finetune/trocr_base/finetune__trocr_base__ft_htr_line.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,6 +19,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_trocr.py \
+    --model-name trocr_base__ft_htr_line \
     --train-epochs 5 \
     --use-data-pct 0.5 \
     --batch-size 15

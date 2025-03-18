@@ -24,7 +24,7 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
-args = parser.parse_args([])
+args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence-2-base-ft-htr-line",

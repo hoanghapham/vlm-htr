@@ -21,6 +21,7 @@ from src.logger import CustomLogger
 
 #%%
 parser = ArgumentParser()
+parser.add_argument("--model-name", required=True)
 parser.add_argument("--train-epochs", default=10)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-data-pct", default=1)
@@ -28,7 +29,7 @@ args = parser.parse_args()
 
 # Constants
 DATA_DIR        = PROJECT_DIR / "data/polis_line"
-MODEL_NAME      = "ft-trocr-htr-line"
+MODEL_NAME      = args.model_name
 MODEL_OUT_DIR   = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
