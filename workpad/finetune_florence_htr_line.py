@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
+from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.tasks.utils import create_dset_from_paths, RunningTextDataset, collect_page_ids_to_splits
@@ -25,6 +26,7 @@ parser.add_argument("--use-data-pct", default=0.5)
 args = parser.parse_args()
 
 logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
+tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard/ft_florence_htr_line")
 
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -123,7 +125,8 @@ trainer = Trainer(
     start_epoch     = START_EPOCH,
     max_train_steps = MAX_TRAIN_STEPS,
     model_out_dir   = MODEL_OUT_DIR,
-    logger          = logger
+    logger          = logger,
+    tsb_logger      = tsb_logger
 )
 
 trainer.train()

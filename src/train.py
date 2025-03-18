@@ -7,8 +7,8 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 from src.file_tools import read_json_file, write_json_file
 
 
@@ -61,6 +61,7 @@ class Trainer():
         max_train_steps: int, 
         model_out_dir: str | Path,
         logger: Logger,
+        tsb_logger: SummaryWriter
     ):
         self.model = model
         self.optimizer = optimizer
@@ -82,24 +83,33 @@ class Trainer():
 
         assert start_epoch >= 1, "start_epoch should be at least 1"
 
+        self.tsb_logger = tsb_logger
+
     def train(self):
         for epoch in range(self.start_epoch, self.n_epochs + 1):
             self.epochs.append(epoch)
             torch.cuda.empty_cache()
             self.model.train()
-
+            
+            # Train
             self._train_one_epoch(epoch)
             avg_train_loss = self.train_losses[-1]
             self.logger.info(f"Epoch {epoch} avg. train loss: {avg_train_loss:.4f}")
             
+            # Eval
             self._evaluate(epoch)
             avg_val_loss = self.val_losses[-1]
             self.logger.info(f"Epoch {epoch} avg. validation loss: {avg_val_loss:.4f}")
             
+            # Save metrics
             self._save_epoch_state(epoch)
             self._save_epoch_metrics(epoch, avg_train_loss, avg_val_loss)
             saved_path = (self.model_out_dir / f"checkpoint_epoch_{epoch:04d}").relative_to(self.model_out_dir.parent)
             self.logger.info(f"Saved checkpoint to {saved_path}")
+
+            if self.tsb_logger is not None:
+                self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, epoch)
+                self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, epoch)
             
     def _train_one_epoch(self, epoch: int):
         train_loss = 0
@@ -107,8 +117,8 @@ class Trainer():
 
         for batch_idx, batch_data in enumerate(iterator):
             
-            # Skip soe of the batches
-            if batch_idx > self.max_train_steps:
+            # Skip some of the batches
+            if batch_idx > (self.max_train_steps - 1):
                 break
 
             # Predict output
