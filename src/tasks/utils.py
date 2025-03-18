@@ -43,23 +43,27 @@ def gen_split_indices(
     return train_indices, val_indices, test_indices
 
 
-def collect_page_ids_to_splits(data_dir: str | Path):
-
-    """Collect page IDs into splits"""
+def create_split_info(
+    data_dir,
+    seed: int = 42,
+    train_ratio: float = 0.7, 
+    val_ratio: float = 0.15, 
+    test_ratio: float = 0.15
+):
     data_dir = Path(data_dir)
     split_info_path = Path(data_dir) / "split_info.json"
     page_path_list = sorted([path for path in data_dir.glob("*") if path.is_dir()])
 
-    # If split_info.json does not exist, regenerate the splits
-    if not split_info_path.exists():
-        train_indices, val_indices, test_indices = gen_split_indices(len(page_path_list), seed=42)
-        split_info = {
-            "train": [page_path_list[idx].stem for idx in train_indices],
-            "validation": [page_path_list[idx].stem for idx in val_indices],
-            "test": [page_path_list[idx].stem for idx in test_indices]
-        }
-        write_json_file(split_info, split_info_path)
-    else:
-        split_info = read_json_file(split_info_path)
-
-    return split_info
+    train_indices, val_indices, test_indices = gen_split_indices(
+        len(page_path_list), 
+        seed=42,
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        test_ratio=test_ratio
+    )
+    split_info = {
+        "train": [page_path_list[idx].stem for idx in train_indices],
+        "validation": [page_path_list[idx].stem for idx in val_indices],
+        "test": [page_path_list[idx].stem for idx in test_indices]
+    }
+    write_json_file(split_info, split_info_path)

@@ -61,9 +61,11 @@ class Trainer():
         max_train_steps: int, 
         model_out_dir: str | Path,
         logger: Logger,
-        tsb_logger: SummaryWriter
+        tsb_logger: SummaryWriter,
+        load_last_checkpoint: bool = True
     ):
         self.model = model
+        self.device = model.device
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
 
@@ -73,6 +75,7 @@ class Trainer():
         self.n_epochs = n_epochs
         self.start_epoch = start_epoch
         self.max_train_steps = max_train_steps
+        self.load_last_checkpoint = load_last_checkpoint
 
         self.epochs = []
         self.train_losses = []
@@ -86,10 +89,17 @@ class Trainer():
         self.tsb_logger = tsb_logger
 
     def train(self):
+        
+        # Load last checkpoint
+        if self.load_last_checkpoint:
+            self._load_last_checkpoint()
+        
+        # Train loop
         for epoch in range(self.start_epoch, self.n_epochs + 1):
             self.epochs.append(epoch)
             torch.cuda.empty_cache()
             self.model.train()
+
             
             # Train
             self._train_one_epoch(epoch)
@@ -110,7 +120,22 @@ class Trainer():
             if self.tsb_logger is not None:
                 self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, epoch)
                 self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, epoch)
+    
+    def _load_last_checkpoint(self):
+        last_cp = load_last_checkpoint(self.model_out_dir, self.device)
+
+        if last_cp is not None:
+            # Update model & optimizer with last checkpoint
+            self.model.load_state_dict(last_cp["model_state_dict"])
+            self.optimizer.load_state_dict(last_cp["optimizer_state_dict"])
             
+            last_epoch, last_train_loss, last_val_loss = \
+                last_cp.get("epoch"), last_cp.get("avg_train_loss"), last_cp.get("avg_val_loss"), 
+            self.logger.info(f"last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
+
+            # Start training from the next epoch
+            self.star_epoch = last_cp["epoch"] + 1
+
     def _train_one_epoch(self, epoch: int):
         train_loss = 0
         iterator = tqdm(self.train_loader, desc=f"Train epoch {epoch}/{self.n_epochs}", total=self.max_train_steps)

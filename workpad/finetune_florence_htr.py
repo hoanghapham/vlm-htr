@@ -12,9 +12,10 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.tasks.utils import create_dset_from_paths, collect_page_ids_to_splits
+from src.file_tools import read_json_file
+from src.tasks.utils import create_dset_from_paths, create_split_info
 from src.tasks.running_text import RunningTextDataset, create_florence_collate_fn
-from src.train import load_last_checkpoint, Trainer
+from src.train import Trainer
 from src.logger import CustomLogger
 
 
@@ -72,7 +73,12 @@ logger.info("Load data")
 local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
 
 # Subset train & validate set
-split_info = collect_page_ids_to_splits(DATA_DIR)
+split_info_path = DATA_DIR / "split_info.json"
+
+if not split_info_path.exists():
+    create_split_info(DATA_DIR, seed=42)
+
+split_info = read_json_file(split_info_path)
 train_paths = [path for path in local_path_list if path.stem in split_info["train"]]
 val_paths = [path for path in local_path_list if path.stem in split_info["validation"]]
 
@@ -107,38 +113,24 @@ lr_scheduler = get_scheduler(
 )
 
 # Load state
-last_cp = load_last_checkpoint(MODEL_OUT_DIR, DEVICE)
-
-if last_cp is not None:
-    # Update model & optimizer with last checkpoint
-    model.load_state_dict(last_cp["model_state_dict"])
-    optimizer.load_state_dict(last_cp["optimizer_state_dict"])
-    
-    last_epoch, last_train_loss, last_val_loss = \
-        last_cp.get("epoch"), last_cp.get("avg_train_loss"), last_cp.get("avg_val_loss"), 
-    logger.info(f"last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
-
-    # Start training from the next epoch
-    START_EPOCH = last_cp["epoch"] + 1
-
-
 #%%
 # Train
 logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 logger.info(f"Start training")
 
 trainer = Trainer(
-    model           = model,
-    optimizer       = optimizer,
-    lr_scheduler    = lr_scheduler,
-    train_loader    = train_loader,
-    val_loader      = val_loader,
-    n_epochs        = TRAIN_EPOCHS,
-    start_epoch     = START_EPOCH,
-    max_train_steps = MAX_TRAIN_STEPS,
-    model_out_dir   = MODEL_OUT_DIR,
-    logger          = logger,
-    tsb_logger      = tsb_logger
+    model                = model,
+    optimizer            = optimizer,
+    lr_scheduler         = lr_scheduler,
+    train_loader         = train_loader,
+    val_loader           = val_loader,
+    n_epochs             = TRAIN_EPOCHS,
+    start_epoch          = START_EPOCH,
+    max_train_steps      = MAX_TRAIN_STEPS,
+    model_out_dir        = MODEL_OUT_DIR,
+    logger               = logger,
+    tsb_logger           = tsb_logger,
+    load_last_checkpoint = True
 )
 
 trainer.train()
