@@ -1,39 +1,17 @@
 import io
-import os
 import xml.etree.ElementTree as ET
-from glob import glob
 from pathlib import Path, PurePath
 
 from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 from pagexml.parser import parse_pagexml_file
 
-
-from shapely import MultiPoint, convex_hull
-
 import cv2
 import numpy as np
-from datasets import (
-    BuilderConfig,
-    DatasetInfo,
-    Features,
-    GeneratorBasedBuilder,
-    Image,
-    Sequence,
-    Split,
-    SplitGenerator,
-    Value,
-)
 from PIL import Image as PILImage
 from shapely.geometry import Polygon
+from shapely import MultiPoint, convex_hull
 from tqdm import tqdm
 
-class HTRDatasetConfig(BuilderConfig):
-    """Configuration for each dataset variant."""
-
-    def __init__(self, name, description, process_func, features, **kwargs):
-        super().__init__(name=name, description=description, **kwargs)
-        self.process_func = process_func
-        self.features = features
 
 
 def create_lower_bound(line_list: list[PageXMLTextLine]) -> list[tuple]:
