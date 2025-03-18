@@ -27,7 +27,18 @@ parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-data-pct", default=0.5)
 args = parser.parse_args()
 
-MODEL_NAME = args.MODEL_NAME
+# Setup constant values
+MODEL_NAME      = args.model_name
+BATCH_SIZE      = int(args.batch_size)
+TRAIN_EPOCHS    = int(args.train_epochs)
+DATA_DIR        = Path(args.data_dir)
+USE_DATA_PCT    = float(args.use_data_pct)
+MODEL_OUT_DIR   = PROJECT_DIR / "models" / MODEL_NAME
+
+if not MODEL_OUT_DIR.exists():
+    MODEL_OUT_DIR.mkdir(parents=True)
+
+# Setup loggers
 logger = CustomLogger(MODEL_NAME, log_to_local=True)
 tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / f"logs_tensorboard/{MODEL_NAME}")
 
@@ -56,7 +67,6 @@ for param in model.vision_tower.parameters():
 #%%
 # Load data
 logger.info("Load data")
-DATA_DIR = PROJECT_DIR / "data/polis_line"
 
 # Collect page lists
 local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
@@ -71,8 +81,9 @@ train_dataset = create_dset_from_paths(train_paths, RunningTextDataset)
 val_dataset = create_dset_from_paths(val_paths, RunningTextDataset)
 
 # Create data loader
-BATCH_SIZE = int(args.batch_size)
+
 collate_fn = create_florence_collate_fn(processor, DEVICE)
+
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
 
@@ -82,20 +93,17 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 #%%
 # Setup training
-MODEL_OUT_DIR = PROJECT_DIR / "models" / MODEL_NAME
-
-if not MODEL_OUT_DIR.exists():
-    MODEL_OUT_DIR.mkdir(parents=True)
 
 START_EPOCH = 1
-TRAIN_EPOCHS = int(args.train_epochs)
-MAX_TRAIN_STEPS = int(float(args.use_data_pct) * len(train_loader))
-num_training_steps = TRAIN_EPOCHS * len(train_loader)
+MAX_TRAIN_STEPS = int(USE_DATA_PCT * len(train_loader))
+TOTAL_TRAIN_STEPS = TRAIN_EPOCHS * len(train_loader)
 
 optimizer = AdamW(model.parameters(), lr=1e-6)
 lr_scheduler = get_scheduler(
-    name="linear", optimizer=optimizer,
-    num_warmup_steps=0, num_training_steps=num_training_steps,
+    name="linear", 
+    optimizer=optimizer,
+    num_warmup_steps=0,
+    num_training_steps=TOTAL_TRAIN_STEPS
 )
 
 # Load state
