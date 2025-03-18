@@ -1,7 +1,7 @@
 #%%
 import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from argparse import ArgumentParser
@@ -99,8 +99,6 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 #%%
 # Setup training
-
-START_EPOCH = 1
 MAX_TRAIN_STEPS = int(USE_DATA_PCT * len(train_loader))
 TOTAL_TRAIN_STEPS = TRAIN_EPOCHS * len(train_loader)
 
@@ -125,7 +123,7 @@ trainer = Trainer(
     train_loader         = train_loader,
     val_loader           = val_loader,
     n_epochs             = TRAIN_EPOCHS,
-    start_epoch          = START_EPOCH,
+    start_epoch          = 1,
     max_train_steps      = MAX_TRAIN_STEPS,
     model_out_dir        = MODEL_OUT_DIR,
     logger               = logger,

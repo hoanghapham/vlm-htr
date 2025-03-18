@@ -44,7 +44,7 @@ def gen_split_indices(
 
 
 def create_split_info(
-    data_dir,
+    data_dir: Path | str,
     seed: int = 42,
     train_ratio: float = 0.7, 
     val_ratio: float = 0.15, 
@@ -56,7 +56,7 @@ def create_split_info(
 
     train_indices, val_indices, test_indices = gen_split_indices(
         len(page_path_list), 
-        seed=42,
+        seed=seed,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio

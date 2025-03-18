@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-PROJECT_DIR = Path(__file__).parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from argparse import ArgumentParser
@@ -13,9 +13,12 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.logger import CustomLogger
-from src.utils import load_best_checkpoint
+from src.train import load_best_checkpoint
 from src.file_tools import write_json_file, write_list_to_text_file, read_json_file, write_ndjson_file
-from src.htr_tools import create_dset_from_paths
+from src.tasks.utils import create_dset_from_paths
+
+
+
 
 #%%
 
@@ -23,7 +26,7 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 # parser.add_argument("--output-dir", required=True)
-args = parser.parse_args()
+args = parser.parse_args([])
 
 # args = parser.parse_args([
 #     "--model-name", "florence-2-base-ft-htr-line",
@@ -63,7 +66,7 @@ logger.info(f"Load best checkpoint: epoch {best_epoch}, loss: {best_loss:.4f}")
 model.eval()
 
 #%%
-
+logger = CustomLogger(f"eval__{MODEL_NAME}__{INPUT_DIR.stem}", log_to_local=True)
 # Load split info
 logger.info("Load test data")
 split_info_fp = INPUT_DIR / "split_info.json"

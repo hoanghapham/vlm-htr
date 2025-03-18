@@ -10,9 +10,9 @@ from htrflow.evaluate import CER, WER, BagOfWords
 
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
-from src.htr_tools import load_from_disk, create_dset_from_paths
+from data_tools import load_from_disk, create_dset_from_paths
 from src.file_tools import write_json_file, read_json_file
-from src.utils import gen_split_indices
+from train import gen_split_indices
 
 TROCR_PATH = "microsoft/trocr-base-handwritten"
 REMOTE_MODEL_PATH = "Riksarkivet/trocr-base-handwritten-hist-swe-2"

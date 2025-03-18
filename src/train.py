@@ -62,7 +62,7 @@ class Trainer():
         model_out_dir: str | Path,
         logger: Logger,
         tsb_logger: SummaryWriter,
-        load_last_checkpoint: bool = True
+        load_last_checkpoint: bool = True,
     ):
         self.model = model
         self.device = model.device
@@ -76,6 +76,7 @@ class Trainer():
         self.start_epoch = start_epoch
         self.max_train_steps = max_train_steps
         self.load_last_checkpoint = load_last_checkpoint
+        assert start_epoch >= 1, "start_epoch should be at least 1"
 
         self.epochs = []
         self.train_losses = []
@@ -83,9 +84,6 @@ class Trainer():
         
         self.model_out_dir = Path(model_out_dir)
         self.logger = logger
-
-        assert start_epoch >= 1, "start_epoch should be at least 1"
-
         self.tsb_logger = tsb_logger
 
     def train(self):

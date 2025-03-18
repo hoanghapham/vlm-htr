@@ -8,7 +8,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 
 # Load model
 print("Load model")
