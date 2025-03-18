@@ -10,11 +10,10 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from tqdm import tqdm
 
-from src.htr_tools import create_dset_from_paths, create_collate_fn
-from src.file_tools import read_json_file, write_json_file
-from src.utils import gen_split_indices, load_last_checkpoint
+from src.tasks.utils import create_dset_from_paths, RunningTextDataset, collect_page_ids_to_splits
+from src.tasks.running_text import create_florence_collate_fn
+from src.train import load_last_checkpoint, Trainer
 from src.logger import CustomLogger
 
 
@@ -55,36 +54,20 @@ logger.info("Load data")
 DATA_DIR = PROJECT_DIR / "data/polis_line"
 
 # Collect page lists
-page_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
+local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
 
-# Create dataset
 # Subset train & validate set
-
-split_info_path = DATA_DIR / "split_info.json"
-
-if not split_info_path.exists():
-    train_indices, val_indices, test_indices = gen_split_indices(len(page_path_list), seed=42)
-    split_info = {
-        "train": [page_path_list[idx].stem for idx in train_indices],
-        "validation": [page_path_list[idx].stem for idx in val_indices],
-        "test": [page_path_list[idx].stem for idx in test_indices]
-    }
-
-    write_json_file(split_info, split_info_path)
-
-else:
-    split_info = read_json_file(split_info_path)
-
-train_paths = [path for path in page_path_list if path.stem in split_info["train"]]
-val_paths = [path for path in page_path_list if path.stem in split_info["validation"]]
+split_info = collect_page_ids_to_splits(DATA_DIR)
+train_paths = [path for path in local_path_list if path.stem in split_info["train"]]
+val_paths = [path for path in local_path_list if path.stem in split_info["validation"]]
 
 # Create dataset object
-train_dataset = create_dset_from_paths(train_paths)
-val_dataset = create_dset_from_paths(val_paths)
+train_dataset = create_dset_from_paths(train_paths, RunningTextDataset)
+val_dataset = create_dset_from_paths(val_paths, RunningTextDataset)
 
 # Create data loader
 BATCH_SIZE = int(args.batch_size)
-collate_fn = create_collate_fn(processor, DEVICE)
+collate_fn = create_florence_collate_fn(processor, DEVICE)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
 
@@ -93,16 +76,15 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 
 #%%
-logger.info("Start training")
+# Setup training
+MODEL_OUT_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
 
-MODEL_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
+if not MODEL_OUT_DIR.exists():
+    MODEL_OUT_DIR.mkdir(parents=True)
 
-if not MODEL_DIR.exists():
-    MODEL_DIR.mkdir(parents=True)
-
+START_EPOCH = 1
 TRAIN_EPOCHS = int(args.train_epochs)
-START_EPOCH = 0
-BREAK_IDX = int(float(args.use_data_pct) * len(train_loader))
+MAX_TRAIN_STEPS = int(float(args.use_data_pct) * len(train_loader))
 num_training_steps = TRAIN_EPOCHS * len(train_loader)
 
 optimizer = AdamW(model.parameters(), lr=1e-6)
@@ -112,75 +94,36 @@ lr_scheduler = get_scheduler(
 )
 
 # Load state
-last_checkpoint = load_last_checkpoint(MODEL_DIR, DEVICE)
+last_cp = load_last_checkpoint(MODEL_OUT_DIR, DEVICE)
 
-if last_checkpoint is not None:
-    model.load_state_dict(last_checkpoint["model_state_dict"])
-    optimizer = AdamW(model.parameters(), lr=1e-6)
-    optimizer.load_state_dict(last_checkpoint["optimizer_state_dict"])
-    START_EPOCH = last_checkpoint["epoch"]
-    last_loss = last_checkpoint["loss"]
-    logger.info(f"Last epoch: {START_EPOCH + 1}, loss: {last_loss}")
+if last_cp is not None:
+    # Update model & optimizer with last checkpoint
+    model.load_state_dict(last_cp["model_state_dict"])
+    optimizer.load_state_dict(last_cp["optimizer_state_dict"])
+    
+    last_epoch, last_train_loss, last_val_loss = \
+        last_cp.get("epoch"), last_cp.get("avg_train_loss"), last_cp.get("avg_val_loss"), 
+    logger.info(f"last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
+
+    # Start training from the next epoch
+    START_EPOCH = last_cp["epoch"] + 1
+
 
 #%%
 # Train
-for epoch in range(START_EPOCH, TRAIN_EPOCHS):
+logger.info(f"Train model for {MAX_TRAIN_STEPS} steps.")
 
-    model.train()
-    train_loss = 0
-    
-    # Inputs is the processed tuple (text, image)
-    iterator = tqdm(train_loader, desc=f"Train epoch {epoch + 1}/{TRAIN_EPOCHS}")
+trainer = Trainer(
+    model           = model,
+    optimizer       = optimizer,
+    lr_scheduler    = lr_scheduler,
+    train_loader    = train_loader,
+    val_loader      = val_loader,
+    n_epochs        = TRAIN_EPOCHS,
+    start_epoch     = START_EPOCH,
+    max_train_steps = MAX_TRAIN_STEPS,
+    model_out_dir   = MODEL_OUT_DIR,
+    logger          = logger
+)
 
-    for batch_idx, batch_data in enumerate(iterator):
-        
-        # Skip half of the batches
-        if batch_idx > BREAK_IDX:
-            break
-
-        # Predict output
-        outputs = model(**batch_data)
-
-        # Calculate loss, then backward
-        loss = outputs.loss
-        loss.backward()
-
-        # Then step to update weights
-        optimizer.step()
-        lr_scheduler.step()
-
-        # Reset grad
-        optimizer.zero_grad()
-        train_loss += loss.item()
-
-        iterator.set_postfix({"loss": loss.item()})
-    
-    # Save checkpoint
-    checkpoint_metrics = {
-        'epoch': epoch,
-        'loss': loss.item(),
-    }
-
-    checkpoint_states = {
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }
-
-    write_json_file(checkpoint_metrics, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.json")
-    torch.save(checkpoint_states, MODEL_DIR / f"checkpoint_epoch_{epoch:04d}.pt")
-
-    avg_train_loss = train_loss / len(train_loader)
-    logger.info(f"Average Training Loss: {avg_train_loss:.4f}")
-
-
-    # Check validation loss
-    model.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for batch in tqdm(val_loader, desc=f"Validate epoch {epoch + 1}/{TRAIN_EPOCHS}"):
-            outputs = model(**batch)
-            loss = outputs.loss
-            val_loss += loss.item()
-
-    avg_val_loss = val_loss / len(val_loader)
-    logger.info(f"Average Validation Loss: {avg_val_loss:.4f}")
+trainer.train()
