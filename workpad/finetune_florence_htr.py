@@ -12,21 +12,24 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.tasks.utils import create_dset_from_paths, RunningTextDataset, collect_page_ids_to_splits
-from src.tasks.running_text import create_florence_collate_fn
+from src.tasks.utils import create_dset_from_paths, collect_page_ids_to_splits
+from src.tasks.running_text import RunningTextDataset, create_florence_collate_fn
 from src.train import load_last_checkpoint, Trainer
 from src.logger import CustomLogger
 
 
 #%%
 parser = ArgumentParser()
+parser.add_argument("--data-dir", required=True)
+parser.add_argument("--model-name", required=True)
 parser.add_argument("--train-epochs", default=5)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-data-pct", default=0.5)
 args = parser.parse_args()
 
-logger = CustomLogger("ft_florence_htr_line", log_to_local=True)
-tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard/ft_florence_htr_line")
+MODEL_NAME = args.MODEL_NAME
+logger = CustomLogger(MODEL_NAME, log_to_local=True)
+tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / f"logs_tensorboard/{MODEL_NAME}")
 
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -79,7 +82,7 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
 
 #%%
 # Setup training
-MODEL_OUT_DIR = PROJECT_DIR / "models/florence-2-base-ft-htr-line"
+MODEL_OUT_DIR = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
@@ -113,7 +116,8 @@ if last_cp is not None:
 
 #%%
 # Train
-logger.info(f"Train model for {MAX_TRAIN_STEPS} steps.")
+logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader)}, max train steps: {MAX_TRAIN_STEPS}")
+logger.info(f"Start training")
 
 trainer = Trainer(
     model           = model,

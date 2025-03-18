@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J finetune_florence_htr_region
-#SBATCH -o logs_uppmax/finetune_florence_htr_region.out
-#SBATCH -e logs_uppmax/finetune_florence_htr_region.err
+#SBATCH -J finetune__florence_htr_region
+#SBATCH -o logs_uppmax/finetune__florence_htr_region.out
+#SBATCH -e logs_uppmax/finetune__florence_htr_region.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,6 +19,8 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
 cd $PROJECT_DIR
 
 python workpad/finetune_florence_htr_region.py \
-    --train-epochs 10 \
+    --data-dir $PROJECT_DIR/data/polis_region \
+    --model-name florence-2-base-ft-htr-region \
+    --train-epochs 30 \
     --use-data-pct 1 \
     --batch-size 2

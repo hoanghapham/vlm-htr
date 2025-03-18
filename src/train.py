@@ -104,7 +104,7 @@ class Trainer():
             # Save metrics
             self._save_epoch_state(epoch)
             self._save_epoch_metrics(epoch, avg_train_loss, avg_val_loss)
-            saved_path = (self.model_out_dir / f"checkpoint_epoch_{epoch:04d}").relative_to(self.model_out_dir.parent)
+            saved_path = (self.model_out_dir / f"checkpoint_epoch_{epoch:04d}").relative_to(self.model_out_dir.parent.parent)
             self.logger.info(f"Saved checkpoint to {saved_path}")
 
             if self.tsb_logger is not None:
