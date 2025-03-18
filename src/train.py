@@ -12,45 +12,80 @@ from tqdm import tqdm
 from src.file_tools import read_json_file, write_json_file
 
 
-def load_best_checkpoint(path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> dict:
+class Checkpoint():
+    def __init__(
+        self,
+        epoch,
+        train_loss,
+        val_loss,
+        model_state_dict,
+        optimizer_state_dict,
+    ):
+        self.epoch = epoch,
+        self.train_loss = train_loss,
+        self.val_loss = val_loss
+        self.model_state_dict = model_state_dict,
+        self.optimizer_state_dict = optimizer_state_dict
 
-    compare_metrics = ["avg_train_loss", "avg_val_loss"]
-    assert compare_metric in compare_metrics, f"compare_metrics must be one of {compare_metrics}"
+    def __str__(self):
+        return f"Epoch: {self.epoch}, train loss: {self.train_loss}, validation loss: {self.val_loss}"
 
-    cp_metric_paths = sorted(path.glob("*.json"))
-    cp_state_paths = [path.with_suffix(".pt") for path in cp_metric_paths]
+
+def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> Checkpoint:
+
+    supported_metrics = ["avg_train_loss", "avg_val_loss"]
+    assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
+
+    paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(model_path.glob("*.json"))}
 
     best_value = float("inf")
-    best_metrics = {}
-    best_epoch_idx = 0
+    best_cp_path = None
+    best_cp_metadata = None
 
-    for idx, cp_path in enumerate(cp_metric_paths):
-        cp_metric = read_json_file(cp_path)
-        if cp_metric.get(compare_metric) is not None and cp_metric.get(compare_metric) < best_value:
-            best_metrics = cp_metric
-            best_epoch_idx = idx
+    for json_path, state_path in paths_map.items():
+        metric_dict = read_json_file(json_path)
+        
+        if metric_dict.get(compare_metric) is not None:
+            if metric_dict.get(compare_metric) < best_value
+                best_value = metric_dict.get(compare_metric)
+                best_cp_path = state_path
+                best_cp_metadata = metric_dict
     
-    best_state = torch.load(cp_state_paths[best_epoch_idx], weights_only=True, map_location=torch.device(device))
-    best_state.update(best_metrics)
+    if best_cp_path:
+        best_cp_states = torch.load(best_cp_path, weights_only=True, map_location=torch.device(device))
+        return Checkpoint(
+            epoch                  = best_cp_metadata.get("epoch"),
+            train_loss             = best_cp_metadata.get("avg_train_loss"),
+            val_loss               = best_cp_metadata.get("avg_val_loss"),
+            model_state_dict       = best_cp_states.get("model_state_dict"),
+            optimizer_state_dict   = best_cp_states.get("optimizer_state_dict"),
+        )
 
-    return best_state
+    else:
+        # If cannot determine best checkpoint, return None
+        return None
     
 
-def load_last_checkpoint(path: Path, device: str) -> dict:
+def load_last_checkpoint(path: Path, device: str) -> Checkpoint:
 
-    cp_state_paths = list(sorted(path.glob("*.pt")))
-    cp_metric_paths = [path.with_suffix(".json") for path in cp_state_paths]
+    pt_paths = list(sorted(path.glob("*.pt")))
+    json_paths = [path.with_suffix(".json") for path in pt_paths]
 
-    if cp_state_paths:
-        last_cp_state_path = cp_state_paths[-1]
-        last_cp_state = torch.load(last_cp_state_path, weights_only=True, map_location=torch.device(device))
+    if pt_paths:
+        last_pt_path = pt_paths[-1]
+        last_cp_states = torch.load(last_pt_path, weights_only=True, map_location=torch.device(device))
 
-        last_cp_metric_path = cp_metric_paths[-1]
-        if last_cp_metric_path.exists():
-            last_cp_metric = read_json_file(last_cp_metric_path)
-            last_cp_state.update(last_cp_metric)
+        last_json_path = json_paths[-1]
+        if last_json_path.exists():
+            last_cp_metadata = read_json_file(last_json_path)
 
-        return last_cp_state
+        return Checkpoint(
+            epoch                   = last_cp_metadata.get("epoch"),
+            train_loss              = last_cp_metadata.get("avg_train_loss"),
+            val_loss                = last_cp_metadata.get("avg_val_loss"),
+            model_state_dict        = last_cp_states.get("model_state_dict"),
+            optimizer_state_dict    = last_cp_states.get("optimizer_state_dict")
+        )
     else:
         return None
     
@@ -119,8 +154,7 @@ class Trainer():
             self.logger.info(f"Epoch {epoch} avg. validation loss: {avg_val_loss:.4f}")
             
             # Save metrics
-            self._save_epoch_state(epoch)
-            self._save_epoch_metrics(epoch, avg_train_loss, avg_val_loss)
+            self._save_checkpoint(epoch, avg_train_loss, avg_val_loss)
             saved_path = (self.model_out_dir / f"checkpoint_epoch_{epoch:04d}").relative_to(self.model_out_dir.parent.parent)
             self.logger.info(f"Saved checkpoint to {saved_path}")
 
@@ -133,8 +167,8 @@ class Trainer():
 
         if last_cp is not None:
             # Update model & optimizer with last checkpoint
-            self.model.load_state_dict(last_cp["model_state_dict"])
-            self.optimizer.load_state_dict(last_cp["optimizer_state_dict"])
+            self.model.load_state_dict(last_cp.model_state_dict)
+            self.optimizer.load_state_dict(last_cp.optimizer_state_dict)
             
             last_epoch, last_train_loss, last_val_loss = \
                 last_cp.get("epoch"), last_cp.get("avg_train_loss"), last_cp.get("avg_val_loss"), 
@@ -186,20 +220,23 @@ class Trainer():
         avg_val_loss = val_loss / len(self.val_loader)
         self.val_losses.append(avg_val_loss)
 
-    def _save_epoch_state(self, epoch: int):
+    def _save_checkpoint(self, epoch: int, avg_train_loss: float, avg_val_loss: float):
+        # Save pt
         checkpoint_states = {
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }
         torch.save(checkpoint_states, self.model_out_dir / f"checkpoint_epoch_{epoch:04d}.pt")
-
-    def _save_epoch_metrics(self, epoch, avg_train_loss, avg_epoch_val_los):
+        
+        # Save dict
         checkpoint_metrics = dict(
             epoch = epoch,
             avg_train_loss = avg_train_loss,
-            avg_val_loss = avg_epoch_val_los
+            avg_val_loss = avg_val_loss
         )
         write_json_file(checkpoint_metrics, self.model_out_dir / f"checkpoint_epoch_{epoch:04d}.json")
+
+        
 
 
     

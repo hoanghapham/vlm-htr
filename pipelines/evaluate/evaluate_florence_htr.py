@@ -13,7 +13,7 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.logger import CustomLogger
-from src.train import load_best_checkpoint
+from src.train import load_best_checkpoint, load_last_checkpoint
 from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
 from src.tasks.utils import create_dset_from_paths
 from src.tasks.running_text import RunningTextDataset
@@ -24,13 +24,14 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
-# args = parser.parse_args()
+parser.add_argument("--load-checkpoint", default="best", choices=["last", "best"])
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--model-name", "florence_base__ft_htr_line",
-    "--input-dir", str(PROJECT_DIR/"data/hovratt_line"),
-    "--use-split-info", "true"
-])
+# args = parser.parse_args([
+#     "--model-name", "florence_base__ft_htr_line",
+#     "--input-dir", str(PROJECT_DIR / "data/hovratt_line"),
+#     "--use-split-info", "true"
+# ])
 
 # Setup paths
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,6 +40,7 @@ LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
 INPUT_DIR = Path(args.input_dir)
+LOAD_CHECKPOINT = args.load_checkpoint
 USE_SPLIT_INFO = args.use_split_info == "true"
 OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
 
@@ -54,15 +56,16 @@ logger.info("Load model")
 processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
-# Load best checkpoint
+# Load checkpoint to evaluate
 
-best_state = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
-model.load_state_dict(best_state["model_state_dict"])
-best_epoch = best_state["epoch"]
-best_train_loss = best_state["avg_train_loss"]
-best_val_loss = best_state["avg_val_loss"]
+if LOAD_CHECKPOINT == "last":
+    eval_cp = load_last_checkpoint(LOCAL_MODEL_PATH, DEVICE)
+elif LOAD_CHECKPOINT == "best":
+    eval_cp = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
 
-logger.info(f"Best checkpoint: epoch {best_epoch}, train loss: {best_train_loss:.4f}, validation loss: {best_val_loss}")
+model.load_state_dict(eval_cp.model_state_dict)
+
+logger.info(f"Evaluate checkpoint: {eval_cp}")
 
 # Set model to evaluation mode
 model.eval()
@@ -148,9 +151,9 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 logger.info(f"Save result to {OUTPUT_DIR}")
 
 metrics_aggr = {
-    "best_epoch": best_epoch,
-    "best_train_loss": best_train_loss,
-    "best_val_loss": best_val_loss,
+    "epoch": eval_cp.epoch,
+    "train_loss": eval_cp.train_loss,
+    "val_loss": eval_cp.val_loss,
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
