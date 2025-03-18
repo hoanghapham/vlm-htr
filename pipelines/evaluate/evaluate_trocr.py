@@ -17,7 +17,7 @@ from src.logger import CustomLogger
 
 # REMOTE_MODEL_PATH = "Riksarkivet/trocr-base-handwritten-hist-swe-2"
 REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH = PROJECT_DIR / "model/trocr_base__ft_htr_line"
+LOCAL_MODEL_PATH = PROJECT_DIR / "models/trocr_base__ft_htr_line"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 DATA_DIR = PROJECT_DIR / "data/polis_line"
@@ -45,8 +45,20 @@ val_dataset = create_dset_from_paths(val_paths, RunningTextDataset)
 #%%
 # Load model
 processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(device)
+model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
 model.eval()
+
+#%%
+best_state = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
+model.load_state_dict(best_state["model_state_dict"])
+best_epoch = best_state["epoch"]
+best_train_loss = best_state.get("avg_train_loss")
+best_val_loss = best_state.get("avg_val_loss")
+
+logger.info(f"Best checkpoint: epoch {best_epoch}, train loss: {best_train_loss}, validation loss: {best_val_loss}")
+
+
+#%%
 
 #%%
 
@@ -60,12 +72,3 @@ generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)
 print(train_dataset[idx]["answer"])
 print(generated_text)
 # %%
-
-
-best_state = load_best_checkpoint(LOCAL_MODEL_PATH, DEVICE)
-model.load_state_dict(best_state["model_state_dict"])
-best_epoch = best_state["epoch"]
-best_train_loss = best_state["avg_train_loss"]
-best_val_loss = best_state["avg_val_loss"]
-
-logger.info(f"Best checkpoint: epoch {best_epoch}, train loss: {best_train_loss:.4f}, validation loss: {best_val_loss}")

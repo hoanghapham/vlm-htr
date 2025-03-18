@@ -24,12 +24,13 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--model-name", "florence-2-base-ft-htr-line",
-#     "--input-dir", str(PROJECT_DIR/"data/poliskammare_line")
-# ])
+args = parser.parse_args([
+    "--model-name", "florence_base__ft_htr_line",
+    "--input-dir", str(PROJECT_DIR/"data/hovratt_line"),
+    "--use-split-info", "true"
+])
 
 # Setup paths
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -55,7 +56,7 @@ model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_cod
 
 # Load best checkpoint
 
-best_state = load_best_checkpoint(LOCAL_MODEL_PATH, DEVICE)
+best_state = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
 model.load_state_dict(best_state["model_state_dict"])
 best_epoch = best_state["epoch"]
 best_train_loss = best_state["avg_train_loss"]

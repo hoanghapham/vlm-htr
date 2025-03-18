@@ -64,7 +64,7 @@ class Trainer():
         lr_scheduler: LRScheduler,
         train_loader: DataLoader,
         val_loader: DataLoader,
-        n_epochs: int,
+        train_epochs: int,
         start_epoch: int,
         max_train_steps: int, 
         model_out_dir: str | Path,
@@ -80,7 +80,7 @@ class Trainer():
         self.train_loader = train_loader
         self.val_loader = val_loader
         
-        self.n_epochs = n_epochs
+        self.train_epochs = train_epochs
         self.start_epoch = start_epoch
         self.max_train_steps = max_train_steps
         self.load_last_checkpoint = load_last_checkpoint
@@ -100,8 +100,10 @@ class Trainer():
         if self.load_last_checkpoint:
             self._load_last_checkpoint()
         
+        self.logger.info(f"Start training from epoch {self.start_epoch}/{self.train_epochs}")
+
         # Train loop
-        for epoch in range(self.start_epoch, self.n_epochs + 1):
+        for epoch in range(self.start_epoch, self.train_epochs + 1):
             self.epochs.append(epoch)
             torch.cuda.empty_cache()
             self.model.train()
@@ -139,11 +141,11 @@ class Trainer():
             self.logger.info(f"Last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
 
             # Start training from the next epoch
-            self.star_epoch = last_cp["epoch"] + 1
+            self.start_epoch = last_cp["epoch"] + 1
 
     def _train_one_epoch(self, epoch: int):
         train_loss = 0
-        iterator = tqdm(self.train_loader, desc=f"Train epoch {epoch}/{self.n_epochs}", total=self.max_train_steps)
+        iterator = tqdm(self.train_loader, desc=f"Train epoch {epoch}/{self.train_epochs}", total=self.max_train_steps)
 
         for batch_idx, batch_data in enumerate(iterator):
             
@@ -176,7 +178,7 @@ class Trainer():
         val_loss = 0
 
         with torch.no_grad():
-            for batch_data in tqdm(self.val_loader, desc=f"Evaluate epoch {epoch}/{self.n_epochs}"):
+            for batch_data in tqdm(self.val_loader, desc=f"Evaluate epoch {epoch}/{self.train_epochs}"):
                 outputs = self.model(**batch_data)
                 loss = outputs.loss
                 val_loss += loss.item()
