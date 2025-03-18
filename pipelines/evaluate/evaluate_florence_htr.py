@@ -14,18 +14,16 @@ from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.logger import CustomLogger
 from src.train import load_best_checkpoint
-from src.file_tools import write_json_file, write_list_to_text_file, read_json_file, write_ndjson_file
+from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
 from src.tasks.utils import create_dset_from_paths
-
-
-
+from src.tasks.running_text import RunningTextDataset
 
 #%%
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
-# parser.add_argument("--output-dir", required=True)
+parser.add_argument("--use-split-info", default="false")
 args = parser.parse_args([])
 
 # args = parser.parse_args([
@@ -40,6 +38,7 @@ LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 
 INPUT_DIR = Path(args.input_dir)
+USE_SPLIT_INFO = args.use_split_info == "true"
 OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
 
 if not OUTPUT_DIR.exists():
@@ -59,29 +58,29 @@ model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_cod
 best_state = load_best_checkpoint(LOCAL_MODEL_PATH, DEVICE)
 model.load_state_dict(best_state["model_state_dict"])
 best_epoch = best_state["epoch"]
-best_loss = best_state["loss"]
-logger.info(f"Load best checkpoint: epoch {best_epoch}, loss: {best_loss:.4f}")
+best_train_loss = best_state["avg_train_loss"]
+best_val_loss = best_state["avg_val_loss"]
+
+logger.info(f"Best checkpoint: epoch {best_epoch}, train loss: {best_train_loss:.4f}, validation loss: {best_val_loss}")
 
 # Set model to evaluation mode
 model.eval()
 
 #%%
-logger = CustomLogger(f"eval__{MODEL_NAME}__{INPUT_DIR.stem}", log_to_local=True)
 # Load split info
 logger.info("Load test data")
-split_info_fp = INPUT_DIR / "split_info.json"
 
-# Load data to test
-if split_info_fp.exists():
+if USE_SPLIT_INFO:
+    split_info_fp = INPUT_DIR / "split_info.json"
     split_info = read_json_file(split_info_fp)
     test_page_names = [Path(path).stem for path in split_info["test"]]
     test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir() and path.name in test_page_names]
 else:
     test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir()]
 
-test_data = create_dset_from_paths(test_data_paths)
+test_data = create_dset_from_paths(test_data_paths, RunningTextDataset)
 
-logger.info(f"Test samples: {len(test_data)}")
+logger.info(f"Total test samples: {len(test_data)}")
 
 # Evaluate
 #%%
@@ -90,7 +89,7 @@ wer = WER()
 bow = BagOfWords()
 prompt = "<SwedishHTR>Print out the text in this image"
 
-logger.info(f"Test user prompt: {prompt}")
+logger.info(f"User prompt: {prompt}")
 
 cer_list = []
 wer_list = []
@@ -105,7 +104,7 @@ transcr_pred_list = []
 for inputs in tqdm(test_data, unit="line", total=len(test_data), desc="Evaluate"):
 
     image = inputs["image"]
-    transcription_gt = inputs["answer"]
+    transcr_gt = inputs["answer"]
     inputs = processor(text=prompt, images=image, return_tensors="pt").to(DEVICE)
 
     generated_ids = model.generate(
@@ -120,16 +119,16 @@ for inputs in tqdm(test_data, unit="line", total=len(test_data), desc="Evaluate"
     pred = processor.post_process_generation(output_text, task="<SwedishHTR>", image_size=image.size)
     # transcr_pred.append(pred)
 
-    cer_value = cer.compute(pred["<SwedishHTR>"], transcription_gt)["cer"]
-    wer_value = wer.compute(pred["<SwedishHTR>"], transcription_gt)["wer"]
-    bow_hits_value = bow.compute(pred["<SwedishHTR>"], transcription_gt)["bow_hits"]
-    bow_extras_value = bow.compute(pred["<SwedishHTR>"], transcription_gt)["bow_extras"]
+    cer_value = cer.compute(pred["<SwedishHTR>"], transcr_gt)["cer"]
+    wer_value = wer.compute(pred["<SwedishHTR>"], transcr_gt)["wer"]
+    bow_hits_value = bow.compute(pred["<SwedishHTR>"], transcr_gt)["bow_hits"]
+    bow_extras_value = bow.compute(pred["<SwedishHTR>"], transcr_gt)["bow_extras"]
 
     cer_list.append(cer_value)
     wer_list.append(wer_value)
     bow_hits_list.append(bow_hits_value)
     bow_extras_list.append(bow_extras_value)
-    transcr_gt_list.append(transcription_gt)
+    transcr_gt_list.append(transcr_gt)
     transcr_pred_list.append(pred)
 
 #%%
@@ -149,18 +148,17 @@ logger.info(f"Save result to {OUTPUT_DIR}")
 
 metrics_aggr = {
     "best_epoch": best_epoch,
-    "best_loss": best_loss,
+    "best_train_loss": best_train_loss,
+    "best_val_loss": best_val_loss,
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
     "bow_extras": avg_bow_extras
 }
 
-
 write_json_file(metrics_aggr, OUTPUT_DIR / "metrics_aggr.json")
 
 # Detailed results
-
 metrics_lists = {
     "cer": [str(val) for val in cer_list],
     "wer": [str(val) for val in wer_list],
@@ -170,11 +168,10 @@ metrics_lists = {
 
 write_json_file(metrics_lists, OUTPUT_DIR / "metrics_lists.json")
 
-# Predicted text
-write_ndjson_file(transcr_gt_list, OUTPUT_DIR / "ground_truth.json")
+# Write ground text for reference
+write_list_to_text_file(transcr_gt_list, OUTPUT_DIR / "ground_truth.txt")
 
+# Write prediction for reference
 pred_list = [line["<SwedishHTR>"] for line in transcr_pred_list]
-write_ndjson_file(pred_list, OUTPUT_DIR / "prediction.txt")
+write_list_to_text_file(pred_list, OUTPUT_DIR / "prediction.txt")
 
-
-# %%
