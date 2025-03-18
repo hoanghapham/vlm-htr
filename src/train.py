@@ -12,17 +12,21 @@ from tqdm import tqdm
 from src.file_tools import read_json_file, write_json_file
 
 
-def load_best_checkpoint(path: Path, device: str) -> dict:
-    cp_metric_paths = sorted(path.glob("*.json"))
-    cp_state_paths = sorted(path.glob("*.pt"))
+def load_best_checkpoint(path: Path, compare_metric: str = "avg_train_loss", device: str) -> dict:
 
-    best_loss = float("inf")
+    compare_metrics = ["avg_train_loss", "avg_val_loss"]
+    assert compare_metric in compare_metrics, f"compare_metrics must be one of {compare_metrics}"
+
+    cp_metric_paths = sorted(path.glob("*.json"))
+    cp_state_paths = [path.with_suffix(".pt") for path in cp_metric_paths]
+
+    best_value = float("inf")
     best_metrics = {}
     best_epoch_idx = 0
 
     for idx, cp_path in enumerate(cp_metric_paths):
         cp_metric = read_json_file(cp_path)
-        if cp_metric["loss"] < best_loss:
+        if cp_metric.get(compare_metric) is not None and cp_metric.get(compare_metric) < best_value:
             best_metrics = cp_metric
             best_epoch_idx = idx
     
@@ -34,14 +38,18 @@ def load_best_checkpoint(path: Path, device: str) -> dict:
 
 def load_last_checkpoint(path: Path, device: str) -> dict:
 
-    last_cp_state_path = list(reversed(sorted(path.glob("*.pt"))))
-    last_cp_metric_path = list(reversed(sorted(path.glob("*.json"))))
+    cp_state_paths = list(sorted(path.glob("*.pt")))
+    cp_metric_paths = [path.with_suffix(".json") for path in cp_state_paths]
 
-    if last_cp_state_path:
-        last_cp_path = last_cp_state_path[0]
-        last_cp_metric = read_json_file(last_cp_metric_path[0])
-        last_cp_state = torch.load(last_cp_path, weights_only=True, map_location=torch.device(device))
-        last_cp_state.update(last_cp_metric)
+    if cp_state_paths:
+        last_cp_state_path = cp_state_paths[-1]
+        last_cp_state = torch.load(last_cp_state_path, weights_only=True, map_location=torch.device(device))
+
+        last_cp_metric_path = cp_metric_paths[-1]
+        if last_cp_metric_path.exists():
+            last_cp_metric = read_json_file(last_cp_metric_path)
+            last_cp_state.update(last_cp_metric)
+
         return last_cp_state
     else:
         return None
@@ -98,7 +106,6 @@ class Trainer():
             torch.cuda.empty_cache()
             self.model.train()
 
-            
             # Train
             self._train_one_epoch(epoch)
             avg_train_loss = self.train_losses[-1]
@@ -129,7 +136,7 @@ class Trainer():
             
             last_epoch, last_train_loss, last_val_loss = \
                 last_cp.get("epoch"), last_cp.get("avg_train_loss"), last_cp.get("avg_val_loss"), 
-            self.logger.info(f"last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
+            self.logger.info(f"Last epoch: {last_epoch}, train loss: {last_train_loss}, validation loss: {last_val_loss}")
 
             # Start training from the next epoch
             self.star_epoch = last_cp["epoch"] + 1
