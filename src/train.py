@@ -21,11 +21,11 @@ class Checkpoint():
         model_state_dict,
         optimizer_state_dict,
     ):
-        self.epoch = epoch,
-        self.train_loss = train_loss,
-        self.val_loss = val_loss
-        self.model_state_dict = model_state_dict,
-        self.optimizer_state_dict = optimizer_state_dict
+        self.epoch                  = epoch
+        self.train_loss             = train_loss
+        self.val_loss               = val_loss
+        self.model_state_dict       = model_state_dict
+        self.optimizer_state_dict   = optimizer_state_dict
 
     def __str__(self):
         return f"Epoch: {self.epoch}, train loss: {self.train_loss}, validation loss: {self.val_loss}"
@@ -36,7 +36,7 @@ def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss",
     supported_metrics = ["avg_train_loss", "avg_val_loss"]
     assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
 
-    paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(model_path.glob("*.json"))}
+    paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(Path(model_path).glob("*.json"))}
 
     best_value = float("inf")
     best_cp_path = None
@@ -66,14 +66,15 @@ def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss",
         return None
     
 
-def load_last_checkpoint(path: Path, device: str) -> Checkpoint:
-
-    pt_paths = list(sorted(path.glob("*.pt")))
+def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
+    
+    pt_paths = list(sorted(Path(model_path).glob("*.pt")))
     json_paths = [path.with_suffix(".json") for path in pt_paths]
 
     if pt_paths:
         last_pt_path = pt_paths[-1]
         last_cp_states = torch.load(last_pt_path, weights_only=True, map_location=torch.device(device))
+        last_cp_metadata = {"epoch": len(pt_paths)}
 
         last_json_path = json_paths[-1]
         if last_json_path.exists():
