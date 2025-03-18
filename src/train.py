@@ -12,7 +12,7 @@ from tqdm import tqdm
 from src.file_tools import read_json_file, write_json_file
 
 
-def load_best_checkpoint(path: Path, compare_metric: str = "avg_train_loss", device: str) -> dict:
+def load_best_checkpoint(path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> dict:
 
     compare_metrics = ["avg_train_loss", "avg_val_loss"]
     assert compare_metric in compare_metrics, f"compare_metrics must be one of {compare_metrics}"
