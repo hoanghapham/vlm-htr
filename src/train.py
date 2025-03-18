@@ -46,7 +46,7 @@ def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss",
         metric_dict = read_json_file(json_path)
         
         if metric_dict.get(compare_metric) is not None:
-            if metric_dict.get(compare_metric) < best_value
+            if metric_dict.get(compare_metric) < best_value:
                 best_value = metric_dict.get(compare_metric)
                 best_cp_path = state_path
                 best_cp_metadata = metric_dict
