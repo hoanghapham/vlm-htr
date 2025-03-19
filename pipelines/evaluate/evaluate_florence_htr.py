@@ -24,7 +24,7 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
-parser.add_argument("--load-checkpoint", default="best", choices=["last", "best"])
+parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -58,14 +58,18 @@ model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_cod
 
 # Load checkpoint to evaluate
 
-if LOAD_CHECKPOINT == "last":
-    eval_cp = load_last_checkpoint(LOCAL_MODEL_PATH, DEVICE)
-elif LOAD_CHECKPOINT == "best":
-    eval_cp = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
+if LOAD_CHECKPOINT == "vanilla":
+    logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 
-model.load_state_dict(eval_cp.model_state_dict)
+else:
+    if LOAD_CHECKPOINT == "last":
+        eval_cp = load_last_checkpoint(LOCAL_MODEL_PATH, DEVICE)
+    elif LOAD_CHECKPOINT == "best":
+        eval_cp = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
 
-logger.info(f"Evaluate checkpoint: {eval_cp}")
+    model.load_state_dict(eval_cp.model_state_dict)
+    logger.info(f"Evaluate checkpoint: {eval_cp}")
+
 
 # Set model to evaluation mode
 model.eval()
