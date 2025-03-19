@@ -21,4 +21,5 @@ python pipelines/evaluate/evaluate_trocr_htr.py \
     --model-name trocr_base__ft_vanilla \
     --input-dir $PROJECT_DIR/data/hovratt_line \
     --use-split-info false \
+    --batch-size 15 \
     --load-checkpoint vanilla

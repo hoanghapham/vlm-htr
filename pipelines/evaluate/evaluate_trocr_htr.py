@@ -27,15 +27,15 @@ parser.add_argument("--input-dir", required=True)
 parser.add_argument("--batch-size", default=15)
 parser.add_argument("--use-split-info", default="false")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--model-name", "trocr_base__ft_vanilla",
-    "--input-dir", str(PROJECT_DIR / "data/hovratt_line"),
-    "--use-split-info", "false",
-    "--load-checkpoint", "vanilla",
-    "--batch-size", "2"
-])
+# args = parser.parse_args([
+#     "--model-name", "trocr_base__ft_vanilla",
+#     "--input-dir", str(PROJECT_DIR / "data/hovratt_line"),
+#     "--use-split-info", "false",
+#     "--load-checkpoint", "vanilla",
+#     "--batch-size", "2"
+# ])
 
 
 MODEL_NAME      = args.model_name
@@ -91,7 +91,7 @@ if USE_SPLIT_INFO:
 else:
     test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir()]
 
-test_data = create_dset_from_paths(test_data_paths, RunningTextDataset).select(range(10))
+test_data = create_dset_from_paths(test_data_paths, RunningTextDataset)
 
 collate_fn = create_trocr_collate_fn(processor, DEVICE)
 test_loader = DataLoader(test_data, collate_fn=collate_fn, batch_size=BATCH_SIZE)
