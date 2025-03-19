@@ -132,6 +132,7 @@ class Trainer():
         self.logger = logger
         self.tsb_logger = tsb_logger
         self.logging_interval = logging_interval
+        self.step_idx_spaces = 7
 
     def train(self):
         total_train_loss = 0
@@ -224,7 +225,8 @@ class Trainer():
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }
-        torch.save(checkpoint_states, self.model_out_dir / f"checkpoint_epoch_{step_idx:04d}.pt")
+        step_idx_str = str(step_idx).zfill(self.step_idx_spaces)
+        torch.save(checkpoint_states, self.model_out_dir / f"checkpoint_step_{step_idx_str}.pt")
         
         # Save dict
         checkpoint_metrics = dict(
@@ -232,4 +234,4 @@ class Trainer():
             train_loss  = train_loss,
             val_loss    = val_loss
         )
-        write_json_file(checkpoint_metrics, self.model_out_dir / f"checkpoint_epoch_{step_idx:04d}.json")
+        write_json_file(checkpoint_metrics, self.model_out_dir / f"checkpoint_step_{step_idx_str}.json")

@@ -22,7 +22,7 @@ cd $PROJECT_DIR
 python pipelines/train/finetune_florence_htr.py \
     --data-dir $PROJECT_DIR/data/polis_line \
     --model-name florence_base__ft_htr_line \
-    --num-train-epochs 3 \
-    --max-train-steps 100000 \
+    --num-train-epochs 4 \
+    --max-train-steps 120000 \
     --batch-size 2 \
     --logging-interval 3000
