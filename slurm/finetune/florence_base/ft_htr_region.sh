@@ -3,7 +3,6 @@
 #SBATCH -A uppmax2020-2-2
 #SBATCH -M snowy
 #SBATCH -p node
-#SBATCH -C mem512GB
 #SBATCH -N 1
 #SBATCH -t 3-00:00
 #SBATCH -J finetune/florence_base/ft_htr_region
