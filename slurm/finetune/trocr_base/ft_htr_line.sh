@@ -19,6 +19,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_trocr_htr.py \
+    --data-dir $PROJECT_DIR/data/polis_line \
     --model-name trocr_base__ft_htr_line \
     --num-train-epochs 4 \
     --max-train-steps 26000 \
