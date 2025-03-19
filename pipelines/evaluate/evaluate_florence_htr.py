@@ -25,6 +25,7 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--user-prompt", required=True, default="<SwedishHTR>Print out the text in this image")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -42,6 +43,7 @@ REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
 INPUT_DIR = Path(args.input_dir)
 LOAD_CHECKPOINT = args.load_checkpoint
 USE_SPLIT_INFO = args.use_split_info == "true"
+USER_PROMPT = args.user_prompt
 OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
 
 if not OUTPUT_DIR.exists():
@@ -96,9 +98,8 @@ logger.info(f"Total test samples: {len(test_data)}")
 cer = CER()
 wer = WER()
 bow = BagOfWords()
-prompt = "<SwedishHTR>Print out the text in this image"
 
-logger.info(f"User prompt: {prompt}")
+logger.info(f"User prompt: {USER_PROMPT}")
 
 cer_list = []
 wer_list = []
@@ -114,7 +115,7 @@ for inputs in tqdm(test_data, total=len(test_data), desc="Evaluate"):
 
     image = inputs["image"]
     troundtruth = inputs["answer"]
-    inputs = processor(text=prompt, images=image, return_tensors="pt").to(DEVICE)
+    inputs = processor(text=USER_PROMPT, images=image, return_tensors="pt").to(DEVICE)
 
     generated_ids = model.generate(
         input_ids=inputs["input_ids"],
