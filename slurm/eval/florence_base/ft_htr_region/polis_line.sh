@@ -14,7 +14,7 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
+PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_florence_htr.py \

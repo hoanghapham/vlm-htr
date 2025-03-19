@@ -15,8 +15,8 @@
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 
-INPUT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models/data/poliskammare"
-PROJECT_DIR="/proj/uppmax2024-2-24/hapham/visual-language-models"
+INPUT_DIR="/proj/uppmax2024-2-24/hapham/vlm/data/poliskammare"
+PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
