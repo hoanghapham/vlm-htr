@@ -16,24 +16,24 @@ class Checkpoint():
     def __init__(
         self,
         step_idx: int               = None,
-        train_loss: float           = None,
-        val_loss: float             = None,
+        avg_train_loss: float           = None,
+        avg_val_loss: float             = None,
         model_state_dict: dict      = None,
         optimizer_state_dict: dict  = None,
     ):
         self.step_idx               = step_idx
-        self.train_loss             = train_loss
-        self.val_loss               = val_loss
+        self.avg_train_loss         = avg_train_loss
+        self.avg_val_loss           = avg_val_loss
         self.model_state_dict       = model_state_dict
         self.optimizer_state_dict   = optimizer_state_dict
 
     def __str__(self):
-        return f"Checkpoint: {self.step_idx}, train loss: {self.train_loss}, validation loss: {self.val_loss}"
+        return f"Checkpoint: {self.step_idx}, avg. train loss: {self.avg_train_loss}, avg. validation loss: {self.avg_val_loss}"
 
 
-def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> Checkpoint:
+def load_best_checkpoint(model_path: Path, compare_metric: str = "val_loss", device: str = "cpu") -> Checkpoint:
 
-    supported_metrics = ["avg_epoch_loss", "avg_val_loss"]
+    supported_metrics = ["train_loss", "val_loss"]
     assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
 
     paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(Path(model_path).glob("*.json"))}
@@ -54,8 +54,8 @@ def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss",
         best_cp_states = torch.load(best_cp_path, weights_only=True, map_location=torch.device(device))
         return Checkpoint(
             step_idx               = best_cp_metadata.get("step_idx"),
-            train_loss             = best_cp_metadata.get("train_loss"),
-            val_loss               = best_cp_metadata.get("val_loss"),
+            avg_train_loss         = best_cp_metadata.get("avg_train_loss"),
+            avg_val_loss           = best_cp_metadata.get("avg_val_loss"),
             model_state_dict       = best_cp_states.get("model_state_dict"),
             optimizer_state_dict   = best_cp_states.get("optimizer_state_dict"),
         )
@@ -72,7 +72,8 @@ def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
     if pt_paths:
         last_pt_path = pt_paths[-1]
         last_cp_states = torch.load(last_pt_path, weights_only=True, map_location=torch.device(device))
-        last_cp_metadata = {"epoch": len(pt_paths)}
+        last_cp_step_idx = int(last_pt_path.stem.split("__")[-1])
+        last_cp_metadata = {"step_idx": last_cp_step_idx}
 
         last_json_path = json_paths[-1]
         if last_json_path.exists():
@@ -80,8 +81,8 @@ def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
 
         return Checkpoint(
             step_idx                = last_cp_metadata.get("step_idx"),
-            train_loss              = last_cp_metadata.get("train_loss"),
-            val_loss                = last_cp_metadata.get("val_loss"),
+            avg_train_loss          = last_cp_metadata.get("avg_train_loss"),
+            avg_val_loss            = last_cp_metadata.get("avg_val_loss"),
             model_state_dict        = last_cp_states.get("model_state_dict"),
             optimizer_state_dict    = last_cp_states.get("optimizer_state_dict")
         )
@@ -160,17 +161,19 @@ class Trainer():
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
             self.model.train()
+            is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == self.max_train_steps
 
             # Train
             for idx, batch_data in enumerate(self.train_loader):
-                self.logger.info(f"Train step {step_counter}/{self.max_train_steps}")
+                if is_logging_point:
+                    self.logger.info(f"Train step {step_counter}/{self.max_train_steps}")
+
                 step_loss = self._train_one_step(batch_data)
                 total_train_loss += step_loss
 
-                avg_train_loss = total_train_loss / step_counter
-
-                if (step_counter % self.logging_interval == 0) or step_counter == self.max_train_steps:
-                    avg_val_loss = self._evaluate(step_counter)
+                if is_logging_point:
+                    avg_train_loss  = total_train_loss / step_counter
+                    avg_val_loss    = self._evaluate(step_counter)
                     self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
                     self.logger.info(f"Saved checkpoint {step_counter}")
 
@@ -219,7 +222,7 @@ class Trainer():
         # self.val_losses.append(avg_val_loss)
         return avg_val_loss
 
-    def _save_checkpoint(self, step_idx: int, train_loss: float, val_loss: float):
+    def _save_checkpoint(self, step_idx: int, avg_train_loss: float, avg_val_loss: float):
         # Save pt
         checkpoint_states = {
             'model_state_dict': self.model.state_dict(),
@@ -230,8 +233,8 @@ class Trainer():
         
         # Save dict
         checkpoint_metrics = dict(
-            step_idx    = step_idx,
-            train_loss  = train_loss,
-            val_loss    = val_loss
+            step_idx        = step_idx,
+            avg_train_loss  = avg_train_loss,
+            avg_val_loss    = avg_val_loss,
         )
         write_json_file(checkpoint_metrics, self.model_out_dir / f"checkpoint_step_{step_idx_str}.json")
