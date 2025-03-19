@@ -110,12 +110,12 @@ bow_extras_list = []
 gt_list = []
 pred_list = []
 
-current_idx = 0
+range_start = 0
+range_end = BATCH_SIZE
 
 for inputs in tqdm(test_loader, desc="Evaluate"):
 
-    current_idx += BATCH_SIZE
-    groundtruths = [data["answer"] for data in test_data.select(range(current_idx))]
+    groundtruths = [data["answer"] for data in test_data.select(range(range_start, range_end))]
 
     generated_ids = model.generate(inputs=inputs["pixel_values"])
     preds = processor.batch_decode(generated_ids, skip_special_tokens=True)
@@ -133,6 +133,9 @@ for inputs in tqdm(test_loader, desc="Evaluate"):
         bow_extras_list.append(bow_extras_value)
         gt_list.append(gt)
         pred_list.append(pred)
+    
+    range_start += BATCH_SIZE
+    range_end += BATCH_SIZE
 
 
 # %%
