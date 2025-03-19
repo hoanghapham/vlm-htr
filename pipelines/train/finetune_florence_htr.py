@@ -53,7 +53,7 @@ if not MODEL_OUT_DIR.exists():
 
 # Setup loggers
 logger = CustomLogger(MODEL_NAME, log_to_local=True)
-tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / f"logs_tensorboard/{MODEL_NAME}")
+tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
 
 #%%
 # Load model
