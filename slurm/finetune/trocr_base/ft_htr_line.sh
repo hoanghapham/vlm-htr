@@ -6,8 +6,8 @@
 #SBATCH -N 1
 #SBATCH -t 3-00:00
 #SBATCH -J finetune/trocr_base
-#SBATCH -o logs_uppmax/finetune/trocr_base/finetune__trocr_base__ft_htr_line.out
-#SBATCH -e logs_uppmax/finetune/trocr_base/finetune__trocr_base__ft_htr_line.err
+#SBATCH -o logs_uppmax/finetune/trocr_base/ft_htr_line.out
+#SBATCH -e logs_uppmax/finetune/trocr_base/ft_htr_line.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -20,6 +20,7 @@ cd $PROJECT_DIR
 
 python pipelines/train/finetune_trocr_htr.py \
     --model-name trocr_base__ft_htr_line \
-    --train-epochs 5 \
-    --use-data-pct 0.5 \
-    --batch-size 15
+    --num-train-epochs 4 \
+    --max-train-steps 26000 \
+    --batch-size 10 \
+    --logging-interval 2000

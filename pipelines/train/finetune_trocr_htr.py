@@ -21,29 +21,31 @@ from src.logger import CustomLogger
 
 #%%
 parser = ArgumentParser()
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--train-epochs", default=10)
+parser.add_argument("--num-train-epochs", default=5)
+parser.add_argument("--max-train-steps", default=2000)
+parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--use-data-pct", default=1)
 args = parser.parse_args()
 
 # Constants
-DATA_DIR        = PROJECT_DIR / "data/polis_line"
-MODEL_NAME      = args.model_name
-MODEL_OUT_DIR   = PROJECT_DIR / "models" / MODEL_NAME
+MODEL_NAME          = args.model_name
+BATCH_SIZE          = int(args.batch_size)
+NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
+MAX_TRAIN_STEPS     = int(args.max_train_steps)
+LOGGING_INTERVAL    = int(args.logging_interval)
+DATA_DIR            = Path(args.data_dir)
+MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
 
-BATCH_SIZE = int(args.batch_size)
-USE_DATA_PCT = float(args.use_data_pct)
-TRAIN_EPOCHS = int(args.train_epochs)
+logger = CustomLogger(MODEL_NAME, log_to_local=True, log_path=PROJECT_DIR / "logs")
+tsb_logger = SummaryWriter(log_dir=PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
+
 
 #%%
-
-logger = CustomLogger(MODEL_NAME, log_to_local=True, log_path=PROJECT_DIR / "logs")
-tsb_logger = SummaryWriter(log_dir=PROJECT_DIR / "logs_tensorboard" / MODEL_NAME )
-
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
@@ -94,26 +96,21 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0)
 
-
+logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}")
 #%%
 # Setup training
 torch.manual_seed(42)
-MAX_TRAIN_STEPS = int(USE_DATA_PCT * len(train_loader))
 
 # Set optimizer & scheduler
 # Scheduler & optimizer config: https://github.com/microsoft/unilm/tree/master/trocr#fine-tuning-on-iam
 
-optimizer = AdamW(
-    model.parameters(), 
-    lr=2e-5, 
-    weight_decay=0.0001,
-)
+optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.0001)
 
 lr_scheduler = get_scheduler(
     name="inverse_sqrt", 
     optimizer=optimizer,
     num_warmup_steps=0, 
-    num_training_steps=TRAIN_EPOCHS * len(train_loader),
+    num_training_steps=NUM_TRAIN_EPOCHS * len(train_loader),
     
     # inverse_sqrt params. See https://github.com/facebookresearch/fairseq/blob/main/fairseq/optim/lr_scheduler/inverse_squa
     scheduler_specific_kwargs=dict(
@@ -122,7 +119,6 @@ lr_scheduler = get_scheduler(
     )
 )
 
-logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 logger.info(f"Start training")
 
 #%%
@@ -132,13 +128,12 @@ trainer = Trainer(
     lr_scheduler         = lr_scheduler,
     train_loader         = train_loader,
     val_loader           = val_loader,
-    train_epochs         = TRAIN_EPOCHS,
-    start_epoch          = 1,
+    num_train_epochs     = NUM_TRAIN_EPOCHS,
     max_train_steps      = MAX_TRAIN_STEPS,
+    start_from_last_cp   = True,
     model_out_dir        = MODEL_OUT_DIR,
     logger               = logger,
     tsb_logger           = tsb_logger,
-    load_last_checkpoint = True
+    logging_interval     = LOGGING_INTERVAL
 )
-
 trainer.train()
