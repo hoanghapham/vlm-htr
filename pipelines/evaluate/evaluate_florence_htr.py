@@ -57,10 +57,8 @@ processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=T
 model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 # Load checkpoint to evaluate
-
 if LOAD_CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
-
 else:
     if LOAD_CHECKPOINT == "last":
         eval_cp = load_last_checkpoint(LOCAL_MODEL_PATH, DEVICE)
@@ -75,7 +73,7 @@ else:
 model.eval()
 
 #%%
-# Load split info
+# Load test data
 logger.info("Load test data")
 
 if USE_SPLIT_INFO:
@@ -103,16 +101,16 @@ cer_list = []
 wer_list = []
 bow_hits_list = []
 bow_extras_list = []
-transcr_gt_list = []
-transcr_pred_list = []
+gt_list = []
+pred_list = []
 
 
 # Can only process one image at a time due to post_process_generation task requiring image size,
 # but image size varies
-for inputs in tqdm(test_data, unit="line", total=len(test_data), desc="Evaluate"):
+for inputs in tqdm(test_data, total=len(test_data), desc="Evaluate"):
 
     image = inputs["image"]
-    transcr_gt = inputs["answer"]
+    troundtruth = inputs["answer"]
     inputs = processor(text=prompt, images=image, return_tensors="pt").to(DEVICE)
 
     generated_ids = model.generate(
@@ -123,21 +121,22 @@ for inputs in tqdm(test_data, unit="line", total=len(test_data), desc="Evaluate"
         num_beams=3,
     )
 
-    output_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0] # 0 because current "batch" size is 1
-    pred = processor.post_process_generation(output_text, task="<SwedishHTR>", image_size=image.size)
-    # transcr_pred.append(pred)
+    output = processor.batch_decode(generated_ids, skip_special_tokens=False)[0] # 0 because current "batch" size is 1
+    pred = processor.post_process_generation(output, task="<SwedishHTR>", image_size=image.size)
 
-    cer_value = cer.compute(pred["<SwedishHTR>"], transcr_gt)["cer"]
-    wer_value = wer.compute(pred["<SwedishHTR>"], transcr_gt)["wer"]
-    bow_hits_value = bow.compute(pred["<SwedishHTR>"], transcr_gt)["bow_hits"]
-    bow_extras_value = bow.compute(pred["<SwedishHTR>"], transcr_gt)["bow_extras"]
+    # Calcualte metrics
+    cer_value = cer.compute(pred["<SwedishHTR>"], troundtruth)["cer"]
+    wer_value = wer.compute(pred["<SwedishHTR>"], troundtruth)["wer"]
+    bow_hits_value = bow.compute(pred["<SwedishHTR>"], troundtruth)["bow_hits"]
+    bow_extras_value = bow.compute(pred["<SwedishHTR>"], troundtruth)["bow_extras"]
 
+    # Append results
     cer_list.append(cer_value)
     wer_list.append(wer_value)
     bow_hits_list.append(bow_hits_value)
     bow_extras_list.append(bow_extras_value)
-    transcr_gt_list.append(transcr_gt)
-    transcr_pred_list.append(pred)
+    gt_list.append(troundtruth)
+    pred_list.append(pred)
 
 #%%
 avg_cer = float(sum(cer_list))
@@ -177,9 +176,9 @@ metrics_lists = {
 write_json_file(metrics_lists, OUTPUT_DIR / "metrics_lists.json")
 
 # Write ground text for reference
-write_list_to_text_file(transcr_gt_list, OUTPUT_DIR / "ground_truth.txt")
+write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-pred_list = [line["<SwedishHTR>"] for line in transcr_pred_list]
+pred_list = [line["<SwedishHTR>"] for line in pred_list]
 write_list_to_text_file(pred_list, OUTPUT_DIR / "prediction.txt")
 
