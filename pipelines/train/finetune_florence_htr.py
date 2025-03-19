@@ -23,18 +23,30 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--train-epochs", default=5)
+parser.add_argument("--num-train-epochs", default=5)
+parser.add_argument("--max-train-steps", default=2000)
+parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--use-data-pct", default=0.5)
 args = parser.parse_args()
 
+# args = parser.parse_args([
+#     "--data-dir", str(PROJECT_DIR / "data/polis_line"),
+#     "--model-name", "demo",
+#     "--num-train-epochs", "5",
+#     "--max-train-steps", "11",
+#     "--batch-size", "2",
+#     "--logging-interval", "3"
+# ])
+
+
 # Setup constant values
-MODEL_NAME      = args.model_name
-BATCH_SIZE      = int(args.batch_size)
-TRAIN_EPOCHS    = int(args.train_epochs)
-DATA_DIR        = Path(args.data_dir)
-USE_DATA_PCT    = float(args.use_data_pct)
-MODEL_OUT_DIR   = PROJECT_DIR / "models" / MODEL_NAME
+MODEL_NAME          = args.model_name
+BATCH_SIZE          = int(args.batch_size)
+NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
+MAX_TRAIN_STEPS     = int(args.max_train_steps)
+LOGGING_INTERVAL    = int(args.logging_interval)
+DATA_DIR            = Path(args.data_dir)
+MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
@@ -43,6 +55,7 @@ if not MODEL_OUT_DIR.exists():
 logger = CustomLogger(MODEL_NAME, log_to_local=True)
 tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / f"logs_tensorboard/{MODEL_NAME}")
 
+#%%
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
@@ -60,8 +73,8 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code=True, revision='refs/pr/6'
 )
 
-# Unfreeze vision params
-for param in model.vision_tower.parameters():
+# Unfreeze all params
+for param in model.parameters():
     param.is_trainable = True
 
 
@@ -70,9 +83,8 @@ for param in model.vision_tower.parameters():
 logger.info("Load data")
 
 # Collect page lists
-local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
-
 # Subset train & validate set
+local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
 split_info_path = DATA_DIR / "split_info.json"
 
 if not split_info_path.exists():
@@ -80,11 +92,9 @@ if not split_info_path.exists():
 
 split_info = read_json_file(split_info_path)
 train_paths = [path for path in local_path_list if path.stem in split_info["train"]]
-val_paths = [path for path in local_path_list if path.stem in split_info["validation"]]
-
-# Create dataset object
-train_dataset = create_dset_from_paths(train_paths, RunningTextDataset)
-val_dataset = create_dset_from_paths(val_paths, RunningTextDataset)
+val_paths   = [path for path in local_path_list if path.stem in split_info["validation"]]
+train_dataset   = create_dset_from_paths(train_paths, RunningTextDataset)
+val_dataset     = create_dset_from_paths(val_paths, RunningTextDataset)
 
 # Create data loader
 
@@ -96,11 +106,10 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0)
 
-
+logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 #%%
 # Setup training
-MAX_TRAIN_STEPS = int(USE_DATA_PCT * len(train_loader))
-TOTAL_TRAIN_STEPS = TRAIN_EPOCHS * len(train_loader)
+TOTAL_TRAIN_STEPS = NUM_TRAIN_EPOCHS * len(train_loader)
 
 optimizer = AdamW(model.parameters(), lr=1e-6)
 lr_scheduler = get_scheduler(
@@ -113,7 +122,7 @@ lr_scheduler = get_scheduler(
 # Load state
 #%%
 # Train
-logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
+
 logger.info(f"Start training")
 
 trainer = Trainer(
@@ -122,13 +131,15 @@ trainer = Trainer(
     lr_scheduler         = lr_scheduler,
     train_loader         = train_loader,
     val_loader           = val_loader,
-    train_epochs         = TRAIN_EPOCHS,
-    start_epoch          = 1,
+    num_train_epochs     = NUM_TRAIN_EPOCHS,
     max_train_steps      = MAX_TRAIN_STEPS,
+    start_from_last_cp   = True,
     model_out_dir        = MODEL_OUT_DIR,
     logger               = logger,
     tsb_logger           = tsb_logger,
-    load_last_checkpoint = True
+    logging_interval     = LOGGING_INTERVAL
 )
 
 trainer.train()
+
+# %%
