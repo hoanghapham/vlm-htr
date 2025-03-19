@@ -135,7 +135,7 @@ for inputs in tqdm(test_loader, desc="Evaluate"):
         pred_list.append(pred)
     
     range_start += BATCH_SIZE
-    range_end += BATCH_SIZE
+    range_end = min(len(test_data), range_end + BATCH_SIZE)
 
 
 # %%
