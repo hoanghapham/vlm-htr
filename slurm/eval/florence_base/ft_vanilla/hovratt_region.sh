@@ -3,6 +3,7 @@
 #SBATCH -A uppmax2020-2-2
 #SBATCH -M snowy
 #SBATCH -p node
+#SBATCH -C mem256GB
 #SBATCH -N 1
 #SBATCH -t 24:00:00
 #SBATCH -J eval/florence_base/ft_vanilla/hovratt_region
