@@ -13,12 +13,12 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
-from src.logger import CustomLogger
-from src.train import load_best_checkpoint, load_last_checkpoint
-from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
+from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
 from src.tasks.utils import create_dset_from_paths
 from src.tasks.running_text import RunningTextDataset, create_trocr_collate_fn
 
+from src.logger import CustomLogger
+from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
 #%%
 
 parser = ArgumentParser()
@@ -61,6 +61,8 @@ processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
 model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
 
 # Load checkpoint to evaluate
+eval_cp = Checkpoint()
+
 if LOAD_CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:

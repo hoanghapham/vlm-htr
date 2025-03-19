@@ -15,11 +15,11 @@ from src.file_tools import read_json_file, write_json_file
 class Checkpoint():
     def __init__(
         self,
-        epoch,
-        train_loss,
-        val_loss,
-        model_state_dict,
-        optimizer_state_dict,
+        epoch: int = None,
+        train_loss: float = None,
+        val_loss: float = None,
+        model_state_dict: dict = None,
+        optimizer_state_dict: dict = None,
     ):
         self.epoch                  = epoch
         self.train_loss             = train_loss
