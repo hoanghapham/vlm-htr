@@ -13,7 +13,7 @@
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 
 
-source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
+source activate /crex/proj/uppmax2024-2-24/hapham/envs/htrflow
 
 INPUT_DIR="/proj/uppmax2024-2-24/hapham/vlm/data/hovratt"
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
