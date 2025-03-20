@@ -37,11 +37,11 @@ steps:
 # Export to Alto and Page XML
 - step: Export
   settings:
-    dest: output/alto
+    dest: output/htrflow/polis_text_recognition/alto
     format: alto
 - step: Export
   settings:
-    dest: output/page
+    dest: output/htrflow/polis_text_recognition/page
     format: page
 
 # Sets label format to regionX_lineY_wordZ

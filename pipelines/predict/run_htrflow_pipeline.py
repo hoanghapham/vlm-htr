@@ -1,45 +1,57 @@
 #%%
+import sys
+import yaml
+import time
+from pathlib import Path
+from argparse import ArgumentParser
+
 from htrflow.pipeline.pipeline import Pipeline
 from htrflow.volume.volume import Collection
 from htrflow.pipeline.steps import auto_import
-import yaml
-from pathlib import Path
-from argparse import ArgumentParser
-import sys
-import time
 
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.utils.file_tools import list_files
-from src.utils.logger import CustomLogger
+from src.file_tools import list_files, read_json_file
+from src.logger import CustomLogger
 
 parser = ArgumentParser()
-parser.add_argument("--input_dir", "-i", required=True)
-parser.add_argument("--config_path", "-c", required=True)
+parser.add_argument("--input-dir", "-i", required=True)
+parser.add_argument("--split-info-fp", "-s", required=False)
+parser.add_argument("--config-path", "-c", required=True)
 args = parser.parse_args()
 
 logger = CustomLogger("HTRFlow", log_to_local=True)
 
 # Parse args
-input_dir = Path(args.input_dir)
-config_path = Path(args.config_path)
+INPUT_DIR       = Path(args.input_dir)
+CONFIG_PATH     = Path(args.config_path)
+
 
 #%%
 # Load the YAML configuration.
-with open(config_path, "r") as f:
+with open(CONFIG_PATH, "r") as f:
     config = yaml.safe_load(f)
+
+# Load split info
+split_info = None
+
+if args.split_info_fp:
+    split_info = read_json_file(args.split_info_fp)
 
 #%%
 # Create a pipeline instance from the loaded configuration.
 pipe = Pipeline.from_config(config)
 
 # Create collection
-image_files = list_files(input_dir, extensions=[".tif"])
-parents: list[Path] = list(set([tup[0] for tup in image_files]))
-existing_xml_files = [name for (_, name) in list_files(PROJECT_DIR / "output", extensions=[".xml"])]
+image_files = list_files(INPUT_DIR, extensions=[".tif"])
 
-logger.info(f"Found {len(parents)} parent dirs, {len(image_files)} images")
+if split_info:
+    image_files = [tup for tup in image_files if tup[1].stem in split_info["test"]]
+
+# existing_xml_files  = [name for (_, name) in list_files(PROJECT_DIR / "output", extensions=[".xml"])]
+
+logger.info(f"Total images to be processed: {len(image_files),}")
 
 # Iterate through n images at a time
 
@@ -52,7 +64,7 @@ for i in range(total_images // batch_size):
 
     images = [
         str(parent / file) for parent, file in image_files[start:end] 
-        if str(Path(file).with_suffix(".xml")) not in existing_xml_files
+        # if str(Path(file).with_suffix(".xml")) not in existing_xml_files
     ]
 
     logger.info(f"Process images {start} - {end}")
@@ -63,7 +75,7 @@ for i in range(total_images // batch_size):
         collection = Collection(images)
         logger.info(f"Create collection: {(time.time()-t0) / 60:.2f} minutes")
 
-        logger.info("Run pipeline")
+        # logger.info("Run pipeline")
         t0 = time.time()
         new_collection = pipe.run(collection)
         logger.info(f"Inference time: {(time.time()-t0) / 60:.2f} minutes")
