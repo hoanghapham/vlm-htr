@@ -22,5 +22,4 @@ cd $PROJECT_DIR
 
 python pipelines/predict/run_htrflow_pipeline.py \
     --input-dir $INPUT_DIR \
-    --split-info-fp $PROJECT_DIR/data/hovratt_line/split_info.json \
     --config-path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml

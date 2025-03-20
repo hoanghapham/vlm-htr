@@ -16,7 +16,7 @@ from src.logger import CustomLogger
 
 parser = ArgumentParser()
 parser.add_argument("--input-dir", required=True)
-parser.add_argument("--split-info-fp", required=True)
+parser.add_argument("--split-info-fp", required=False)
 parser.add_argument("--config-path", required=True)
 args = parser.parse_args()
 
