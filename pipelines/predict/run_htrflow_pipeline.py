@@ -7,9 +7,8 @@ from argparse import ArgumentParser
 
 from htrflow.pipeline.pipeline import Pipeline
 from htrflow.volume.volume import Collection
-from htrflow.pipeline.steps import auto_import
 
-PROJECT_DIR = Path(__file__).parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, read_json_file
