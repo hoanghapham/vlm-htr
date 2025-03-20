@@ -58,7 +58,7 @@ logger.info(f"Total images to be processed: {len(image_files)}")
 batch_size = 100
 total_images = len(image_files)
 
-for i in range(total_images // batch_size):
+for i in range((total_images // batch_size) + 1):
     start = i * batch_size
     end = min((i+1) * batch_size, total_images)
 
