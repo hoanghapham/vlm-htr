@@ -18,6 +18,7 @@ parser = ArgumentParser()
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--split-info-fp", required=False)
 parser.add_argument("--config-path", required=True)
+parser.add_argument("--img-extension", required=True, default=".tif")
 args = parser.parse_args()
 
 logger = CustomLogger("HTRFlow", log_to_local=True)
@@ -43,14 +44,14 @@ if args.split_info_fp:
 pipe = Pipeline.from_config(config)
 
 # Create collection
-image_files = list_files(INPUT_DIR, extensions=[".tif"])
+image_files = list_files(INPUT_DIR, extensions=[args.img_extension])
 
 if split_info:
     image_files = [tup for tup in image_files if tup[1].stem in split_info["test"]]
 
 # existing_xml_files  = [name for (_, name) in list_files(PROJECT_DIR / "output", extensions=[".xml"])]
 
-logger.info(f"Total images to be processed: {len(image_files),}")
+logger.info(f"Total images to be processed: {len(image_files)}")
 
 # Iterate through n images at a time
 

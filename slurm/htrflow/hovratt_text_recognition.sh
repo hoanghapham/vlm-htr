@@ -22,4 +22,5 @@ cd $PROJECT_DIR
 
 python pipelines/predict/run_htrflow_pipeline.py \
     --input-dir $INPUT_DIR \
-    --config-path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml
+    --config-path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml \
+    --img-extension .jpg
