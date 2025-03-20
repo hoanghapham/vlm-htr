@@ -15,9 +15,9 @@ from src.file_tools import list_files, read_json_file
 from src.logger import CustomLogger
 
 parser = ArgumentParser()
-parser.add_argument("--input-dir", "-i", required=True)
-parser.add_argument("--split-info-fp", "-s", required=False)
-parser.add_argument("--config-path", "-c", required=True)
+parser.add_argument("--input-dir", required=True)
+parser.add_argument("--split-info-fp", required=True)
+parser.add_argument("--config-path", required=True)
 args = parser.parse_args()
 
 logger = CustomLogger("HTRFlow", log_to_local=True)

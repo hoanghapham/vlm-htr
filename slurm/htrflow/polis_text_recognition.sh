@@ -23,4 +23,4 @@ cd $PROJECT_DIR
 python pipelines/predict/run_htrflow_pipeline.py \
     --config_path $PROJECT_DIR/configs/htrflow/polis_text_recognition.yaml \
     --input_dir $INPUT_DIR \
-    --split-info-fp $PROJECT_DIR/data/polis_line/split_info.json \
+    --split-info-fp $PROJECT_DIR/data/polis_line/split_info.json

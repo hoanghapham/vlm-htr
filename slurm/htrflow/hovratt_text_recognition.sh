@@ -21,6 +21,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/predict/run_htrflow_pipeline.py \
-    --config_path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml \
-    --input_dir $INPUT_DIR \
+    --input-dir $INPUT_DIR \
     --split-info-fp $PROJECT_DIR/data/hovratt_line/split_info.json \
+    --config-path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml
