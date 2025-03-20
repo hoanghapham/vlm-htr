@@ -20,7 +20,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python workpad/run_htrflow.py \
+python workpad/run_htrflow_pipeline.py \
     --input_dir $INPUT_DIR \
     --split-info-fp $PROJECT_DIR/data/hovratt_line/split_info.json \
     --config_path $PROJECT_DIR/configs/htrflow/hovratt_line_segmentation.yaml
