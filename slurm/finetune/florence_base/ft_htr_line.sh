@@ -24,4 +24,4 @@ python pipelines/train/finetune_florence_htr.py \
     --num-train-epochs 4 \
     --max-train-steps 120000 \
     --batch-size 2 \
-    --logging-interval 3000
+    --logging-interval 2000

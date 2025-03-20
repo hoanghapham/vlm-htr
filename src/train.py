@@ -104,7 +104,7 @@ class Trainer():
         logger: Logger,
         tsb_logger: SummaryWriter,
         max_train_steps: int = None, 
-        start_from_last_cp: bool = True,
+        resume: bool = True,
         logging_interval: int = 100
     ):
         self.model = model
@@ -124,7 +124,7 @@ class Trainer():
         else:
             self.max_train_steps = min(max_train_steps, num_train_epochs * len(train_loader))
 
-        self.start_from_last_cp = start_from_last_cp
+        self.resume = resume
 
         self.train_losses = []
         self.val_losses = []
@@ -139,7 +139,7 @@ class Trainer():
         total_train_loss = 0
 
         # Init model from the last checkpoint state
-        if self.start_from_last_cp:
+        if self.resume:
             last_cp = load_last_checkpoint(self.model_out_dir, self.device)
 
             if last_cp is not None:
@@ -161,18 +161,18 @@ class Trainer():
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
             self.model.train()
-            is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == self.max_train_steps
 
             # Train
-            for idx, batch_data in enumerate(self.train_loader):
-                if is_logging_point:
-                    self.logger.info(f"Train step {step_counter}/{self.max_train_steps}")
-
+            iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}")
+            for batch_data in iterator:
+                is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == self.max_train_steps
+                
                 step_loss = self._train_one_step(batch_data)
                 total_train_loss += step_loss
+                avg_train_loss  = total_train_loss / step_counter
+                iterator.set_postfix({"loss": avg_train_loss})
 
                 if is_logging_point:
-                    avg_train_loss  = total_train_loss / step_counter
                     avg_val_loss    = self._evaluate(step_counter)
                     self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
                     self.logger.info(f"Saved checkpoint {step_counter}")
