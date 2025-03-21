@@ -22,6 +22,6 @@ python pipelines/train/finetune_trocr_htr.py \
     --data-dir $PROJECT_DIR/data/polis_line \
     --model-name trocr_base__ft_htr_line \
     --num-train-epochs 4 \
-    --max-train-steps 30000 \
+    --max-train-steps 60000 \
     --batch-size 10 \
     --logging-interval 2000
