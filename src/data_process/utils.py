@@ -2,12 +2,13 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
+import unicodedata
 import numpy as np
 from torch.utils.data import Dataset
 from datasets import concatenate_datasets, load_from_disk
 
 from src.file_tools import read_json_file, write_json_file
-from src.tasks.running_text import RunningTextDataset
+from src.data_process.florence import RunningTextDataset
 
 
 def create_dset_from_paths(path_list: list[str | Path], data_class: Dataset | RunningTextDataset):
@@ -67,3 +68,7 @@ def create_split_info(
         "test": [page_path_list[idx].stem for idx in test_indices]
     }
     write_json_file(split_info, split_info_path)
+
+
+def normalize_name(s):
+    return unicodedata.normalize('NFD', s)

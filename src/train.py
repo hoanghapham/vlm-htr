@@ -173,7 +173,7 @@ class Trainer():
                 iterator.set_postfix({"loss": avg_train_loss})
 
                 if is_logging_point:
-                    avg_val_loss    = self._evaluate(step_counter)
+                    avg_val_loss = self._evaluate(step_counter)
                     self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
                     self.logger.info(f"Saved checkpoint {step_counter}")
 

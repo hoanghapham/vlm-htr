@@ -13,8 +13,8 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.file_tools import read_json_file
-from src.tasks.utils import create_dset_from_paths, create_split_info
-from src.tasks.running_text import RunningTextDataset, create_florence_collate_fn
+from src.data_process.utils import create_dset_from_paths, create_split_info
+from src.data_process.florence import RunningTextDataset, create_florence_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 

@@ -13,16 +13,22 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, read_json_file
 
-groundtruth_dir = PROJECT_DIR / "data/polis/page_xmls"
-candidate_dir   = PROJECT_DIR / "output/htrflow/polis_text_recognition/page"
 
-split_info = read_json_file(PROJECT_DIR / "data/polis_line/split_info.json")
+task = "hovratt_text_recognition"
+
+
+groundtruth_dir = PROJECT_DIR / "data/hovratt/page_xmls"
+candidate_dir   = PROJECT_DIR / f"output/htrflow/{task}/page"
+
+
+split_info = None
+# split_info = read_json_file(PROJECT_DIR / "data/polis_line/split_info.json")
 
 
 def NFD(s):
     return unicodedata.normalize('NFD', s)
 
-def read_xmls(dir_path: str | Path, keep_pages: list):
+def read_xmls(dir_path: str | Path):
     xml_files = list_files(dir_path, extensions=[".xml"])
     results = {}
     error_files = []
@@ -51,9 +57,10 @@ groundtruth = read_xmls(groundtruth_dir)
 groundtruth = {NFD(k): v for k, v in groundtruth.items()}
 candidates = {NFD(k): v for k, v in candidates.items()}
 
-train_pages = [NFD(name) for name in split_info["train"]]
-validation_pages = [NFD(name) for name in split_info["validation"]]
-test_pages = [NFD(name) for name in split_info["test"]]
+if split_info:
+    train_pages = [NFD(name) for name in split_info["train"]]
+    validation_pages = [NFD(name) for name in split_info["validation"]]
+    test_pages = [NFD(name) for name in split_info["test"]]
 
 # Filter pages
 pages = list(groundtruth.keys())
@@ -65,10 +72,12 @@ pages = [
     page for page in groundtruth 
     if page in candidates 
         and groundtruth[page].num_words > 0
-        and page.replace(".xml", "") in test_pages
+        # and page.replace(".xml", "") in test_pages
     ]
 
-# print(len(pages))
+
+
+print(f"Evaluate performance on {len(pages)} pages")
 
 
 #%%
@@ -96,7 +105,7 @@ for name in result_df.columns:
 
 # Write result
 result_df = result_df.reset_index().rename(columns={"index": "page"})
-result_df.to_csv(PROJECT_DIR / "output/htrflow/polis_text_recognition_metrics.csv", index=False)
+result_df.to_csv(PROJECT_DIR / f"output/htrflow/{task}_metrics.csv", index=False)
 
 
 

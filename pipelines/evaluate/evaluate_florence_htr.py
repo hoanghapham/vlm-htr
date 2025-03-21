@@ -13,8 +13,8 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
-from src.tasks.utils import create_dset_from_paths
-from src.tasks.running_text import RunningTextDataset
+from src.data_process.utils import create_dset_from_paths
+from src.data_process.florence import RunningTextDataset
 
 from src.logger import CustomLogger
 from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
