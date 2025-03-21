@@ -72,7 +72,7 @@ def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
     if pt_paths:
         last_pt_path = pt_paths[-1]
         last_cp_states = torch.load(last_pt_path, weights_only=True, map_location=torch.device(device))
-        last_cp_step_idx = int(last_pt_path.stem.split("__")[-1])
+        last_cp_step_idx = int(last_pt_path.stem.split("_")[-1])
         last_cp_metadata = {"step_idx": last_cp_step_idx}
 
         last_json_path = json_paths[-1]
