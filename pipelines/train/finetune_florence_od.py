@@ -28,16 +28,16 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--data-dir", "/Users/hoanghapham/Projects/thesis-data/polis",
-    "--model-name", "demo",
-    "--num-train-epochs", "5",
-    "--max-train-steps", "11",
-    "--batch-size", "2",
-    "--logging-interval", "3"
-])
+# args = parser.parse_args([
+#     "--data-dir", "/Users/hoanghapham/Projects/thesis-data/polis",
+#     "--model-name", "demo",
+#     "--num-train-epochs", "5",
+#     "--max-train-steps", "11",
+#     "--batch-size", "2",
+#     "--logging-interval", "3"
+# ])
 
 
 # Setup constant values
