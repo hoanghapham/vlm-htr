@@ -21,7 +21,7 @@ cd $PROJECT_DIR
 python pipelines/train/finetune_florence_od.py \
     --data-dir $DATA_DIR/polis \
     --model-name florence_base__ft_od_region \
-    --num-train-epochs 4 \
-    --max-train-steps 8000 \
+    --num-train-epochs 10 \
+    --max-train-steps 20000 \
     --batch-size 2 \
     --logging-interval 1000
