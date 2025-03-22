@@ -15,11 +15,11 @@
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
-DATA_DIR="/proj/uppmax2024-2-24/hapham/data/"
+DATA_DIR="/proj/uppmax2024-2-24/hapham/data/riksarkivet"
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_florence_od.py \
-    --data-dir $DATA_DIR/polis \
+    --data-dir $DATA_DIR/poliskammare \
     --model-name florence_base__ft_od_region \
     --num-train-epochs 10 \
     --max-train-steps 20000 \
