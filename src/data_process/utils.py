@@ -44,7 +44,7 @@ def gen_split_indices(
     return train_indices, val_indices, test_indices
 
 
-def create_split_info(
+def create_htr_split_info(
     data_dir: Path | str,
     seed: int = 42,
     train_ratio: float = 0.7, 
@@ -53,19 +53,20 @@ def create_split_info(
 ):
     data_dir = Path(data_dir)
     split_info_path = Path(data_dir) / "split_info.json"
-    page_paths = sorted([path for path in data_dir.glob("**/images/**/*")])
+    img_paths = sorted([path for path in data_dir.glob("**/images/**/*")])
+    xml_paths = sorted([path for path in data_dir.glob("**/page_xmls/**/*")])
 
     train_indices, val_indices, test_indices = gen_split_indices(
-        len(page_paths), 
+        len(img_paths), 
         seed=seed,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio
     )
     split_info = {
-        "train": [page_paths[idx].stem for idx in train_indices],
-        "validation": [page_paths[idx].stem for idx in val_indices],
-        "test": [page_paths[idx].stem for idx in test_indices]
+        "train": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in train_indices],
+        "validation": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in val_indices],
+        "test": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in test_indices]
     }
     write_json_file(split_info, split_info_path)
 

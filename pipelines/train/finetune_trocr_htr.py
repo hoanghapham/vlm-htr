@@ -12,7 +12,7 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
 
-from src.data_process.utils import create_dset_from_paths, create_split_info
+from src.data_process.utils import create_dset_from_paths
 from src.data_process.florence import RunningTextDataset
 from src.data_process.trocr import create_trocr_collate_fn
 from src.file_tools import read_json_file
@@ -73,12 +73,7 @@ logger.info("Load data")
 
 # Collect page lists
 page_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
-
 split_info_path = DATA_DIR / "split_info.json"
-
-if not split_info_path.exists():
-    create_split_info(DATA_DIR, seed=42)
-
 split_info = read_json_file(split_info_path)
 
 train_paths = [path for path in page_path_list if path.stem in split_info["train"]]

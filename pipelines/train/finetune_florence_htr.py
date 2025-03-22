@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.file_tools import read_json_file
-from src.data_process.utils import create_dset_from_paths, create_split_info
+from src.data_process.utils import create_dset_from_paths
 from src.data_process.florence import RunningTextDataset, create_florence_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
@@ -86,10 +86,6 @@ logger.info("Load data")
 # Subset train & validate set
 local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
 split_info_path = DATA_DIR / "split_info.json"
-
-if not split_info_path.exists():
-    create_split_info(DATA_DIR, seed=42)
-
 split_info = read_json_file(split_info_path)
 train_paths = [path for path in local_path_list if path.stem in split_info["train"]]
 val_paths   = [path for path in local_path_list if path.stem in split_info["validation"]]
