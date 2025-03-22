@@ -53,19 +53,19 @@ def create_split_info(
 ):
     data_dir = Path(data_dir)
     split_info_path = Path(data_dir) / "split_info.json"
-    page_path_list = sorted([path for path in data_dir.glob("*") if path.is_dir()])
+    page_paths = sorted([path for path in data_dir.glob("**/images/**/*")])
 
     train_indices, val_indices, test_indices = gen_split_indices(
-        len(page_path_list), 
+        len(page_paths), 
         seed=seed,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio
     )
     split_info = {
-        "train": [page_path_list[idx].stem for idx in train_indices],
-        "validation": [page_path_list[idx].stem for idx in val_indices],
-        "test": [page_path_list[idx].stem for idx in test_indices]
+        "train": [page_paths[idx].stem for idx in train_indices],
+        "validation": [page_paths[idx].stem for idx in val_indices],
+        "test": [page_paths[idx].stem for idx in test_indices]
     }
     write_json_file(split_info, split_info_path)
 
