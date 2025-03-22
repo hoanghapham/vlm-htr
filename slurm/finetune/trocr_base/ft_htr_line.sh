@@ -5,7 +5,7 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J finetune/trocr_base
+#SBATCH -J finetune/trocr_base/ft_htr_line
 #SBATCH -o logs_uppmax/finetune/trocr_base/ft_htr_line.out
 #SBATCH -e logs_uppmax/finetune/trocr_base/ft_htr_line.err
 #SBATCH --gres=gpu:1
