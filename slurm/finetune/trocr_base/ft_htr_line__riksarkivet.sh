@@ -14,8 +14,8 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
-DATA_DIR="/proj/uppmax2024-2-24/hapham/data/riksarkivet
+PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
+DATA_DIR=/proj/uppmax2024-2-24/hapham/data/riksarkivet
 
 cd $PROJECT_DIR
 
