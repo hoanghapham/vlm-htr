@@ -159,8 +159,8 @@ logger.info(f"Save result to {OUTPUT_DIR}")
 
 metrics_aggr = {
     "step_idx": eval_cp.step_idx,
-    "avg_train_loss": eval_cp.step_idx,
-    "avg_val_loss": eval_cp.step_idx,
+    "avg_train_loss": eval_cp.avg_train_loss,
+    "avg_val_loss": eval_cp.avg_val_loss,
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
