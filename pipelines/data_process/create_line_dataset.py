@@ -65,7 +65,7 @@ for idx, (img_path, xml_path) in enumerate(imgs_xmls):
     dataset_obj = Dataset.from_list(
         [
             {
-                "unique_key": data["unique+key"],
+                "unique_key": data["unique_key"],
                 "image": data["image"],
                 "transcription": data["transcription"]
             } for data in builder.create_line_dataset([(img_path, xml_path)])
