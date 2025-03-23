@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python workpad/create_line_dataset.py \
+python pipelines/data_process/create_line_dataset.py \
     --input-dir $INPUT_DIR \
     --output-dir $PROJECT_DIR/data/hovratt_line \
     --img-extension .jpg
