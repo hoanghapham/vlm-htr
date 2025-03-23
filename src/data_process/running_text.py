@@ -150,7 +150,7 @@ def join_transcriptions(line_list: list[PageXMLTextLine]):
     return "\n".join(texts)
 
 
-class ImageDatasetBuilder():
+class RunningTextDatasetBuilder():
     # Define feature structures for each dataset type
 
     def create_line_dataset(self, imgs_xmls):
@@ -178,6 +178,34 @@ class ImageDatasetBuilder():
                 unique_key = f"{volume}_{img_filename}_{region_id}"
                 yield {"unique_key": unique_key, "image": cropped_image, "transcription": transcription}
 
+    def process_one_page(self, img, xml):
+        img_filename, volume = self._extract_filename_and_volume(img, xml)
+        lines_data = self.parse_pagexml(xml)
+        image_array = cv2.imread(img)
+
+        processed_lines = []
+
+        for i, line in enumerate(lines_data):
+            region_id = str(i).zfill(4)
+            try:
+                cropped_image = self.crop_line_image(image_array, line["coords"])
+            except Exception as e:
+                print("Error image:", img_filename)
+                print(e)
+                processed_lines.append(None)
+                continue
+
+            transcription = line["transcription"]
+
+            if not transcription:
+                print(f"Invalid transcription: {transcription}")
+                processed_lines.append(None)
+                continue
+
+            unique_key = f"{volume}_{img_filename}_{region_id}"
+            processed_lines.append({"unique_key": unique_key, "image": cropped_image, "transcription": transcription})
+        
+        return processed_lines
 
     def process_one_line(self, img, xml, line_idx):
         img_filename, volume = self._extract_filename_and_volume(img, xml)

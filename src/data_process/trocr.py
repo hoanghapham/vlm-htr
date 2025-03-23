@@ -4,13 +4,13 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from torch.utils.data import Dataset
 from pagexml.parser import parse_pagexml_file
-from src.data_process.running_text import ImageDatasetBuilder
+from src.data_process.running_text import RunningTextDatasetBuilder
 
 
 class TrOCRLineDataset(Dataset):
     def __init__(self, img_xml_pairs: list[list] | list[tuple], use_cache: bool = True):
         super().__init__()
-        self.builder = ImageDatasetBuilder()
+        self.builder = RunningTextDatasetBuilder()
         self._img_xml_pairs = img_xml_pairs
         self._idx_to_data = self._index(img_xml_pairs)
         self.use_cache = use_cache
@@ -37,7 +37,7 @@ class TrOCRLineDataset(Dataset):
         return len(self._idx_to_data)
 
     def _cache(self, img, xml):
-        data = list(self.builder.create_line_dataset([(img, xml)]))
+        data = list(self.builder.process_one_page(img, xml))
         self.cache[img] = data
 
     def __getitem__(self, idx):
@@ -46,10 +46,10 @@ class TrOCRLineDataset(Dataset):
 
         if self.use_cache:
             if img in self.cache:
-                return self.cache[img].get(line_idx)
+                return self.cache[img][line_idx]
             else:
                 self._cache(img, xml)
-                return self.cache[img].get(line_idx)
+                return self.cache[img][line_idx]
         else:
             data = self.builder.process_one_line(img, xml, line_idx)
             return data
