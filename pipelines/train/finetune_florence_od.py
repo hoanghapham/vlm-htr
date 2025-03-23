@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.file_tools import read_json_file
 from src.data_process.utils import normalize_name
-from src.data_process.florence import FlorenceObjectDetectionDataset, create_florence_collate_fn
+from src.data_process.florence import TextRegionDataset, create_florence_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -93,11 +93,11 @@ split_info = read_json_file(split_info_path)
 train_names = [normalize_name(name) for name in split_info["train"]]
 val_names = [normalize_name(name) for name in split_info["validation"]]
 
-train_dataset   = FlorenceObjectDetectionDataset(
+train_dataset   = TextRegionDataset(
     img_paths=[path for path in img_paths if normalize_name(path.stem) in train_names],
     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in train_names]
 )
-val_dataset   = FlorenceObjectDetectionDataset(
+val_dataset   = TextRegionDataset(
     img_paths=[path for path in img_paths if normalize_name(path.stem) in val_names],
     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in val_names]
 )
