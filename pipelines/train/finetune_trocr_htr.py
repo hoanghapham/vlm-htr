@@ -77,6 +77,9 @@ val_dataset     = TrOCRLineDataset(split_info["validation"])
 
 def create_collate_fn(processor, device):
     def func(batch):
+        # Filter None item in the batch. In the worst case, all items are None
+        batch = list(filter(lambda x: x is not None, batch))
+
         images = [data[1]["image"] for data in batch]
         texts = [data[1]["transcription"] for data in batch]
         
