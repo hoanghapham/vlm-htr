@@ -165,7 +165,7 @@ class Trainer():
             # Train
             iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}")
             for batch_data in iterator:
-                is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == self.max_train_steps
+                is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps - 1)
                 
                 step_loss = self._train_one_step(batch_data)
                 total_train_loss += step_loss

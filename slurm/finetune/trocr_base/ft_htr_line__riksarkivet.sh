@@ -23,6 +23,6 @@ python pipelines/train/finetune_trocr_htr.py \
     --data-dir $DATA_DIR \
     --model-name trocr_base__ft_htr_line__riksarkivet \
     --num-train-epochs 5 \
-    --max-train-steps 300000 \
+    --max-train-steps 10000 \
     --batch-size 10 \
-    --logging-interval 10000
+    --logging-interval 1000

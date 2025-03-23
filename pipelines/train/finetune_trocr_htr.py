@@ -80,8 +80,8 @@ def create_collate_fn(processor, device):
         # Filter None item in the batch. In the worst case, all items are None
         batch = list(filter(lambda x: x is not None, batch))
 
-        images = [data[1]["image"] for data in batch]
-        texts = [data[1]["transcription"] for data in batch]
+        images = [data["image"] for data in batch]
+        texts = [data["transcription"] for data in batch]
         
         pixel_values = processor(images=images, return_tensors="pt").pixel_values.to(device)
         labels = processor.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)["input_ids"].to(device)

@@ -8,11 +8,13 @@ from src.data_process.running_text import ImageDatasetBuilder
 
 
 class TrOCRLineDataset(Dataset):
-    def __init__(self, img_xml_pairs: list[list] | list[tuple]):
+    def __init__(self, img_xml_pairs: list[list] | list[tuple], use_cache: bool = True):
         super().__init__()
         self.builder = ImageDatasetBuilder()
         self._img_xml_pairs = img_xml_pairs
         self._idx_to_data = self._index(img_xml_pairs)
+        self.use_cache = use_cache
+        self.cache = {}
 
     def _index(self, img_xml_pairs):
         """Parse xml files and create a list containing (img, xml, line_idx)"""
@@ -33,11 +35,23 @@ class TrOCRLineDataset(Dataset):
 
     def __len__(self):
         return len(self._idx_to_data)
-        
+
+    def _cache(self, img, xml):
+        data = list(self.builder.create_line_dataset([(img, xml)]))
+        self.cache[img] = data
+
     def __getitem__(self, idx):
         img, xml, line_idx = self._idx_to_data[idx]
-        data = self.builder.process_one_line(img, xml, line_idx)
-        return data
+
+        if self.use_cache:
+            if img in self.cache:
+                return self.cache[img][line_idx]
+            else:
+                self._cache(img, xml)
+                return self.cache[img][line_idx]
+        else:
+            data = self.builder.process_one_line(img, xml, line_idx)
+            return data
     
     
 

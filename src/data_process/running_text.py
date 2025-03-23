@@ -167,16 +167,16 @@ class ImageDatasetBuilder():
                 except Exception as e:
                     print("Error image:", img_filename)
                     print(e)
-                    continue
+                    yield None
 
                 transcription = line["transcription"]
 
                 if not transcription:
                     print(f"Invalid transcription: {transcription}")
-                    continue
+                    yield None
 
                 unique_key = f"{volume}_{img_filename}_{region_id}"
-                yield unique_key, {"image": cropped_image, "transcription": transcription}
+                yield {"unique_key": unique_key, "image": cropped_image, "transcription": transcription}
 
 
     def process_one_line(self, img, xml, line_idx):
@@ -198,7 +198,7 @@ class ImageDatasetBuilder():
             return None
 
         unique_key = f"{volume}_{img_filename}_{region_id}"
-        return unique_key, {"image": cropped_image, "transcription": transcription}
+        return {"unique_key": unique_key, "image": cropped_image, "transcription": transcription}
 
 
 
