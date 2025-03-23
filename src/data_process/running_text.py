@@ -179,6 +179,29 @@ class ImageDatasetBuilder():
                 yield unique_key, {"image": cropped_image, "transcription": transcription}
 
 
+    def process_one_line(self, img, xml, line_idx):
+        img_filename, volume = self._extract_filename_and_volume(img, xml)
+        lines_data = self.parse_pagexml(xml)
+        image_array = cv2.imread(img)
+        region_id = str(line_idx).zfill(4)
+        
+        try:
+            cropped_image = self.crop_line_image(image_array, lines_data[line_idx]["coords"])
+        except Exception:
+            print("Error image:", img_filename)
+            return None
+
+        transcription = lines_data[line_idx]["transcription"]
+
+        if not transcription:
+            print(f"Invalid transcription: {transcription}")
+            return None
+
+        unique_key = f"{volume}_{img_filename}_{region_id}"
+        return unique_key, {"image": cropped_image, "transcription": transcription}
+
+
+
     def create_smooth_region_dataset(self, imgs_xmls):
         for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
             img_filename, volume = self._extract_filename_and_volume(img, xml)

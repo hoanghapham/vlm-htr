@@ -51,10 +51,11 @@ def create_htr_split_info(
     val_ratio: float = 0.15, 
     test_ratio: float = 0.15
 ):
+    img_ext = [".tif", ".jpg", ".jpeg", ".png"]
     data_dir = Path(data_dir)
     split_info_path = Path(data_dir) / "split_info.json"
-    img_paths = sorted([path for path in data_dir.glob("**/images/**/*")])
-    xml_paths = sorted([path for path in data_dir.glob("**/page_xmls/**/*")])
+    img_paths = [path for path in sorted(data_dir.glob("**/images/**/*")) if path.is_file() and path.suffix in img_ext]
+    xml_paths = [path for path in sorted(data_dir.glob("**/page_xmls/**/*.xml")) if path.is_file()]
 
     assert len(img_paths) == len(xml_paths) > 0, f"Length invalid: {len(img_paths)} images, {len(xml_paths)} xmls."
 

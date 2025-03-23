@@ -15,7 +15,6 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--output-dir", required=True)
-parser.add_argument("--img-extension", required=True, default=".tif")
 args = parser.parse_args()
 
 # Setup
@@ -29,6 +28,8 @@ logger = CustomLogger("create_line_dataset")
 
 #%%
 builder = ImageDatasetBuilder()
+
+img_ext = [".tif", ".jpg", ".jpeg", ".png"]
 
 all_img_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "images", pattern="**/*" + args.img_extension))]
 all_xml_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "page_xmls", pattern="**/*.xml"))]

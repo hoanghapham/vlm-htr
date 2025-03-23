@@ -12,9 +12,7 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
 
-from src.data_process.utils import create_dset_from_paths
-from src.data_process.florence import RunningTextDataset
-from src.data_process.trocr import create_trocr_collate_fn
+from src.data_process.trocr import TrOCRLineDataset
 from src.file_tools import read_json_file
 from src.train import Trainer
 from src.logger import CustomLogger
@@ -55,12 +53,9 @@ logger.info(f"Load model. Use device: {DEVICE}")
 
 processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
 model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
-
-# Config model
 model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
 model.config.pad_token_id           = processor.tokenizer.pad_token_id
 model.config.vocab_size             = model.config.decoder.vocab_size
-
 
 # Unfreeze params for training
 for param in model.parameters():
@@ -72,20 +67,32 @@ for param in model.parameters():
 logger.info("Load data")
 
 # Collect page lists
-page_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
-split_info_path = DATA_DIR / "split_info.json"
-split_info = read_json_file(split_info_path)
-
-train_paths = [path for path in page_path_list if path.stem in split_info["train"]]
-val_paths = [path for path in page_path_list if path.stem in split_info["validation"]]
+split_info = read_json_file(DATA_DIR / "split_info.json")
 
 # Create dataset object
-train_dataset = create_dset_from_paths(train_paths, RunningTextDataset)
-val_dataset = create_dset_from_paths(val_paths, RunningTextDataset)
+train_dataset   = TrOCRLineDataset(split_info["train"])
+val_dataset     = TrOCRLineDataset(split_info["validation"])
 
 # Create data loader
 
-collate_fn = create_trocr_collate_fn(processor, DEVICE)
+def create_collate_fn(processor, device):
+    def func(batch):
+        images = [data[1]["image"] for data in batch]
+        texts = [data[1]["transcription"] for data in batch]
+        
+        pixel_values = processor(images=images, return_tensors="pt").pixel_values.to(device)
+        labels = processor.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)["input_ids"].to(device)
+
+        return dict(
+            pixel_values=pixel_values, 
+            labels=labels,
+        )
+
+    return func
+
+
+collate_fn = create_collate_fn(processor, DEVICE)
+
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
 
