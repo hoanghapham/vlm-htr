@@ -20,4 +20,6 @@ cd $PROJECT_DIR
 python pipelines/evaluate/evaluate_florence_htr.py \
     --model-name florence_base__ft_htr_line \
     --input-dir $PROJECT_DIR/data/polis_region \
-    --use-split-info true
+    --use-split-info true \
+    --load-checkpoint best \
+    --user-prompt "<SwedishHTR>Print out the text in this image"
