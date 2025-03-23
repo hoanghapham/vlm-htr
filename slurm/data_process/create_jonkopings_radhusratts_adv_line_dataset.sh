@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J create_jonkopings_radhusratts_line_dataset
-#SBATCH -o logs_uppmax/create_jonkopings_radhusratts_line_dataset.out
-#SBATCH -e logs_uppmax/create_jonkopings_radhusratts_line_dataset.err
+#SBATCH -J data_process/create_jonkopings_radhusratts_line_dataset
+#SBATCH -o logs_uppmax/data_process/create_jonkopings_radhusratts_line_dataset.out
+#SBATCH -e logs_uppmax/data_process/create_jonkopings_radhusratts_line_dataset.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 
