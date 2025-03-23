@@ -13,11 +13,11 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-INPUT_DIR="/proj/uppmax2024-2-24/hapham/data/krigshovrattens"
+INPUT_DIR="/proj/uppmax2024-2-24/hapham/data/riksarkivet/krigshovrattens"
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
 python pipelines/data_process/create_line_dataset.py \
     --input-dir $INPUT_DIR \
-    --output-dir $PROJECT_DIR/data/krigshovrattens_line
+    --output-dir $PROJECT_DIR/data/riksarkivet/krigshovrattens_line
