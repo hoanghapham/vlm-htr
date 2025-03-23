@@ -31,9 +31,9 @@ class Checkpoint():
         return f"Checkpoint: {self.step_idx}, avg. train loss: {self.avg_train_loss}, avg. validation loss: {self.avg_val_loss}"
 
 
-def load_best_checkpoint(model_path: Path, compare_metric: str = "val_loss", device: str = "cpu") -> Checkpoint:
+def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> Checkpoint:
 
-    supported_metrics = ["train_loss", "val_loss"]
+    supported_metrics = ["avg_train_loss", "avg_val_loss"]
     assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
 
     paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(Path(model_path).glob("*.json"))}

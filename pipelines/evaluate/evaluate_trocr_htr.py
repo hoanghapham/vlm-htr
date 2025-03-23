@@ -156,16 +156,16 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 logger.info(f"Save result to {OUTPUT_DIR}")
 
 metrics_aggr = {
-    "epoch": eval_cp.epoch,
-    "train_loss": eval_cp.train_loss,
-    "val_loss": eval_cp.val_loss,
+    "step_idx": eval_cp.step_idx,
+    "avg_train_loss": eval_cp.avg_train_loss,
+    "avg_val_loss": eval_cp.avg_val_loss,
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
     "bow_extras": avg_bow_extras
 }
 
-write_json_file(metrics_aggr, OUTPUT_DIR / "metrics_aggr.json")
+write_json_file(metrics_aggr, OUTPUT_DIR / f"metrics_aggr_step_{eval_cp.step_idx}.json")
 
 # Detailed results
 metrics_lists = {
@@ -175,11 +175,11 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, OUTPUT_DIR / "metrics_lists.json")
+write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step_{eval_cp.step_idx}.json")
 
 # Write ground text for reference
 write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-write_list_to_text_file(pred_list, OUTPUT_DIR / "prediction.txt")
+write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_step_{eval_cp.step_idx}.txt")
 

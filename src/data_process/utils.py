@@ -56,6 +56,8 @@ def create_htr_split_info(
     img_paths = sorted([path for path in data_dir.glob("**/images/**/*")])
     xml_paths = sorted([path for path in data_dir.glob("**/page_xmls/**/*")])
 
+    assert len(img_paths) == len(xml_paths) > 0, f"Length invalid: {len(img_paths)} images, {len(xml_paths)} xmls."
+
     train_indices, val_indices, test_indices = gen_split_indices(
         len(img_paths), 
         seed=seed,
@@ -64,9 +66,9 @@ def create_htr_split_info(
         test_ratio=test_ratio
     )
     split_info = {
-        "train": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in train_indices],
-        "validation": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in val_indices],
-        "test": [(str(img_paths[idx]), str(xml_paths[idx])) for idx in test_indices]
+        "train": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in train_indices],
+        "validation": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in val_indices],
+        "test": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in test_indices]
     }
     write_json_file(split_info, split_info_path)
 

@@ -131,7 +131,25 @@ class BoxQuantizer(object):
         return dequantized_boxes    
 
 
-class FlorenceObjectDetectionDataset(Dataset):
+class FlorenceTask():
+    OD = "<OD>"
+    DENSE_REGION_CAPTION = "<DENSE_REGION_CAPTION>"
+    CAPTION = "<CAPTION>"
+    DETAILED_CAPTION = "<DETAILED_CAPTION> "
+    MORE_DETAILED_CAPTION = "<MORE_DETAILED_CAPTION> "
+    REGION_PROPOSAL = "<REGION_PROPOSAL>"
+    CAPTION_TO_PHRASE_GROUNDING = "<CAPTION_TO_PHRASE_GROUNDING>"
+    REFERRING_EXPRESSION_SEGMENTATION = "<REFERRING_EXPRESSION_SEGMENTATION>"
+    REGION_TO_SEGMENTATION = "<REGION_TO_SEGMENTATION>"
+    OPEN_VOCABULARY_DETECTION = "<OPEN_VOCABULARY_DETECTION>"
+    REGION_TO_DESCRIPTION = "<REGION_TO_DESCRIPTION>"
+    OCR = "<OCR>"
+    OCR_WITH_REGION = "<OCR_WITH_REGION>"
+
+    def __init__(self):
+        pass
+
+class TextRegionDataset(Dataset):
 
     def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
         super().__init__()
@@ -186,5 +204,5 @@ class FlorenceObjectDetectionDataset(Dataset):
     def select(self, indices: typing.Iterable):
         img_paths = [self.img_paths[idx] for idx in indices]
         xml_paths = [self.xml_paths[idx] for idx in indices]
-        return FlorenceObjectDetectionDataset(img_paths, xml_paths)
+        return TextRegionDataset(img_paths, xml_paths)
     
