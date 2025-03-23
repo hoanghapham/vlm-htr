@@ -155,7 +155,7 @@ class ImageDatasetBuilder():
 
     def create_line_dataset(self, imgs_xmls):
         """Process for line dataset with cropped images and transcriptions."""
-        for img, xml in tqdm(imgs_xmls, total=len(imgs_xmls), unit="page", desc="Processing"):
+        for img, xml in imgs_xmls:
             img_filename, volume = self._extract_filename_and_volume(img, xml)
             lines_data = self.parse_pagexml(xml)
             image_array = cv2.imread(img)

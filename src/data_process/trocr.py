@@ -41,14 +41,15 @@ class TrOCRLineDataset(Dataset):
         self.cache[img] = data
 
     def __getitem__(self, idx):
+        # This can return None
         img, xml, line_idx = self._idx_to_data[idx]
 
         if self.use_cache:
             if img in self.cache:
-                return self.cache[img][line_idx]
+                return self.cache[img].get(line_idx)
             else:
                 self._cache(img, xml)
-                return self.cache[img][line_idx]
+                return self.cache[img].get(line_idx)
         else:
             data = self.builder.process_one_line(img, xml, line_idx)
             return data
