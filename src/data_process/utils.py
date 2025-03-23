@@ -66,9 +66,9 @@ def create_htr_split_info(
         test_ratio=test_ratio
     )
     split_info = {
-        "train": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in train_indices],
-        "validation": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in val_indices],
-        "test": [(str(img_paths[idx].resolve()), str(xml_paths[idx].resolve())) for idx in test_indices]
+        "train": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in train_indices],
+        "validation": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in val_indices],
+        "test": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in test_indices]
     }
     write_json_file(split_info, split_info_path)
 
