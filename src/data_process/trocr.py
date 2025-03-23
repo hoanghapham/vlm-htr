@@ -8,7 +8,7 @@ from src.data_process.running_text import RunningTextDatasetBuilder
 
 
 class TrOCRLineDataset(Dataset):
-    def __init__(self, img_xml_pairs: list[list] | list[tuple], use_cache: bool = True):
+    def __init__(self, img_xml_pairs: list[list] | list[tuple], use_cache: bool = False):
         super().__init__()
         self.builder = RunningTextDatasetBuilder()
         self._img_xml_pairs = img_xml_pairs
