@@ -167,13 +167,13 @@ class RunningTextDatasetBuilder():
                 except Exception as e:
                     print("Error image:", img_filename)
                     print(e)
-                    yield None
+                    continue
 
                 transcription = line["transcription"]
 
                 if not transcription:
                     print(f"Invalid transcription: {transcription}")
-                    yield None
+                    continue
 
                 unique_key = f"{volume}_{img_filename}_{region_id}"
                 yield {"unique_key": unique_key, "image": cropped_image, "transcription": transcription}
