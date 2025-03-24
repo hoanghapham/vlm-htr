@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
+from datasets import load_from_disk, concatenate_datasets
 
 from src.data_process.trocr import TrOCRLineDataset
 from src.file_tools import read_json_file
@@ -27,6 +28,11 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 args = parser.parse_args()
+
+# args = parser.parse_args([
+#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/riksarkivet",
+#     "--model-name", "demo"
+# ])
 
 # Constants
 MODEL_NAME          = args.model_name
@@ -70,8 +76,19 @@ logger.info("Load data")
 split_info = read_json_file(DATA_DIR / "split_info.json")
 
 # Create dataset object
-train_dataset   = TrOCRLineDataset(split_info["train"])
-val_dataset     = TrOCRLineDataset(split_info["validation"])
+# train_dataset   = TrOCRLineDataset(split_info["train"])
+# val_dataset     = TrOCRLineDataset(split_info["validation"])
+
+train_pages = [Path(tup[0]).stem for tup in split_info["train"]]
+val_pages   = [Path(tup[0]).stem for tup in split_info["validation"]]
+page_dirs   = [path.parent for path in DATA_DIR.glob("**/*.arrow")]
+
+train_dirs  = [path for path in page_dirs if path.stem in train_pages]
+val_dirs    = [path for path in page_dirs if path.stem in val_pages]
+
+train_dataset   = concatenate_datasets([load_from_disk(page) for page in train_dirs])
+val_dataset     = concatenate_datasets([load_from_disk(page) for page in val_dirs])
+
 
 # Create data loader
 
