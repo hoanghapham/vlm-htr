@@ -17,7 +17,7 @@ class XMLParser():
 
     def _get_polygon(self, element, namespaces):
         """Extracts polygon points from a PAGE XML element."""
-        polygon = element.find(".//ns:Coords/ns:polygon", namespaces=namespaces).attrib["points"]
+        polygon = element.find(".//ns:Coords", namespaces=namespaces).attrib["points"]
         return [tuple(map(int, p.split(","))) for p in polygon.split()]
     
     def _get_bbox(self, polygon):

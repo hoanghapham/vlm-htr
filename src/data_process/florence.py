@@ -155,11 +155,13 @@ class FlorenceTask():
         pass
 
 
-class FlorenceTextRegionDataset(Dataset):
+class FlorenceTextODDataset(Dataset):
 
-    def __init__(self, imgs_xmls: list[tuple | list]):
+    def __init__(self, imgs_xmls: list[tuple | list], object_class: str = "region"):
+        assert object_class in ["region", "line"]
         super().__init__()
         
+        self.object_class = object_class
         self.task = FlorenceTask.OD
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
@@ -167,10 +169,14 @@ class FlorenceTextRegionDataset(Dataset):
 
         # Validate that the xml files have regions
         valid_pairs = []
+        objects = []
         for img, xml in imgs_xmls:
-            regions = self.xmlparser.get_regions(xml)
+            if self.object_class == "region":
+                objects = self.xmlparser.get_regions(xml)
+            elif self.object_class == "line":
+                objects = self.xmlparser.get_lines(xml)
 
-            if len(regions) > 0:
+            if len(objects) > 0:
                 valid_pairs.append((img, xml))
         
         self.imgs_xmls = valid_pairs
@@ -180,8 +186,14 @@ class FlorenceTextRegionDataset(Dataset):
     
     def __getitem__(self, idx):
         image = Image.open(self.imgs_xmls[idx][0]).convert("RGB")
-        regions_data = self.xmlparser.get_regions(self.imgs_xmls[idx][1])
-        bboxes = [data["bbox"] for data in regions_data]
+        xml = self.imgs_xmls[idx][1]
+        
+        if self.object_class == "region":
+            objects = self.xmlparser.get_regions(xml)
+        elif self.object_class == "line":
+            objects = self.xmlparser.get_lines(xml)
+
+        bboxes = [data["bbox"] for data in objects]
 
         # Quantize bbox to coordinates relative to 1000 bins
         quantized_bboxes = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
@@ -189,10 +201,10 @@ class FlorenceTextRegionDataset(Dataset):
         # Convert bbox info to text
         bbox_texts = []
         for bbox in quantized_bboxes:
-            bbox_text = "text_region" + "".join([f"<loc_{val}>" for val in bbox])
+            bbox_text = self.object_class + "".join([f"<loc_{val}>" for val in bbox])
             bbox_texts.append(bbox_text)
 
-        # Output text is of format </s><s>region<loc_...><loc_...><loc_...><loc_...>...</s>
+        # Output text is of format </s><s>object_class<loc_...><loc_...><loc_...><loc_...>...</s>
         answer = "</s><s>" + "".join(bbox_texts) + "</s>"
         
         return dict(
@@ -204,5 +216,5 @@ class FlorenceTextRegionDataset(Dataset):
 
     def select(self, indices: typing.Iterable):
         pairs = [self.imgs_xmls[idx] for idx in indices]
-        return FlorenceTextRegionDataset(pairs)
+        return FlorenceTextODDataset(pairs)
     
