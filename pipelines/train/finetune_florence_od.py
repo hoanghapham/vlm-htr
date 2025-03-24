@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.file_tools import read_json_file
 from src.data_process.utils import normalize_name
-from src.data_process.florence import TextRegionDataset, create_florence_collate_fn
+from src.data_process.florence import FlorenceTextRegionDataset, create_florence_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -28,16 +28,16 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--data-dir", "/Users/hoanghapham/Projects/thesis-data/polis",
-#     "--model-name", "demo",
-#     "--num-train-epochs", "5",
-#     "--max-train-steps", "11",
-#     "--batch-size", "2",
-#     "--logging-interval", "3"
-# ])
+args = parser.parse_args([
+    "--data-dir", "/Users/hoanghapham/Projects/thesis-data/riksarkivet",
+    "--model-name", "demo",
+    "--num-train-epochs", "5",
+    "--max-train-steps", "11",
+    "--batch-size", "2",
+    "--logging-interval", "3"
+])
 
 
 # Setup constant values
@@ -88,19 +88,21 @@ logger.info("Load data")
 img_paths = sorted(DATA_DIR.glob(pattern="images/**/*.tif"))
 xml_paths = sorted(DATA_DIR.glob(pattern="page_xmls/**/*.xml"))
 
-split_info_path = DATA_DIR / "split_info.json"
-split_info = read_json_file(split_info_path)
-train_names = [normalize_name(name) for name in split_info["train"]]
-val_names = [normalize_name(name) for name in split_info["validation"]]
+split_info = read_json_file(DATA_DIR / "split_info.json")
+# train_names = [normalize_name(name) for name in split_info["train"]]
+# val_names = [normalize_name(name) for name in split_info["validation"]]
 
-train_dataset   = TextRegionDataset(
-    img_paths=[path for path in img_paths if normalize_name(path.stem) in train_names],
-    xml_paths=[path for path in xml_paths if normalize_name(path.stem) in train_names]
-)
-val_dataset   = TextRegionDataset(
-    img_paths=[path for path in img_paths if normalize_name(path.stem) in val_names],
-    xml_paths=[path for path in xml_paths if normalize_name(path.stem) in val_names]
-)
+# train_dataset   = FlorenceTextRegionDataset(
+#     img_paths=[path for path in img_paths if normalize_name(path.stem) in train_names],
+#     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in train_names]
+# )
+# val_dataset   = FlorenceTextRegionDataset(
+#     img_paths=[path for path in img_paths if normalize_name(path.stem) in val_names],
+#     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in val_names]
+# )
+
+train_dataset   = FlorenceTextRegionDataset(split_info["train"])
+val_dataset     = FlorenceTextRegionDataset(split_info["validation"])
 
 # Create data loader
 

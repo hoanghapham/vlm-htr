@@ -149,31 +149,33 @@ class FlorenceTask():
     def __init__(self):
         pass
 
-class TextRegionDataset(Dataset):
 
-    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
+class FlorenceTextRegionDataset(Dataset):
+
+    def __init__(self, img_xml_pairs: list[tuple | list]):
         super().__init__()
         
-        page_names = set([Path(path).stem for path in img_paths]) \
-            .intersection(set([Path(path).stem for path in xml_paths]))
+        # page_names = set([Path(path).stem for path in img_paths]) \
+        #     .intersection(set([Path(path).stem for path in xml_paths]))
         
-        assert len(img_paths) == len(xml_paths) == len(page_names) > 0, \
-            f"Invalid: {len(img_paths)} images, {len(xml_paths)} XML files, {len(page_names)} matched"
+        # assert len(img_paths) == len(xml_paths) == len(page_names) > 0, \
+        #     f"Invalid: {len(img_paths)} images, {len(xml_paths)} XML files, {len(page_names)} matched"
         
-        self.img_paths = img_paths
-        self.xml_paths = xml_paths
-        self.page_names = page_names
-        self.task = "<OD>"
+        # self.img_paths = img_paths
+        # self.xml_paths = xml_paths
+        # self.page_names = page_names
+        self.img_xml_pairs = img_xml_pairs
+        self.task = FlorenceTask.OD
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
 
     def __len__(self):
-        return len(self.page_names)
+        return len(self.img_xml_pairs)
     
     def __getitem__(self, idx):
-        image = Image.open(self.img_paths[idx]).convert("RGB")
-        xml_content = parse_pagexml_file(self.xml_paths[idx])
+        image = Image.open(self.img_xml_pairs[idx][0]).convert("RGB")
+        xml_content = parse_pagexml_file(self.img_xml_pairs[idx][1])
 
         # Construct raw bbox (xmin, ymin, xmax, ymax)
         bboxes = []
@@ -202,7 +204,6 @@ class TextRegionDataset(Dataset):
         )
 
     def select(self, indices: typing.Iterable):
-        img_paths = [self.img_paths[idx] for idx in indices]
-        xml_paths = [self.xml_paths[idx] for idx in indices]
-        return TextRegionDataset(img_paths, xml_paths)
+        pairs = [self.img_xml_pairs[idx] for idx in indices]
+        return FlorenceTextRegionDataset(pairs)
     
