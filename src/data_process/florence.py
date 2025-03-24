@@ -152,7 +152,7 @@ class FlorenceTask():
 
 class FlorenceTextRegionDataset(Dataset):
 
-    def __init__(self, img_xml_pairs: list[tuple | list]):
+    def __init__(self, imgs_xmls: list[tuple | list]):
         super().__init__()
         
         # page_names = set([Path(path).stem for path in img_paths]) \
@@ -164,25 +164,34 @@ class FlorenceTextRegionDataset(Dataset):
         # self.img_paths = img_paths
         # self.xml_paths = xml_paths
         # self.page_names = page_names
-        self.img_xml_pairs = img_xml_pairs
         self.task = FlorenceTask.OD
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
+        # Validate that the xml files have regions
+        valid_pairs = []
+        for img, xml in imgs_xmls:
+            xml_content = parse_pagexml_file(xml)
+            regions = xml_content.get_all_text_regions()
+            if len(regions) > 0:
+                valid_pairs.append((img, xml))
+        
+        self.imgs_xmls = valid_pairs
 
     def __len__(self):
-        return len(self.img_xml_pairs)
+        return len(self.imgs_xmls)
     
     def __getitem__(self, idx):
-        image = Image.open(self.img_xml_pairs[idx][0]).convert("RGB")
-        xml_content = parse_pagexml_file(self.img_xml_pairs[idx][1])
+        image = Image.open(self.imgs_xmls[idx][0]).convert("RGB")
+        xml_content = parse_pagexml_file(self.imgs_xmls[idx][1])
 
         # Construct raw bbox (xmin, ymin, xmax, ymax)
         bboxes = []
 
         for region in xml_content.get_all_text_regions():
-            bbox = construct_bbox(region)
-            bboxes.append(bbox)
+            if region:
+                bbox = construct_bbox(region)
+                bboxes.append(bbox)
 
         # Quantize bbox to coordinates relative to 1000 bins
         quantized_bboxes = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
@@ -204,6 +213,6 @@ class FlorenceTextRegionDataset(Dataset):
         )
 
     def select(self, indices: typing.Iterable):
-        pairs = [self.img_xml_pairs[idx] for idx in indices]
+        pairs = [self.imgs_xmls[idx] for idx in indices]
         return FlorenceTextRegionDataset(pairs)
     
