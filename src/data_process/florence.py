@@ -1,3 +1,4 @@
+import sys
 import typing
 import torch
 from torch.utils.data import Dataset
@@ -6,6 +7,10 @@ from PIL import Image
 from pagexml.parser import parse_pagexml_file
 from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 
+PROJECT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_DIR))
+
+from src.data_process.xml import XMLParser
 
 class RunningTextDataset(Dataset):
 
@@ -155,24 +160,16 @@ class FlorenceTextRegionDataset(Dataset):
     def __init__(self, imgs_xmls: list[tuple | list]):
         super().__init__()
         
-        # page_names = set([Path(path).stem for path in img_paths]) \
-        #     .intersection(set([Path(path).stem for path in xml_paths]))
-        
-        # assert len(img_paths) == len(xml_paths) == len(page_names) > 0, \
-        #     f"Invalid: {len(img_paths)} images, {len(xml_paths)} XML files, {len(page_names)} matched"
-        
-        # self.img_paths = img_paths
-        # self.xml_paths = xml_paths
-        # self.page_names = page_names
         self.task = FlorenceTask.OD
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
+        self.xmlparser = XMLParser()
 
         # Validate that the xml files have regions
         valid_pairs = []
         for img, xml in imgs_xmls:
-            xml_content = parse_pagexml_file(xml)
-            regions = xml_content.get_all_text_regions()
+            regions = self.xmlparser.get_regions(xml)
+
             if len(regions) > 0:
                 valid_pairs.append((img, xml))
         
@@ -183,15 +180,8 @@ class FlorenceTextRegionDataset(Dataset):
     
     def __getitem__(self, idx):
         image = Image.open(self.imgs_xmls[idx][0]).convert("RGB")
-        xml_content = parse_pagexml_file(self.imgs_xmls[idx][1])
-
-        # Construct raw bbox (xmin, ymin, xmax, ymax)
-        bboxes = []
-
-        for region in xml_content.get_all_text_regions():
-            if region:
-                bbox = construct_bbox(region)
-                bboxes.append(bbox)
+        regions_data = self.xmlparser.get_regions(self.imgs_xmls[idx][1])
+        bboxes = [data["bbox"] for data in regions_data]
 
         # Quantize bbox to coordinates relative to 1000 bins
         quantized_bboxes = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
@@ -199,7 +189,7 @@ class FlorenceTextRegionDataset(Dataset):
         # Convert bbox info to text
         bbox_texts = []
         for bbox in quantized_bboxes:
-            bbox_text = "region" + "".join([f"<loc_{val}>" for val in bbox])
+            bbox_text = "text_region" + "".join([f"<loc_{val}>" for val in bbox])
             bbox_texts.append(bbox_text)
 
         # Output text is of format </s><s>region<loc_...><loc_...><loc_...><loc_...>...</s>

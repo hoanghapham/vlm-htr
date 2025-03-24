@@ -202,5 +202,3 @@ else:
 
 
 trainer.train()
-
-# %%
