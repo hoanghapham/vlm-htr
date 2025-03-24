@@ -161,7 +161,13 @@ logger.info(f"Start training")
 
 if USE_LORA:
     peft_model = get_peft_model(model, config)
-    peft_model.print_trainable_parameters()
+    trainable_params, all_param = peft_model.get_nb_trainable_parameters()
+
+    logger.info(
+        f"trainable params: {trainable_params:,d} || "
+        f"all params: {all_param:,d} || "
+        f"trainable%: {100 * trainable_params / all_param:.4f}"
+    )
 
     trainer = Trainer(
         model                = peft_model,

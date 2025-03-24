@@ -24,6 +24,6 @@ python pipelines/train/finetune_florence_od.py \
     --model-name florence_base__ft_od_region__lora \
     --num-train-epochs 10 \
     --max-train-steps 20000 \
-    --batch-size 10 \
+    --batch-size 6 \
     --logging-interval 1000 \
     --use-lora true
