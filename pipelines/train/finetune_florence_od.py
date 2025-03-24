@@ -15,7 +15,7 @@ from peft import LoraConfig, get_peft_model
 
 from src.file_tools import read_json_file
 from src.data_process.utils import normalize_name
-from src.data_process.florence import FlorenceTextRegionDataset, create_florence_collate_fn
+from src.data_process.florence import FlorenceTextODDataset, create_florence_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -30,6 +30,7 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-lora", default="false")
+parser.add_argument("--detect-class", default="region")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -51,6 +52,7 @@ LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 USE_LORA            = args.use_lora == "true"
+DETECT_CLASS        = args.detect_class
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
@@ -96,17 +98,17 @@ split_info = read_json_file(DATA_DIR / "split_info.json")
 # train_names = [normalize_name(name) for name in split_info["train"]]
 # val_names = [normalize_name(name) for name in split_info["validation"]]
 
-# train_dataset   = FlorenceTextRegionDataset(
+# train_dataset   = FlorenceTextODDataset(
 #     img_paths=[path for path in img_paths if normalize_name(path.stem) in train_names],
 #     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in train_names]
 # )
-# val_dataset   = FlorenceTextRegionDataset(
+# val_dataset   = FlorenceTextODDataset(
 #     img_paths=[path for path in img_paths if normalize_name(path.stem) in val_names],
 #     xml_paths=[path for path in xml_paths if normalize_name(path.stem) in val_names]
 # )
 
-train_dataset   = FlorenceTextRegionDataset(split_info["train"])
-val_dataset     = FlorenceTextRegionDataset(split_info["validation"])
+train_dataset   = FlorenceTextODDataset(split_info["train"], object_class=DETECT_CLASS)
+val_dataset     = FlorenceTextODDataset(split_info["validation"], object_class=DETECT_CLASS)
 
 # Create data loader
 
