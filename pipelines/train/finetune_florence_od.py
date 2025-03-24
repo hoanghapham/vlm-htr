@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
+from peft import LoraConfig, get_peft_model
 
 from src.file_tools import read_json_file
 from src.data_process.utils import normalize_name
@@ -28,6 +29,7 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
+parser.add_argument("--use-lora", default="false")
 # args = parser.parse_args()
 
 args = parser.parse_args([
@@ -48,6 +50,7 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
+USE_LORA            = args.use_lora == "true"
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
@@ -60,18 +63,19 @@ tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NA
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
+REVISION = 'refs/pr/6'
 
 logger.info(f"Load model. Use device: {DEVICE}")
 
 model = AutoModelForCausalLM.from_pretrained(
     REMOTE_MODEL_PATH,
     trust_remote_code=True,
-    revision='refs/pr/6'
+    revision=REVISION
 ).to(DEVICE)
 
 processor = AutoProcessor.from_pretrained(
     REMOTE_MODEL_PATH,
-    trust_remote_code=True, revision='refs/pr/6'
+    trust_remote_code=True, revision=REVISION
 )
 
 # Unfreeze all params
@@ -127,26 +131,69 @@ lr_scheduler = get_scheduler(
     num_training_steps=TOTAL_TRAIN_STEPS
 )
 
+# LORA
+
+TARGET_MODULES = [
+    "q_proj", "o_proj", "k_proj", "v_proj", 
+    "linear", "Conv2d", "lm_head", "fc2"
+]
+
+config = LoraConfig(
+    r=8,
+    lora_alpha=8,
+    target_modules=TARGET_MODULES,
+    task_type="CAUSAL_LM",
+    lora_dropout=0.05,
+    bias="none",
+    inference_mode=False,
+    use_rslora=True,
+    init_lora_weights="gaussian",
+    revision=REVISION
+)
+
+
 # Load state
 #%%
 # Train
 
 logger.info(f"Start training")
 
-trainer = Trainer(
-    model                = model,
-    optimizer            = optimizer,
-    lr_scheduler         = lr_scheduler,
-    train_loader         = train_loader,
-    val_loader           = val_loader,
-    num_train_epochs     = NUM_TRAIN_EPOCHS,
-    max_train_steps      = MAX_TRAIN_STEPS,
-    resume               = True,
-    model_out_dir        = MODEL_OUT_DIR,
-    logger               = logger,
-    tsb_logger           = tsb_logger,
-    logging_interval     = LOGGING_INTERVAL
-)
+
+if USE_LORA:
+    peft_model = get_peft_model(model, config)
+    peft_model.print_trainable_parameters()
+
+    trainer = Trainer(
+        model                = peft_model,
+        optimizer            = optimizer,
+        lr_scheduler         = lr_scheduler,
+        train_loader         = train_loader,
+        val_loader           = val_loader,
+        num_train_epochs     = NUM_TRAIN_EPOCHS,
+        max_train_steps      = MAX_TRAIN_STEPS,
+        resume               = True,
+        model_out_dir        = MODEL_OUT_DIR,
+        logger               = logger,
+        tsb_logger           = tsb_logger,
+        logging_interval     = LOGGING_INTERVAL
+    )
+
+else:
+    trainer = Trainer(
+        model                = model,
+        optimizer            = optimizer,
+        lr_scheduler         = lr_scheduler,
+        train_loader         = train_loader,
+        val_loader           = val_loader,
+        num_train_epochs     = NUM_TRAIN_EPOCHS,
+        max_train_steps      = MAX_TRAIN_STEPS,
+        resume               = True,
+        model_out_dir        = MODEL_OUT_DIR,
+        logger               = logger,
+        tsb_logger           = tsb_logger,
+        logging_interval     = LOGGING_INTERVAL
+    )
+
 
 trainer.train()
 
