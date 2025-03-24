@@ -86,8 +86,28 @@ page_dirs   = [path.parent for path in DATA_DIR.glob("**/*.arrow")]
 train_dirs  = [path for path in page_dirs if path.stem in train_pages]
 val_dirs    = [path for path in page_dirs if path.stem in val_pages]
 
-train_dataset   = concatenate_datasets([load_from_disk(page) for page in train_dirs])
-val_dataset     = concatenate_datasets([load_from_disk(page) for page in val_dirs])
+train_data_list = []
+for path in train_dirs:
+    try:
+        data = load_from_disk(path)
+    except Exception as e:
+        logger.warning(f"Error: {e}")
+        continue
+    
+    train_data_list.append(data)
+
+val_data_list = []
+for path in train_dirs:
+    try:
+        data = load_from_disk(path)
+    except Exception as e:
+        logger.warning(f"Error: {e}")
+        continue
+    
+    val_data_list.append(data)
+
+train_dataset   = concatenate_datasets(train_data_list)
+val_dataset     = concatenate_datasets(val_data_list)
 
 
 # Create data loader
