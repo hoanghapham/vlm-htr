@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval/florence_base/ft_htr_region/hovratt_region
-#SBATCH -o logs_uppmax/eval/florence_base/ft_htr_region/hovratt_region.out
-#SBATCH -e logs_uppmax/eval/florence_base/ft_htr_region/hovratt_region.err
+#SBATCH -J eval/florence_base/ft_htr_region/gota_hovratt_region
+#SBATCH -o logs_uppmax/eval/florence_base/ft_htr_region/gota_hovratt_region.out
+#SBATCH -e logs_uppmax/eval/florence_base/ft_htr_region/gota_hovratt_region.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,7 +19,7 @@ cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_florence_htr.py \
     --model-name florence_base__ft_htr_region \
-    --input-dir $PROJECT_DIR/data/hovratt_region \
+    --input-dir $PROJECT_DIR/data/riksarkivet_region/gota_hovratt_region \
     --use-split-info false \
     --load-checkpoint best \
     --user-prompt "<SwedishHTR>Print out the text in this image"
