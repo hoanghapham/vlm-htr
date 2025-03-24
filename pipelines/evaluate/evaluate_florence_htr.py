@@ -177,7 +177,7 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step{eval_cp.step_idx}.json")
+write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step_{eval_cp.step_idx}.json")
 
 # Write ground text for reference
 write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")

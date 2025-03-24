@@ -61,16 +61,17 @@ for idx, (img_path, xml_path) in enumerate(imgs_xmls):
     logger.info(f"Process page {idx}/{ttl_samples}")
 
     page_name = Path(img_path).stem
-        
-    dataset_obj = Dataset.from_list(
-        [
-            {
-                "unique_key": data["unique_key"],
-                "image": data["image"],
-                "transcription": data["transcription"]
-            } for data in builder.create_line_dataset([(img_path, xml_path)])
-        ]
-    )
-
-    dataset_obj.save_to_disk(OUTPUT_DIR / page_name)
+    data = [
+        {
+            "unique_key": data["unique_key"],
+            "image": data["image"],
+            "transcription": data["transcription"]
+        } 
+        for data in builder.create_line_dataset([(img_path, xml_path)])
+    ]   
+    
+    # Only write data if exists
+    if data:
+        dataset_obj = Dataset.from_list(data)
+        dataset_obj.save_to_disk(OUTPUT_DIR / page_name)
     
