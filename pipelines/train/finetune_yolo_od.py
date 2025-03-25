@@ -16,6 +16,7 @@ parser.add_argument("--model-path", "-v", required=True, default="yolo11m.pt")
 parser.add_argument("--epochs", "-e", default=100)
 parser.add_argument("--batch-size", "-bs", default=10)
 parser.add_argument("--img-size", "-is", default=1280)
+parser.add_argument("--resume", "-rs", default="false")
 args = parser.parse_args()
 
 # Basics
@@ -30,6 +31,7 @@ DATA_FRACTION   = float(args.data_fraction)
 EPOCHS          = int(args.epochs)
 BATCH_SIZE      = int(args.batch_size)
 IMG_SIZE        = int(args.img_size)
+RESUME          = args.resume == "true"
 
 # Init model
 model = YOLO(MODEL_PATH)
@@ -44,11 +46,11 @@ training_results = model.train(
     device      = DEVICE,
     save        = True,
     save_period = 1,
-    project     = PROJECT_DIR / f"models/{MODEL_NAME}",
+    project     = str(PROJECT_DIR / f"models/{MODEL_NAME}"),
     name        = f"{MODEL_NAME}_{Path(DATA_DIR).stem}",
     seed        = 42,
     single_cls  = True,
-    resume      = True,
+    resume      = RESUME,
     val         = True,
     plots       = True
 )
