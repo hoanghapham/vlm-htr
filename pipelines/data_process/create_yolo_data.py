@@ -16,17 +16,21 @@ from src.data_process.xml import XMLParser
 parser = ArgumentParser()
 parser.add_argument("--input-dir", "-i", required=True)
 parser.add_argument("--output-dir", "-o", required=True)
+parser.add_argument("--copy-files", "-cp", default="true")
 args = parser.parse_args()
 
 INPUT_DIR = Path(args.input_dir)
 OUTPUT_DIR = Path(args.output_dir)
-
+COPY_FILES = args.copy_files == "true"
 
 split_info = read_json_file(INPUT_DIR / "split_info.json")
 
 #%%
 # Copy all train, val, test images to one folder
-print("Copy files")
+
+if COPY_FILES:
+    print("Copy files")
+
 new_split_info = {}
 
 for split, img_xml_paths in split_info.items():
@@ -38,27 +42,28 @@ for split, img_xml_paths in split_info.items():
         if not dest_img.parent.exists():
             dest_img.parent.mkdir(parents=True)
 
-        copy(src_img, dest_img)
-        new_split_info[split].append(dest_img)
-        
+        if COPY_FILES:
+            copy(src_img, dest_img)
 
+        new_split_info[split].append(str(dest_img))
+        
 write_json_file(new_split_info, OUTPUT_DIR / "split_info.json")
 
 # %%
 
 # Create symlink from all_images to 
 print("Create symlinks")
+tasks = ["line_detection", "region_detection"]
 
-for split, img_xml_paths in new_split_info.items():
-    dest_dir = PROJECT_DIR / "data/yolo/regions/images/" / split
-    if not dest_dir.exists():
-        dest_dir.mkdir(parents=True)
+for task in tasks:
 
-    for img, _ in tqdm(img_xml_paths):
-        os.symlink(
-            img, 
-            dest_dir / Path(img).name,
-        )
+    for split, img_xml_paths in new_split_info.items():
+        dest_dir = PROJECT_DIR / f"data/yolo/{task}/images/{split}"
+        if not dest_dir.exists():
+            dest_dir.mkdir(parents=True)
+
+        for img, _ in tqdm(img_xml_paths):
+            os.symlink(img, dest_dir / Path(img).name)
 
 
 # %%
@@ -94,7 +99,7 @@ for split, img_xml_paths in new_split_info.items():
         yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
 
         # Write
-        dest_dir = PROJECT_DIR / "data/yolo/regions/labels" / split
+        dest_dir = PROJECT_DIR / "data/yolo/region_detection/labels" / split
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
 
@@ -115,7 +120,7 @@ for split, img_xml_paths in new_split_info.items():
         yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=1)
 
         # Write
-        dest_dir = PROJECT_DIR / "data/yolo/lines/labels" / split
+        dest_dir = PROJECT_DIR / "data/yolo/line_detection/labels" / split
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
 
