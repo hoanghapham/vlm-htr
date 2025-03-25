@@ -62,7 +62,7 @@ for task in tasks:
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
 
-        for img in tqdm(img_paths):
+        for img in tqdm(img_paths, desc=f"{task} - {split}"):
             os.symlink(img, dest_dir / Path(img).name)
 
 
