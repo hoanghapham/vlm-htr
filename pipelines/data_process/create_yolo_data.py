@@ -31,10 +31,10 @@ split_info = read_json_file(INPUT_DIR / "split_info.json")
 if COPY_FILES:
     print("Copy files")
 
-new_split_info = {}
+split_img_paths = {}
 
 for split, img_xml_paths in split_info.items():
-    new_split_info[split] = []
+    split_img_paths[split] = []
 
     for src_img, _ in tqdm(img_xml_paths, desc=split):
         
@@ -45,9 +45,9 @@ for split, img_xml_paths in split_info.items():
         if COPY_FILES:
             copy(src_img, dest_img)
 
-        new_split_info[split].append(str(dest_img))
+        split_img_paths[split].append(str(dest_img))
         
-write_json_file(new_split_info, OUTPUT_DIR / "split_info.json")
+# write_json_file(split_img_paths, OUTPUT_DIR / "split_info.json")
 
 # %%
 
@@ -57,12 +57,12 @@ tasks = ["line_detection", "region_detection"]
 
 for task in tasks:
 
-    for split, img_xml_paths in new_split_info.items():
+    for split, img_paths in split_img_paths.items():
         dest_dir = PROJECT_DIR / f"data/yolo/{task}/images/{split}"
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
 
-        for img, _ in tqdm(img_xml_paths):
+        for img in tqdm(img_paths):
             os.symlink(img, dest_dir / Path(img).name)
 
 
@@ -88,7 +88,7 @@ def convert_to_yolo_format(bboxes: list[tuple], img_width, img_height, class_id=
 # Create regions data
 print("Create region labels")
 
-for split, img_xml_paths in new_split_info.items():
+for split, img_xml_paths in split_info.items():
     for img, xml in tqdm(img_xml_paths, desc=split):
         # Get image info
         image = Image.open(img)
@@ -109,7 +109,7 @@ for split, img_xml_paths in new_split_info.items():
 # Create lines data
 print("Create line labels")
 
-for split, img_xml_paths in new_split_info.items():
+for split, img_xml_paths in split_info.items():
     for img, xml in tqdm(img_xml_paths, desc=split):
         # Get image info
         image = Image.open(img)
