@@ -27,24 +27,29 @@ split_info = read_json_file(INPUT_DIR / "split_info.json")
 #%%
 # Copy all train, val, test images to one folder
 print("Copy files")
+new_split_info = {}
 
 for split, img_xml_paths in split_info.items():
+    new_split_info[split] = []
+
     for src_img, _ in tqdm(img_xml_paths, desc=split):
         
-        dest_img = PROJECT_DIR / "data/yolo/all_images" / split / Path(src_img).name
+        dest_img = OUTPUT_DIR / split / Path(src_img).name
         if not dest_img.parent.exists():
             dest_img.parent.mkdir(parents=True)
 
         copy(src_img, dest_img)
+        new_split_info[split].append(dest_img)
         
 
+write_json_file(new_split_info, OUTPUT_DIR / "split_info.json")
 
 # %%
 
 # Create symlink from all_images to 
 print("Create symlinks")
 
-for split, img_xml_paths in split_info.items():
+for split, img_xml_paths in new_split_info.items():
     dest_dir = PROJECT_DIR / "data/yolo/regions/images/" / split
     if not dest_dir.exists():
         dest_dir.mkdir(parents=True)
@@ -78,7 +83,7 @@ def convert_to_yolo_format(bboxes: list[tuple], img_width, img_height, class_id=
 # Create regions data
 print("Create region labels")
 
-for split, img_xml_paths in split_info.items():
+for split, img_xml_paths in new_split_info.items():
     for img, xml in tqdm(img_xml_paths, desc=split):
         # Get image info
         image = Image.open(img)
@@ -99,7 +104,7 @@ for split, img_xml_paths in split_info.items():
 # Create lines data
 print("Create line labels")
 
-for split, img_xml_paths in split_info.items():
+for split, img_xml_paths in new_split_info.items():
     for img, xml in tqdm(img_xml_paths, desc=split):
         # Get image info
         image = Image.open(img)
