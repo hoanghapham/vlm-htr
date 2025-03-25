@@ -10,6 +10,7 @@ models/*
 archived/*
 temp/*
 plots/*
+**/runs/*
 
 # files
 .python-version
