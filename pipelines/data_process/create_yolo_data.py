@@ -20,7 +20,8 @@ parser.add_argument("--yolo-dest-dir", "-yd", required=True)
 parser.add_argument("--copy-images", "-ci", default="false")
 parser.add_argument("--copy-xmls", "-cx", default="false")
 parser.add_argument("--create-symlink", "-sl", default="false")
-parser.add_argument("--create-region", "-sl", default="false")
+parser.add_argument("--create-line", "-cl", default="false")
+parser.add_argument("--create-region", "-cr", default="false")
 args = parser.parse_args()
 
 INPUT_DIR = Path(args.input_dir)
@@ -29,6 +30,8 @@ YOLO_DEST_DIR = Path(args.yolo_dest_dir)
 COPY_IMAGES = args.copy_images == "true"
 COPY_XMLS = args.copy_xmls == "true"
 CREATE_SYMLINK = args.create_symlink == "true"
+CREATE_LINE = args.create_line == "true"
+CREATE_REGION = args.create_region == "true"
 
 split_info = read_json_file(INPUT_DIR / "split_info.json")
 
@@ -102,43 +105,45 @@ def convert_to_yolo_format(bboxes: list[tuple], img_width, img_height, class_id=
 
 #%%
 # Create regions data
-print("Create region labels")
+if CREATE_REGION:
+    print("Create region labels")
 
-for split, img_xml_paths in split_info.items():
-    for img, xml in tqdm(img_xml_paths, desc=split):
-        # Get image info
-        image = Image.open(img)
+    for split, img_xml_paths in split_info.items():
+        for img, xml in tqdm(img_xml_paths, desc=split):
+            # Get image info
+            image = Image.open(img)
 
-        # Get bbox info
-        regions = parser.get_regions(xml)
-        bboxes = [reg["bbox"] for reg in regions]
-        yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
+            # Get bbox info
+            regions = parser.get_regions(xml)
+            bboxes = [reg["bbox"] for reg in regions]
+            yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
 
-        # Write
-        dest_dir = YOLO_DEST_DIR / "region_detection/labels" / split
-        if not dest_dir.exists():
-            dest_dir.mkdir(parents=True)
+            # Write
+            dest_dir = YOLO_DEST_DIR / "region_detection/labels" / split
+            if not dest_dir.exists():
+                dest_dir.mkdir(parents=True)
 
-        write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
+            write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
 
 # %%
 # Create lines data
-print("Create line labels")
+if CREATE_LINE:
+    print("Create line labels")
 
-for split, img_xml_paths in split_info.items():
-    for img, xml in tqdm(img_xml_paths, desc=split):
-        # Get image info
-        image = Image.open(img)
+    for split, img_xml_paths in split_info.items():
+        for img, xml in tqdm(img_xml_paths, desc=split):
+            # Get image info
+            image = Image.open(img)
 
-        # Get bbox info
-        lines = parser.get_lines(xml)
-        bboxes = [line["bbox"] for line in lines]
-        yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
+            # Get bbox info
+            lines = parser.get_lines(xml)
+            bboxes = [line["bbox"] for line in lines]
+            yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
 
-        # Write
-        dest_dir = YOLO_DEST_DIR / "line_detection/labels" / split
-        if not dest_dir.exists():
-            dest_dir.mkdir(parents=True)
+            # Write
+            dest_dir = YOLO_DEST_DIR / "line_detection/labels" / split
+            if not dest_dir.exists():
+                dest_dir.mkdir(parents=True)
 
-        write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
+            write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
 
