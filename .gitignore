@@ -11,6 +11,7 @@ archived/*
 temp/*
 plots/*
 **/runs/*
+YOLO*
 
 # files
 .python-version
