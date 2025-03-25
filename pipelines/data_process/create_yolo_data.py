@@ -6,7 +6,7 @@ from tqdm import tqdm
 from shutil import copy
 from argparse import ArgumentParser
 
-PROJECT_DIR = Path.cwd().parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import read_json_file, write_json_file, write_list_to_text_file
