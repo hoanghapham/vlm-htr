@@ -16,12 +16,12 @@ def list_files(input_path: Path | str, extensions) -> dict:
         if file.suffix in extensions
     ]
         
-    data = list(zip(
-        [file.parent for file in files],
-        [file.name for file in files]
-    ))
+    # data = list(zip(
+    #     [file.parent for file in files],
+    #     [file.name for file in files]
+    # ))
 
-    return data
+    return files
 
 def check_file_stats(input_path: Path | str):
     

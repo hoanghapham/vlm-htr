@@ -9,6 +9,7 @@ logs*
 models/*
 archived/*
 temp/*
+plots/*
 
 # files
 .python-version

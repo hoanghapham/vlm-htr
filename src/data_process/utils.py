@@ -44,35 +44,5 @@ def gen_split_indices(
     return train_indices, val_indices, test_indices
 
 
-def create_htr_split_info(
-    data_dir: Path | str,
-    seed: int = 42,
-    train_ratio: float = 0.7, 
-    val_ratio: float = 0.15, 
-    test_ratio: float = 0.15
-):
-    img_ext = [".tif", ".jpg", ".jpeg", ".png"]
-    data_dir = Path(data_dir)
-    split_info_path = Path(data_dir) / "split_info.json"
-    img_paths = [path for path in sorted(data_dir.glob("**/images/**/*")) if path.is_file() and path.suffix in img_ext]
-    xml_paths = [path for path in sorted(data_dir.glob("**/page_xmls/**/*.xml")) if path.is_file()]
-
-    assert len(img_paths) == len(xml_paths) > 0, f"Length invalid: {len(img_paths)} images, {len(xml_paths)} xmls."
-
-    train_indices, val_indices, test_indices = gen_split_indices(
-        len(img_paths), 
-        seed=seed,
-        train_ratio=train_ratio,
-        val_ratio=val_ratio,
-        test_ratio=test_ratio
-    )
-    split_info = {
-        "train": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in train_indices],
-        "validation": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in val_indices],
-        "test": [(str(img_paths[idx].absolute()), str(xml_paths[idx].absolute())) for idx in test_indices]
-    }
-    write_json_file(split_info, split_info_path)
-
-
 def normalize_name(s):
     return unicodedata.normalize('NFD', s)

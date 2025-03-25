@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 class XMLParser():
-    def __init__(self):
-        pass    
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose    
         
     def _parse_xml(self, xml_path: str | Path):
         """Parses the XML file and returns the root element."""
@@ -12,7 +12,8 @@ class XMLParser():
             tree = ET.parse(xml_path)
             return tree.getroot()
         except ET.ParseError as e:
-            print(f"XML Parse Error: {e}")
+            if self.verbose:
+                print(f"XML Parse Error: {e}")
             return None
 
     def _get_polygon(self, element, namespaces):
@@ -46,7 +47,8 @@ class XMLParser():
                     transcription = region.find("ns:TextEquiv/ns:Unicode", namespaces).text or ""
                     regions_data.append({"region_id": region_id, "bbox": bbox, "polygon": polygon, "transcription": transcription})
                 except Exception as e:
-                    print(f"Error parsing region: {e}")
+                    if self.verbose:
+                        print(f"Error parsing region: {e}")
         return regions_data
         
 
@@ -68,5 +70,6 @@ class XMLParser():
                         transcription = line.find("ns:TextEquiv/ns:Unicode", namespaces).text or ""
                         lines_data.append({"region_id": region_id, "bbox": bbox, "polygon": polygon, "transcription": transcription})
                     except Exception as e:
-                        print(f"Error parsing line: {e}")
+                        if self.verbose:
+                            print(f"Error parsing line: {e}")
         return lines_data
