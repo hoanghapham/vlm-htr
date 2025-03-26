@@ -3,13 +3,40 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from logging import Logger
 
+import numpy as np
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
 from src.file_tools import read_json_file, write_json_file
+
+
+def gen_split_indices(
+    total_samples: int, 
+    seed: int = 42, 
+    train_ratio: float = 0.7, 
+    val_ratio: float = 0.15, 
+    test_ratio: float = 0.15
+) -> tuple[list[int], list[int], list[int]]:
+    np.random.seed(seed)
+    all_indices = range(total_samples)
+
+    train_indices = np.random.choice(all_indices, size=int(train_ratio * total_samples), replace=False)
+    val_indices = np.random.choice(
+        [idx for idx in all_indices if idx not in train_indices], 
+        size = int(val_ratio * total_samples), 
+        replace = False
+    )
+    test_indices = np.random.choice(
+        [idx for idx in all_indices if idx not in np.concatenate([train_indices, val_indices])], 
+        size = max(total_samples - len(train_indices) - len(val_indices), int(test_ratio * total_samples)),
+        replace = False
+    )
+
+    return train_indices, val_indices, test_indices
 
 
 class Checkpoint():

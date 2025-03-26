@@ -3,14 +3,13 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+import torch
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModelForCausalLM, AutoProcessor
+from datasets import concatenate_datasets, load_from_disk
 from argparse import ArgumentParser
 
-import torch
-from torch.utils.data import DataLoader
-from transformers import AutoModelForCausalLM, AutoProcessor
-
 from src.data_process.florence import RunningTextDataset
-from src.utils import load_split
 
 
 #%%
@@ -80,6 +79,14 @@ def create_collate_fn(processor, device):
 
 # Collect page lists
 # Subset train & validate set
+def load_split(split_dir: str | Path) -> Dataset:
+    dsets = []
+    for path in split_dir.glob("*"):
+        dsets.append(load_from_disk(path))
+    dataset = concatenate_datasets(dsets)
+    return dataset
+
+
 raw_train_data = load_split(DATA_DIR / "train")
 raw_val_data = load_split(DATA_DIR / "val")
 
