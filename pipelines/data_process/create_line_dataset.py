@@ -25,17 +25,6 @@ if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
 
-
-# INPUT_DIRS = [
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/bergskollegium_adv"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/bergskollegium_rel"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/frihetstidens"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/jonkopings_radhusratts"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/krigshovrattens"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/svea_hovratt"),
-#     Path("/proj/uppmax2024-2-24/hapham/data/riksarkivet/trolldoms"),
-# ]
-
 logger = CustomLogger("create_line_dataset")
 
 #%%
