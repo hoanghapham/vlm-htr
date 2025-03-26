@@ -18,7 +18,7 @@ parser.add_argument("--output-dir", required=True)
 args = parser.parse_args()
 
 # # Setup
-INPUT_PATH = Path(args.INPUT_PATH)
+INPUT_PATH = Path(args.input_path)
 OUTPUT_DIR = Path(args.output_dir)
 
 if not OUTPUT_DIR.exists():
