@@ -82,7 +82,12 @@ def create_collate_fn(processor, device):
 def load_split(split_dir: str | Path) -> Dataset:
     dsets = []
     for path in split_dir.glob("*"):
-        dsets.append(load_from_disk(path))
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
+
     dataset = concatenate_datasets(dsets)
     return dataset
 
