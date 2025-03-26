@@ -9,12 +9,12 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.data_process.florence import RunningTextDataset
 
 
-def load_(path_list: list[str | Path], data_class: Dataset | RunningTextDataset):
+def load_split(split_dir: str | Path):
     dsets = []
-    for path in path_list:
+    for path in split_dir.glob("*"):
         dsets.append(load_from_disk(path))
-    data = concatenate_datasets(dsets)
-    return data_class(data)
+    dataset = concatenate_datasets(dsets)
+    return dataset
 
 
 def gen_split_indices(
