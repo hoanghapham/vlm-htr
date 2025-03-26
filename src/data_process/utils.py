@@ -1,17 +1,15 @@
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
 
-import unicodedata
 import numpy as np
 from torch.utils.data import Dataset
 from datasets import concatenate_datasets, load_from_disk
 
-from src.file_tools import read_json_file, write_json_file
+sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.data_process.florence import RunningTextDataset
 
 
-def create_dset_from_paths(path_list: list[str | Path], data_class: Dataset | RunningTextDataset):
+def load_(path_list: list[str | Path], data_class: Dataset | RunningTextDataset):
     dsets = []
     for path in path_list:
         dsets.append(load_from_disk(path))
@@ -43,6 +41,3 @@ def gen_split_indices(
 
     return train_indices, val_indices, test_indices
 
-
-def normalize_name(s):
-    return unicodedata.normalize('NFD', s)

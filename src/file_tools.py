@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 import sys
 import json
-
+import unicodedata
 import pandas as pd
 
 
@@ -151,3 +151,7 @@ def write_list_to_text_file(lst: list[str], output_file: Path | str, linebreak=T
             f.write(line)
             if linebreak:
                 f.write("\n")
+
+
+def normalize_name(s):
+    return unicodedata.normalize('NFD', s)

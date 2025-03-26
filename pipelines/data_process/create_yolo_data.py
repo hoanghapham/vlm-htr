@@ -39,7 +39,10 @@ split_info = read_json_file(INPUT_DIR / "split_info.json")
 # Copy all train, val, test images to one folder
 
 if COPY_IMAGES:
-    print("Copy files")
+    print("Copy images")
+
+if COPY_XMLS:
+    print("Copy XMLs")
 
 split_img_paths = {}
 

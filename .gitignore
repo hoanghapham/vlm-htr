@@ -12,6 +12,7 @@ temp/*
 plots/*
 **/runs/*
 YOLO*
+eval/*
 
 # files
 .python-version
