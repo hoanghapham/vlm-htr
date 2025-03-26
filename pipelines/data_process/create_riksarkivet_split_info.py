@@ -5,7 +5,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from argparse import ArgumentParser
-from src.data_process.utils import gen_split_indices
+from utils import gen_split_indices
 from src.file_tools import read_json_file, write_json_file
 
 #%%

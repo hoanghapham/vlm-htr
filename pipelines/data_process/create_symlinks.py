@@ -29,6 +29,8 @@ src_page_dirs = list(SOURCE_DIR.glob("*/*/"))
 
 print(f"Total pages: {len(src_page_dirs)}")
 
+#%%
+
 for split, page_names in split_page_names.items():
     norm_page_names = [normalize_name(name) for name in page_names]
     dest_split_dir = DEST_DIR / split

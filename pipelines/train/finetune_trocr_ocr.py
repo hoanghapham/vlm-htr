@@ -7,7 +7,7 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
@@ -76,41 +76,24 @@ logger.info("Load data")
 split_info = read_json_file(DATA_DIR / "split_info.json")
 
 # Create dataset object
-# train_dataset   = TrOCRLineDataset(split_info["train"])
-# val_dataset     = TrOCRLineDataset(split_info["validation"])
 
-train_pages = [Path(tup[0]).stem for tup in split_info["train"]]
-val_pages   = [Path(tup[0]).stem for tup in split_info["validation"]]
-page_dirs   = [path.parent for path in DATA_DIR.glob("**/*.arrow")]
+def load_split(split_dir: str | Path) -> Dataset:
+    dsets = []
+    for path in split_dir.glob("*"):
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
 
-train_dirs  = [path for path in page_dirs if path.stem in train_pages]
-val_dirs    = [path for path in page_dirs if path.stem in val_pages]
-
-train_data_list = []
-for path in train_dirs:
-    try:
-        data = load_from_disk(path)
-    except Exception as e:
-        logger.warning(f"Error: {e}")
-        continue
-    
-    train_data_list.append(data)
-
-val_data_list = []
-for path in train_dirs:
-    try:
-        data = load_from_disk(path)
-    except Exception as e:
-        logger.warning(f"Error: {e}")
-        continue
-    
-    val_data_list.append(data)
-
-train_dataset   = concatenate_datasets(train_data_list)
-val_dataset     = concatenate_datasets(val_data_list)
+    dataset = concatenate_datasets(dsets)
+    return dataset
 
 
+train_dataset = load_split(DATA_DIR / "train")
+val_dataset = load_split(DATA_DIR / "val")
 # Create data loader
+
 
 def create_collate_fn(processor, device):
     def func(batch):

@@ -7,14 +7,14 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
+from datasets import concatenate_datasets, load_from_disk
+from peft import LoraConfig, get_peft_model
 
-from src.file_tools import read_json_file
-from src.data_process.utils import create_dset_from_paths
-from src.data_process.florence import RunningTextDataset, create_florence_collate_fn
+from src.data_process.florence import RunningTextDataset, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -27,10 +27,11 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
+parser.add_argument("--use-lora", default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--data-dir", str(PROJECT_DIR / "data/polis_line"),
+#     "--data-dir", str(PROJECT_DIR / "data/cropped/mixed"),
 #     "--model-name", "demo",
 #     "--num-train-epochs", "5",
 #     "--max-train-steps", "11",
@@ -45,6 +46,7 @@ BATCH_SIZE          = int(args.batch_size)
 NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
+USE_LORA            = args.use_lora == "true"
 DATA_DIR            = Path(args.data_dir)
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
@@ -59,18 +61,20 @@ tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NA
 # Load model
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
+REVISION = 'refs/pr/6'
 
 logger.info(f"Load model. Use device: {DEVICE}")
 
 model = AutoModelForCausalLM.from_pretrained(
     REMOTE_MODEL_PATH,
     trust_remote_code=True,
-    revision='refs/pr/6'
+    revision=REVISION
 ).to(DEVICE)
 
 processor = AutoProcessor.from_pretrained(
     REMOTE_MODEL_PATH,
-    trust_remote_code=True, revision='refs/pr/6'
+    trust_remote_code=True, 
+    revision=REVISION
 )
 
 # Unfreeze all params
@@ -82,19 +86,34 @@ for param in model.parameters():
 # Load data
 logger.info("Load data")
 
+
+
+
 # Collect page lists
 # Subset train & validate set
-local_path_list = sorted([path for path in DATA_DIR.glob("*") if path.is_dir()])
-split_info_path = DATA_DIR / "split_info.json"
-split_info = read_json_file(split_info_path)
-train_paths = [path for path in local_path_list if path.stem in split_info["train"]]
-val_paths   = [path for path in local_path_list if path.stem in split_info["validation"]]
-train_dataset   = create_dset_from_paths(train_paths, RunningTextDataset)
-val_dataset     = create_dset_from_paths(val_paths, RunningTextDataset)
+def load_split(split_dir: str | Path) -> Dataset:
+    dsets = []
+    for path in split_dir.glob("*"):
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
+
+    dataset = concatenate_datasets(dsets)
+    return dataset
+
+
+raw_train_data = load_split(DATA_DIR / "train")
+raw_val_data = load_split(DATA_DIR / "val")
+
+train_dataset   = RunningTextDataset(raw_train_data)
+val_dataset     = RunningTextDataset(raw_val_data)
+
 
 # Create data loader
 
-collate_fn = create_florence_collate_fn(processor, DEVICE)
+collate_fn = create_collate_fn(processor, DEVICE)
 
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0, shuffle=True)
@@ -102,7 +121,9 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0)
 
-logger.info(f"Total samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
+logger.info(f"Total train samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
+
+
 #%%
 # Setup training
 TOTAL_TRAIN_STEPS = NUM_TRAIN_EPOCHS * len(train_loader)
@@ -115,14 +136,46 @@ lr_scheduler = get_scheduler(
     num_training_steps=TOTAL_TRAIN_STEPS
 )
 
+# LoRA
+TARGET_MODULES = [
+    "q_proj", "o_proj", "k_proj", "v_proj", 
+    "linear", "Conv2d", "lm_head", "fc2"
+]
+
+config = LoraConfig(
+    r=8,
+    lora_alpha=8,
+    target_modules=TARGET_MODULES,
+    task_type="CAUSAL_LM",
+    lora_dropout=0.05,
+    bias="none",
+    inference_mode=False,
+    use_rslora=True,
+    init_lora_weights="gaussian",
+    revision=REVISION
+)
+
+
 # Load state
 #%%
 # Train
+if USE_LORA:
+    peft_model = get_peft_model(model, config)
+    trainable_params, all_param = peft_model.get_nb_trainable_parameters()
 
-logger.info(f"Start training")
+    logger.info(
+        f"trainable params: {trainable_params:,d} || "
+        f"all params: {all_param:,d} || "
+        f"trainable%: {100 * trainable_params / all_param:.4f}"
+    )
+
+    selected_model = peft_model
+else:
+    selected_model = model
+
 
 trainer = Trainer(
-    model                = model,
+    model                = selected_model,
     optimizer            = optimizer,
     lr_scheduler         = lr_scheduler,
     train_loader         = train_loader,
@@ -136,6 +189,5 @@ trainer = Trainer(
     logging_interval     = LOGGING_INTERVAL
 )
 
-trainer.train()
 
-# %%
+trainer.train()

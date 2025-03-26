@@ -14,7 +14,7 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
-from src.data_process.utils import create_dset_from_paths
+from utils import create_dset_from_paths
 from src.data_process.trocr import create_trocr_collate_fn
 from src.data_process.florence import RunningTextDataset
 
