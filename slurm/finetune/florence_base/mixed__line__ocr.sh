@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 4-00:00
+#SBATCH -t 3-00:00
 #SBATCH -J finetune/florence_base/mixed__line__ocr
 #SBATCH -o logs_uppmax/finetune/florence_base/mixed__line__ocr.out
 #SBATCH -e logs_uppmax/finetune/florence_base/mixed__line__ocr.err

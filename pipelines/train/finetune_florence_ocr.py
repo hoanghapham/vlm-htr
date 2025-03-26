@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from datasets import concatenate_datasets, load_from_disk
 from peft import LoraConfig, get_peft_model
 
-from src.data_process.florence import RunningTextDataset, create_collate_fn
+from src.data_process.florence import RunningTextDataset
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -86,11 +86,6 @@ for param in model.parameters():
 # Load data
 logger.info("Load data")
 
-
-
-
-# Collect page lists
-# Subset train & validate set
 def load_split(split_dir: str | Path) -> Dataset:
     dsets = []
     for path in split_dir.glob("*"):
@@ -104,14 +99,31 @@ def load_split(split_dir: str | Path) -> Dataset:
     return dataset
 
 
-raw_train_data = load_split(DATA_DIR / "train")
-raw_val_data = load_split(DATA_DIR / "val")
+raw_train_data  = load_split(DATA_DIR / "train")
+raw_val_data    = load_split(DATA_DIR / "val")
 
 train_dataset   = RunningTextDataset(raw_train_data)
 val_dataset     = RunningTextDataset(raw_val_data)
 
 
 # Create data loader
+def create_collate_fn(processor, device):
+    def func(batch):
+        questions = [data["question"] for data in batch]
+        answers = [data["answer"] for data in batch]
+        images = [data["image"] for data in batch]
+        
+        inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
+        labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
+        
+        return dict(
+            input_ids=inputs["input_ids"], 
+            pixel_values=inputs["pixel_values"], 
+            labels=labels,
+        )
+
+    return func
+
 
 collate_fn = create_collate_fn(processor, DEVICE)
 

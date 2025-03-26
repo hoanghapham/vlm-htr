@@ -14,7 +14,6 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_schedule
 from datasets import load_from_disk, concatenate_datasets
 
 from src.data_process.trocr import TrOCRLineDataset
-from src.file_tools import read_json_file
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -72,11 +71,6 @@ for param in model.parameters():
 # Load data
 logger.info("Load data")
 
-# Collect page lists
-split_info = read_json_file(DATA_DIR / "split_info.json")
-
-# Create dataset object
-
 def load_split(split_dir: str | Path) -> Dataset:
     dsets = []
     for path in split_dir.glob("*"):
@@ -90,11 +84,11 @@ def load_split(split_dir: str | Path) -> Dataset:
     return dataset
 
 
-train_dataset = load_split(DATA_DIR / "train")
-val_dataset = load_split(DATA_DIR / "val")
+train_dataset   = load_split(DATA_DIR / "train")
+val_dataset     = load_split(DATA_DIR / "val")
+
+
 # Create data loader
-
-
 def create_collate_fn(processor, device):
     def func(batch):
         # Filter None item in the batch. In the worst case, all items are None
