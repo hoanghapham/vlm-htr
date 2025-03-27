@@ -28,7 +28,7 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-lora", default="false")
-parser.add_argument("--question", default="SwedishHTR")
+parser.add_argument("--question", default="<SwedishHTR>")
 args = parser.parse_args()
 
 # args = parser.parse_args([
