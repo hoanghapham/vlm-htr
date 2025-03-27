@@ -24,4 +24,5 @@ python pipelines/train/finetune_florence_ocr.py \
     --num-train-epochs 2 \
     --max-train-steps 220000 \
     --batch-size 2 \
-    --logging-interval 20000
+    --logging-interval 20000 \
+    --question "<SwedishHTR>"

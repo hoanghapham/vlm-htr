@@ -28,6 +28,7 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-lora", default="false")
+parser.add_argument("--question", default="SwedishHTR")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -48,6 +49,7 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 USE_LORA            = args.use_lora == "true"
 DATA_DIR            = Path(args.data_dir)
+QUESTION            = args.question
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
@@ -102,8 +104,8 @@ def load_split(split_dir: str | Path) -> Dataset:
 raw_train_data  = load_split(DATA_DIR / "train")
 raw_val_data    = load_split(DATA_DIR / "val")
 
-train_dataset   = RunningTextDataset(raw_train_data)
-val_dataset     = RunningTextDataset(raw_val_data)
+train_dataset   = RunningTextDataset(raw_train_data, question=QUESTION)
+val_dataset     = RunningTextDataset(raw_val_data, question=QUESTION)
 
 
 # Create data loader

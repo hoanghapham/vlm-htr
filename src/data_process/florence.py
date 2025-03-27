@@ -4,7 +4,6 @@ import torch
 from torch.utils.data import Dataset
 from pathlib import Path
 from PIL import Image
-from pagexml.parser import parse_pagexml_file
 from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -15,15 +14,16 @@ from src.data_process.xml import XMLParser
 
 class RunningTextDataset(Dataset):
 
-    def __init__(self, data):
+    def __init__(self, data, question: str = "<SwedishHTR>"):
         self.data = data
+        self.question = question
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         example = self.data[idx]
-        question = "<SwedishHTR>Print out the text in this image"
+        question = self.question
         answer = example["transcription"]
         image = example['image'].convert("RGB")
         return dict(
