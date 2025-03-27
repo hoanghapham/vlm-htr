@@ -12,6 +12,7 @@ temp/*
 plots/*
 **/runs/*
 eval/*
+workpad/*
 
 # files
 .python-version
