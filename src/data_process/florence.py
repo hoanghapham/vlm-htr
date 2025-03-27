@@ -199,13 +199,15 @@ class FlorenceTextODDataset(Dataset):
             bbox_texts.append(bbox_text)
 
         # Output text is of format </s><s>object_class<loc_...><loc_...><loc_...><loc_...>...</s>
-        answer = "</s><s>" + "".join(bbox_texts) + "</s>"
+        # answer = "</s><s>" + "".join(bbox_texts) + "</s>"
+        # Output text is of format "object_class<loc_...><loc_...><loc_...><loc_...>..."
+        answer = "".join(bbox_texts)
         
         return dict(
             question=self.task,
             answer=answer,
             image=image,
-            bboxes=bboxes
+            # bboxes=bboxes,
         )
 
     def select(self, indices: typing.Iterable):
