@@ -21,11 +21,11 @@ parser.add_argument("--resume", default="false")
 args = parser.parse_args()
 
 # Basics
-DATA_DIR        = Path(args.data_dir)
-MODEL_PATH      = args.model_path
-MODEL_NAME      = args.model_name
-DATASET_CONFIG  = DATA_DIR / "config.yaml"
-DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DATA_DIR            = Path(args.data_dir)
+BASE_MODEL_PATH     = args.base_model_path
+MODEL_NAME          = args.model_name
+DATASET_CONFIG      = DATA_DIR / "config.yaml"
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Train configs
 DATA_FRACTION   = float(args.data_fraction)
@@ -35,7 +35,7 @@ IMG_SIZE        = int(args.img_size)
 RESUME          = args.resume == "true"
 
 # Init model
-model = YOLO(MODEL_PATH)
+model = YOLO(BASE_MODEL_PATH)
 
 # Train
 training_results = model.train(
