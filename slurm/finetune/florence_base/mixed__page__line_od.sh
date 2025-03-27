@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J finetune/florence_base/ft_od_line
-#SBATCH -o logs_uppmax/finetune/florence_base/ft_od_line.out
-#SBATCH -e logs_uppmax/finetune/florence_base/ft_od_line.err
+#SBATCH -J finetune/florence_base/mixed__page__line_od
+#SBATCH -o logs_uppmax/finetune/florence_base/mixed__page__line_od.out
+#SBATCH -e logs_uppmax/finetune/florence_base/mixed__page__line_od.err
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -15,16 +15,15 @@
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
-DATA_DIR="/proj/uppmax2024-2-24/hapham/data/riksarkivet"
 
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_florence_od.py \
-    --data-dir $DATA_DIR \
-    --model-name florence_base__ft_od_line \
+    --data-dir $PROJECT_DIR/data/variants/mixed/page \
+    --model-name florence_base__mixed__page__line_od \
     --num-train-epochs 10 \
-    --max-train-steps 20000 \
+    --max-train-steps 40000 \
     --batch-size 2 \
-    --logging-interval 1000 \
+    --logging-interval 4000 \
     --use-lora false \
     --detect-class line
