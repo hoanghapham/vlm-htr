@@ -10,19 +10,20 @@ sys.path.append(str(PROJECT_DIR))
 
 # Parser
 parser = ArgumentParser()
-parser.add_argument("--data-dir", "-d", required=True)
-parser.add_argument("--data-fraction", "-df", default=1)
-parser.add_argument("--model-path", "-v", required=True, default="yolo11m.pt")
-parser.add_argument("--epochs", "-e", default=100)
-parser.add_argument("--batch-size", "-bs", default=10)
-parser.add_argument("--img-size", "-is", default=1280)
-parser.add_argument("--resume", "-rs", default="false")
+parser.add_argument("--data-dir", required=True)
+parser.add_argument("--data-fraction", default=1)
+parser.add_argument("--base-model-path", required=True, default="yolo11m.pt")
+parser.add_argument("--model-name", required=True)
+parser.add_argument("--epochs", default=100)
+parser.add_argument("--batch-size", default=10)
+parser.add_argument("--img-size", default=1280)
+parser.add_argument("--resume", default="false")
 args = parser.parse_args()
 
 # Basics
 DATA_DIR        = Path(args.data_dir)
 MODEL_PATH      = args.model_path
-MODEL_NAME      = Path(args.model_path).stem
+MODEL_NAME      = args.model_name
 DATASET_CONFIG  = DATA_DIR / "config.yaml"
 DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -46,8 +47,8 @@ training_results = model.train(
     device      = DEVICE,
     save        = True,
     save_period = 1,
-    project     = str(PROJECT_DIR / f"models/{MODEL_NAME}"),
-    name        = f"{MODEL_NAME}_{Path(DATA_DIR).stem}",
+    project     = str(PROJECT_DIR / "models"),
+    name        = MODEL_NAME,
     seed        = 42,
     single_cls  = True,
     resume      = RESUME,
