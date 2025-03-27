@@ -13,9 +13,8 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from peft import LoraConfig, get_peft_model
 
-from src.file_tools import read_json_file
-from utils import normalize_name
-from src.data_process.florence import FlorenceTextODDataset, create_collate_fn
+from src.file_tools import list_files
+from src.data_process.florence import FlorenceTextODDataset, create_collate_fn, FlorenceTask
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -81,9 +80,9 @@ processor = AutoProcessor.from_pretrained(
     revision=REVISION
 )
 
-# Unfreeze all params
-for param in model.parameters():
-    param.is_trainable = True
+# All params are unfrozen by default
+# for param in model.parameters():
+#     param.requires_grad = True
 
 
 #%%
@@ -91,9 +90,16 @@ for param in model.parameters():
 logger.info("Load data")
 
 # Collect page lists
-split_info = read_json_file(DATA_DIR / "split_info.json")
-train_dataset   = FlorenceTextODDataset(split_info["train"], object_class=DETECT_CLASS)
-val_dataset     = FlorenceTextODDataset(split_info["validation"], object_class=DETECT_CLASS)
+def load_split(base_dir: Path, split: str, object_class: str = "region"):
+    img_paths = list_files(base_dir / "images" / split, [".tif", ".jpg"])
+    xml_paths = list_files(base_dir / "page_xmls" / split, [".xml"])
+    imgs_xmls = list(zip(img_paths, xml_paths))
+    dataset = FlorenceTextODDataset(imgs_xmls, object_class=object_class, task=FlorenceTask.OD)
+    return dataset
+
+
+train_dataset   = load_split(DATA_DIR, "train", "region")
+val_dataset     = load_split(DATA_DIR, "val", "region")
 
 # Create data loader
 

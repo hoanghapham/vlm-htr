@@ -25,7 +25,7 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--input-dir", required=True)
 parser.add_argument("--use-split-info", default="false")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
-parser.add_argument("--user-prompt", default="<SwedishHTR>Print out the text in this image")
+parser.add_argument("--user-prompt", default="<SwedishHTR>")
 args = parser.parse_args()
 
 # args = parser.parse_args([

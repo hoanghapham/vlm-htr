@@ -7,8 +7,9 @@ import numpy as np
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
+from datasets import concatenate_datasets, load_from_disk
 from tqdm import tqdm
 
 from src.file_tools import read_json_file, write_json_file
@@ -37,6 +38,20 @@ def gen_split_indices(
     )
 
     return train_indices, val_indices, test_indices
+
+
+def load_split(split_dir: str | Path) -> Dataset:
+    dsets = []
+    for path in split_dir.glob("*"):
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
+
+    dataset = concatenate_datasets(dsets)
+    return dataset
+
 
 
 class Checkpoint():
@@ -163,6 +178,10 @@ class Trainer():
         self.step_idx_spaces = 7
 
     def train(self):
+
+        if not self.model_out_dir.exists():
+            self.model_out_dir.mkdir(parents=True)
+
         total_train_loss = 0
 
         # Init model from the last checkpoint state

@@ -26,9 +26,9 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code=True, revision='refs/pr/6'
 )
 
-# Unfreeze vision params
-for param in model.vision_tower.parameters():
-  param.is_trainable = True
+# All params are unfrozen by default
+# for param in model.parameters():
+#     param.requires_grad = True
 
 
 # Create VQA Dataset

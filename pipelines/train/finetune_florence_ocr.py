@@ -79,9 +79,9 @@ processor = AutoProcessor.from_pretrained(
     revision=REVISION
 )
 
-# Unfreeze all params
-for param in model.parameters():
-    param.is_trainable = True
+# All params are unfrozen by default
+# for param in model.parameters():
+#     param.requires_grad = True
 
 
 #%%

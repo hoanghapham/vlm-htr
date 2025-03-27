@@ -1,16 +1,41 @@
 import sys
-import typing
-import torch
-from torch.utils.data import Dataset
 from pathlib import Path
-from PIL import Image
-from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
-
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.data_process.xml import XMLParser
+import typing
+import random
 
+import torch
+from torch.utils.data import Dataset
+from PIL import Image
+from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+from src.data_process.xml import XMLParser
+from src.data_process.visualization import random_color
+
+class FlorenceTask():
+    OD = "<OD>"
+    DENSE_REGION_CAPTION = "<DENSE_REGION_CAPTION>"
+    CAPTION = "<CAPTION>"
+    DETAILED_CAPTION = "<DETAILED_CAPTION> "
+    MORE_DETAILED_CAPTION = "<MORE_DETAILED_CAPTION> "
+    REGION_PROPOSAL = "<REGION_PROPOSAL>"
+    CAPTION_TO_PHRASE_GROUNDING = "<CAPTION_TO_PHRASE_GROUNDING>"
+    REFERRING_EXPRESSION_SEGMENTATION = "<REFERRING_EXPRESSION_SEGMENTATION>"
+    REGION_TO_SEGMENTATION = "<REGION_TO_SEGMENTATION>"
+    OPEN_VOCABULARY_DETECTION = "<OPEN_VOCABULARY_DETECTION>"
+    REGION_TO_DESCRIPTION = "<REGION_TO_DESCRIPTION>"
+    OCR = "<OCR>"
+    OCR_WITH_REGION = "<OCR_WITH_REGION>"
+
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+        pass
 
 class RunningTextDataset(Dataset):
 
@@ -119,33 +144,19 @@ class BoxQuantizer(object):
         return dequantized_boxes    
 
 
-class FlorenceTask():
-    OD = "<OD>"
-    DENSE_REGION_CAPTION = "<DENSE_REGION_CAPTION>"
-    CAPTION = "<CAPTION>"
-    DETAILED_CAPTION = "<DETAILED_CAPTION> "
-    MORE_DETAILED_CAPTION = "<MORE_DETAILED_CAPTION> "
-    REGION_PROPOSAL = "<REGION_PROPOSAL>"
-    CAPTION_TO_PHRASE_GROUNDING = "<CAPTION_TO_PHRASE_GROUNDING>"
-    REFERRING_EXPRESSION_SEGMENTATION = "<REFERRING_EXPRESSION_SEGMENTATION>"
-    REGION_TO_SEGMENTATION = "<REGION_TO_SEGMENTATION>"
-    OPEN_VOCABULARY_DETECTION = "<OPEN_VOCABULARY_DETECTION>"
-    REGION_TO_DESCRIPTION = "<REGION_TO_DESCRIPTION>"
-    OCR = "<OCR>"
-    OCR_WITH_REGION = "<OCR_WITH_REGION>"
-
-    def __init__(self):
-        pass
-
-
 class FlorenceTextODDataset(Dataset):
 
-    def __init__(self, imgs_xmls: list[tuple | list], object_class: str = "region"):
+    def __init__(
+        self, 
+        imgs_xmls: list[tuple | list], 
+        task: FlorenceTask = FlorenceTask.OD, 
+        object_class: str = "region", 
+    ):
         assert object_class in ["region", "line"]
         super().__init__()
         
         self.object_class = object_class
-        self.task = FlorenceTask.OD
+        self.task = task
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
         self.xmlparser = XMLParser()
@@ -200,3 +211,106 @@ class FlorenceTextODDataset(Dataset):
     def select(self, indices: typing.Iterable):
         pairs = [self.imgs_xmls[idx] for idx in indices]
         return FlorenceTextODDataset(pairs)
+
+
+def draw_bbox(image, data):
+    """
+    Plot BBox
+    """
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.imshow(image)
+
+    for bbox, label in zip(data['bboxes'], data['labels']):
+        x1, y1, x2, y2 = bbox
+        rect = patches.Rectangle((x1, y1),
+                                 x2 - x1,
+                                 y2 - y1,
+                                 linewidth=2,
+                                 edgecolor='lime',
+                                 facecolor='none')
+        ax.add_patch(rect)
+        plt.text(x1,
+                 y1,
+                 label,
+                 color='black',
+                 fontsize=8,
+                 bbox=dict(facecolor='lime', alpha=1))
+
+    ax.axis('off')
+    plt.show()
+
+
+# def draw_ocr_bboxes(image, prediction):
+#     """
+#     Draw OCR BBox
+#     """
+#     scale = 1
+#     draw = ImageDraw.Draw(image)
+#     bboxes, labels = prediction['quad_boxes'], prediction['labels']
+
+#     for box, label in zip(bboxes, labels):
+#         color = 'lime'
+#         new_box = (np.array(box) * scale).tolist()
+#         draw.polygon(new_box, width=4, outline=color)
+#         draw.text((new_box[0] + 8, new_box[1] + 2),
+#                   "{}".format(label),
+#                   align="right",
+#                   fill=color)
+    
+#     display(image)
+
+
+
+def draw_seg_mask(img_obj: Image, bboxes: list, polygons: list, size: int=10):
+
+    colors = [random_color() for _ in range(len(bboxes))]
+
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(size, size))
+
+    # Show the image
+    ax.imshow(img_obj)
+
+    # Draw the bounding box
+    for idx, ann in enumerate(polygons):
+        bbox = bboxes[idx]
+        segm = polygons[idx]
+        rect = patches.Rectangle(
+            (bbox[0], bbox[1]), bbox[2], bbox[3],
+            linewidth=2, edgecolor='lime', facecolor='none', label="Bounding Box"
+        )
+        ax.add_patch(rect)
+        ax.text(bbox[0], bbox[1] - 10, str(idx), color = "lime", size=11)
+
+        # Draw the segmentation mask
+        seg_x = segm[0::2]
+        seg_y = segm[1::2]
+        ax.fill(seg_x, seg_y, facecolor=colors[idx], alpha=0.4, edgecolor=colors[idx], linewidth=2, label="Segmentation")
+
+    # Set axis limits
+    ax.set_xlim(0, img_obj.width)
+    ax.set_ylim(img_obj.height, 0)  # Invert y-axis to match image coordinates
+
+    # Labels and legend
+    # ax.set_title(file_name)
+    # ax.legend()
+    # Show the plot
+    plt.show()
+
+
+def create_collate_fn(processor, device):
+    def func(batch):
+        questions = [data["question"] for data in batch]
+        answers = [data["answer"] for data in batch]
+        images = [data["image"] for data in batch]
+        
+        inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
+        labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
+        
+        return dict(
+            input_ids=inputs["input_ids"], 
+            pixel_values=inputs["pixel_values"], 
+            labels=labels,
+        )
+
+    return func

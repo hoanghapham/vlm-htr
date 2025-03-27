@@ -62,9 +62,9 @@ model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
 model.config.pad_token_id           = processor.tokenizer.pad_token_id
 model.config.vocab_size             = model.config.decoder.vocab_size
 
-# Unfreeze params for training
-for param in model.parameters():
-    param.is_trainable = True
+# All params are unfrozen by default
+# for param in model.parameters():
+#     param.requires_grad = True
 
 
 #%%
