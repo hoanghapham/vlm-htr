@@ -113,7 +113,7 @@ write_json_file(metrics, OUTPUT_DIR / "metrics.json")
 # Write results
 all_results = []
 
-for img_path, ann, pred, coverage in zip(img_paths, annotations, page_region_coverages):
+for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, page_region_coverages):
     all_results.append(
         dict(
             img_path = str(img_path),
