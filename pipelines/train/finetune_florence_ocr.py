@@ -7,14 +7,13 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from datasets import concatenate_datasets, load_from_disk
 from peft import LoraConfig, get_peft_model
 
-from src.data_process.florence import FlorenceOCRDataset, load_arrow_datasets, create_collate_fn
+from src.data_processing.florence import FlorenceOCRDataset, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -88,12 +87,9 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-raw_train_data  = load_arrow_datasets(DATA_DIR / "train")
-raw_val_data    = load_arrow_datasets(DATA_DIR / "val")
-
 # custom_question can be None
-train_dataset   = FlorenceOCRDataset(raw_train_data, custom_question=USER_PROMPT)
-val_dataset     = FlorenceOCRDataset(raw_val_data, custom_question=USER_PROMPT)
+train_dataset   = FlorenceOCRDataset(DATA_DIR / "train", custom_question=USER_PROMPT)
+val_dataset     = FlorenceOCRDataset(DATA_DIR / "val", custom_question=USER_PROMPT)
 
 # Create data loader
 collate_fn      = create_collate_fn(processor, DEVICE)

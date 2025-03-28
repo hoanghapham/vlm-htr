@@ -13,8 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from peft import LoraConfig, get_peft_model
 
-from src.file_tools import list_files
-from src.data_process.florence import FlorenceTextODDataset, create_collate_fn, FlorenceTask
+from src.data_processing.florence import FlorenceTextODDataset, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -89,17 +88,8 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-# Collect page lists
-def load_split(base_dir: Path, split: str, object_class: str = "region"):
-    img_paths = list_files(base_dir / "images" / split, [".tif", ".jpg"])
-    xml_paths = list_files(base_dir / "page_xmls" / split, [".xml"])
-    imgs_xmls = list(zip(img_paths, xml_paths))
-    dataset = FlorenceTextODDataset(imgs_xmls, object_class=object_class, task=FlorenceTask.OD)
-    return dataset
-
-
-train_dataset   = load_split(DATA_DIR, "train", "region")
-val_dataset     = load_split(DATA_DIR, "val", "region")
+train_dataset   = FlorenceTextODDataset(DATA_DIR / "train", object_class="region")
+val_dataset     = FlorenceTextODDataset(DATA_DIR / "val", object_class="region")
 
 # Create data loader
 

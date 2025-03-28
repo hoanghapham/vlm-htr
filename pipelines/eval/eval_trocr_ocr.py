@@ -14,19 +14,16 @@ from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
 from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
-from utils import create_dset_from_paths
-from src.data_process.trocr import create_trocr_collate_fn
-from src.data_process.florence import RunningTextDataset
-
+from src.data_processing.trocr import create_collate_fn
+from src.data_processing.utils import load_arrow_datasets
+from src.file_tools import write_json_file, write_list_to_text_file
 from src.logger import CustomLogger
-from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
 #%%
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--test-data-dir", required=True)
 parser.add_argument("--batch-size", default=15)
-parser.add_argument("--use-split-info", default="false")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 args = parser.parse_args()
 
@@ -40,20 +37,19 @@ args = parser.parse_args()
 
 
 MODEL_NAME      = args.model_name
-INPUT_DIR       = Path(args.input_dir)
-USE_SPLIT_INFO  = args.use_split_info == "true"
+TEST_DATA_DIR   = Path(args.test_data_dir)
 LOAD_CHECKPOINT = args.load_checkpoint
 BATCH_SIZE      = int(args.batch_size)
     
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
+LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
+EVAL_DIR            = PROJECT_DIR / "evaluations" / MODEL_NAME
 
-OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
-if not OUTPUT_DIR.exists():
-    OUTPUT_DIR.mkdir(parents=True)
+if not EVAL_DIR.exists():
+    EVAL_DIR.mkdir(parents=True)
 
-logger = CustomLogger(f"eval__{MODEL_NAME}__{INPUT_DIR.stem}", log_to_local=True)
+logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 
 
 #%%
@@ -83,21 +79,11 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
+collate_fn = create_collate_fn(processor, DEVICE)
+test_dataset = load_arrow_datasets(TEST_DATA_DIR)
+test_loader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=BATCH_SIZE)
 
-if USE_SPLIT_INFO:
-    split_info_fp = INPUT_DIR / "split_info.json"
-    split_info = read_json_file(split_info_fp)
-    test_page_names = [Path(path).stem for path in split_info["test"]]
-    test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir() and path.name in test_page_names]
-else:
-    test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir()]
-
-test_data = create_dset_from_paths(test_data_paths, RunningTextDataset)
-
-collate_fn = create_trocr_collate_fn(processor, DEVICE)
-test_loader = DataLoader(test_data, collate_fn=collate_fn, batch_size=BATCH_SIZE)
-
-logger.info(f"Total samples: {len(test_data):,}, batch size: {BATCH_SIZE}, total batches: {len(test_loader):,}")
+logger.info(f"Total samples: {len(test_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(test_loader):,}")
 
 #%%
 cer = CER()
@@ -116,7 +102,7 @@ range_end = BATCH_SIZE
 
 for inputs in tqdm(test_loader, desc="Evaluate"):
 
-    groundtruths = [data["answer"] for data in test_data.select(range(range_start, range_end))]
+    groundtruths = [data["answer"] for data in test_dataset.select(range(range_start, range_end))]
 
     generated_ids = model.generate(inputs=inputs["pixel_values"])
     preds = processor.batch_decode(generated_ids, skip_special_tokens=True)
@@ -136,7 +122,7 @@ for inputs in tqdm(test_loader, desc="Evaluate"):
         pred_list.append(pred)
     
     range_start += BATCH_SIZE
-    range_end = min(len(test_data), range_end + BATCH_SIZE)
+    range_end = min(len(test_dataset), range_end + BATCH_SIZE)
 
 
 # %%
@@ -153,7 +139,7 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 # Save results
 # Avg metrics
 
-logger.info(f"Save result to {OUTPUT_DIR}")
+logger.info(f"Save result to {EVAL_DIR}")
 
 metrics_aggr = {
     "step_idx": eval_cp.step_idx,
@@ -165,7 +151,7 @@ metrics_aggr = {
     "bow_extras": avg_bow_extras
 }
 
-write_json_file(metrics_aggr, OUTPUT_DIR / f"metrics_aggr_step_{eval_cp.step_idx}.json")
+write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_step_{eval_cp.step_idx}.json")
 
 # Detailed results
 metrics_lists = {
@@ -175,11 +161,11 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step_{eval_cp.step_idx}.json")
+write_json_file(metrics_lists, EVAL_DIR / f"metrics_lists_step_{eval_cp.step_idx}.json")
 
 # Write ground text for reference
-write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
+write_list_to_text_file(gt_list, EVAL_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_step_{eval_cp.step_idx}.txt")
+write_list_to_text_file(pred_list, EVAL_DIR / f"prediction_step_{eval_cp.step_idx}.txt")
 

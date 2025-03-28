@@ -7,13 +7,13 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_scheduler
-from datasets import load_from_disk, concatenate_datasets
 
-from src.data_process.trocr import TrOCRLineDataset
+from src.data_processing.trocr import create_collate_fn
+from src.data_processing.utils import load_arrow_datasets
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -71,42 +71,11 @@ model.config.vocab_size             = model.config.decoder.vocab_size
 # Load data
 logger.info("Load data")
 
-def load_split(split_dir: str | Path) -> Dataset:
-    dsets = []
-    for path in split_dir.glob("*"):
-        try:
-            data = load_from_disk(path)
-            dsets.append(data)
-        except Exception as e:
-            print(e)
-
-    dataset = concatenate_datasets(dsets)
-    return dataset
-
-
-train_dataset   = load_split(DATA_DIR / "train")
-val_dataset     = load_split(DATA_DIR / "val")
+train_dataset   = load_arrow_datasets(DATA_DIR / "train")
+val_dataset     = load_arrow_datasets(DATA_DIR / "val")
 
 
 # Create data loader
-def create_collate_fn(processor, device):
-    def func(batch):
-        # Filter None item in the batch. In the worst case, all items are None
-        batch = list(filter(lambda x: x is not None, batch))
-
-        images = [data["image"] for data in batch]
-        texts = [data["transcription"] for data in batch]
-        
-        pixel_values = processor(images=images, return_tensors="pt").pixel_values.to(device)
-        labels = processor.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)["input_ids"].to(device)
-
-        return dict(
-            pixel_values=pixel_values, 
-            labels=labels,
-        )
-
-    return func
-
 
 collate_fn = create_collate_fn(processor, DEVICE)
 

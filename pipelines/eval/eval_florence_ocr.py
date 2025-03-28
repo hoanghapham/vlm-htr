@@ -11,12 +11,7 @@ PROJECT_DIR = Path.cwd().parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
-from src.data_process.florence import (
-    FlorenceTask,
-    FlorenceOCRDataset, 
-    load_arrow_datasets, 
-    predict, 
-)
+from src.data_processing.florence import FlorenceTask, FlorenceOCRDataset, predict
 
 from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
 from src.file_tools import write_json_file, write_list_to_text_file
@@ -25,7 +20,6 @@ from src.file_tools import write_json_file, write_list_to_text_file
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--test-data-dir", required=True)
-parser.add_argument("--test-variant", required=True, default="mixed")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
@@ -33,7 +27,6 @@ args = parser.parse_args()
 # args = parser.parse_args([
 #     "--model-name", "florence_base__ft_htr_line",
 #     "--test-data-dir", str(PROJECT_DIR / "data/hovratt_line"),
-#     "--use-split-info", "true"
 # ])
 
 # Setup paths
@@ -43,16 +36,15 @@ LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
 TEST_DATA_DIR       = Path(args.test_data_dir)
-TEST_VARIANT        = args.test_variant
 LOAD_CHECKPOINT     = args.load_checkpoint
 USER_PROMPT         = args.user_prompt
-OUTPUT_DIR          = PROJECT_DIR / "output" / MODEL_NAME / TEST_VARIANT
+OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
 # Logger
-logger = CustomLogger(f"eval__{MODEL_NAME}__{TEST_VARIANT}", log_to_local=True)
+logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 
 #%%
 # Load model
@@ -82,8 +74,7 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
-raw_data = load_arrow_datasets(TEST_DATA_DIR)
-test_dataset = FlorenceOCRDataset(raw_data, custom_question=USER_PROMPT)
+test_dataset = FlorenceOCRDataset(TEST_DATA_DIR, custom_question=USER_PROMPT)
 
 logger.info(f"Total test samples: {len(test_dataset)}")
 logger.info(f"User prompt: {USER_PROMPT}")
