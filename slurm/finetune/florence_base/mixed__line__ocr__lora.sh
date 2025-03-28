@@ -20,10 +20,9 @@ cd $PROJECT_DIR
 
 python pipelines/train/finetune_florence_ocr.py \
     --data-dir $PROJECT_DIR/data/variants/mixed/line/ \
-    --model-name florence_base__mixed__line__ocr \
+    --model-name florence_base__mixed__line__ocr__lora \
     --num-train-epochs 2 \
     --max-train-steps 220000 \
     --batch-size 2 \
     --logging-interval 20000 \
-    --question "<SwedishHTR>" \
     --use-lora true
