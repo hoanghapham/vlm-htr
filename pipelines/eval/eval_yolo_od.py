@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
 
+import torch
 from ultralytics import YOLO
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -22,14 +23,16 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
+DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 INPUT_DIR       = Path(args.input_dir)
 MODEL_NAME      = args.model_name
+OBJECT_CLASS    = args.object_class
 MODEL_PATH      = PROJECT_DIR / f"models/{MODEL_NAME}/weights/best.pt"
 OUTPUT_DIR      = PROJECT_DIR / "evaluations" / MODEL_NAME
-OBJECT_CLASS    = args.object_class
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
+
 
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
@@ -55,7 +58,8 @@ for path in xml_paths:
 # %%
 logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
-results = model(img_paths, verbose=False)
+results = model.predict(img_paths, verbose=False, device=DEVICE)
+
 
 #%%
 predictions = []

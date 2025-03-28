@@ -19,7 +19,7 @@ from src.file_tools import write_json_file, write_list_to_text_file
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--test-data-dir", required=True)
+parser.add_argument("--input-dir", required=True)
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
@@ -35,7 +35,7 @@ MODEL_NAME          = args.model_name
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-TEST_DATA_DIR       = Path(args.test_data_dir)
+INPUT_DIR           = Path(args.input_dir)
 LOAD_CHECKPOINT     = args.load_checkpoint
 USER_PROMPT         = args.user_prompt
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
@@ -74,7 +74,7 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
-test_dataset = FlorenceOCRDataset(TEST_DATA_DIR, custom_question=USER_PROMPT)
+test_dataset = FlorenceOCRDataset(INPUT_DIR, custo  m_question=USER_PROMPT)
 
 logger.info(f"Total test samples: {len(test_dataset)}")
 logger.info(f"User prompt: {USER_PROMPT}")

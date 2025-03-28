@@ -17,7 +17,7 @@ source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
-python pipelines/evaluate/eval_yolo_od.py \
+python pipelines/eval/eval_yolo_od.py \
     --input-dir $PROJECT_DIR/variants/mixed/page \
     --model-name yolo11m__mixed__page__region_od \
     --object-class region
