@@ -44,6 +44,7 @@ class Bbox():
         self.xyxy = xyxy
         self.xywh = bbox_xyxy_to_xywh(xyxy)
         self.polygon = bbox_xyxy_to_polygon(xyxy)
+        self.points = self.polygon.exterior.coords
 
     @staticmethod
     def from_xywh(xywh: tuple) -> Self:

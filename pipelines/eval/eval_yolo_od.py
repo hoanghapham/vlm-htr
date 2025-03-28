@@ -1,6 +1,5 @@
 #%%
 import sys
-import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -12,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_ndjson_file, write_json_file
-from src.data_processing.visual_tasks import Bbox
+from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
 from src.data_processing.utils import XMLParser
 from src.evaluation.visual_metrics import precision_recall_fscore, region_coverage
 from src.logger import CustomLogger
@@ -21,12 +20,12 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--batch-size", default=100)
+parser.add_argument("--batch-size", default=10)
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
 DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DATA_DIR       = Path(args.data_dir)
+DATA_DIR        = Path(args.data_dir)
 MODEL_NAME      = args.model_name
 OBJECT_CLASS    = args.object_class
 BATCH_SIZE      = int(args.batch_size)
@@ -48,7 +47,7 @@ assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
 
 # Get annotations
 xml_parser = XMLParser()
-annotations: list[list[Bbox]] = []
+annotations = []
 
 logger.info("Get annotations")
 for path in xml_paths:
@@ -56,7 +55,7 @@ for path in xml_paths:
         objects = xml_parser.get_regions(path)
     elif OBJECT_CLASS == "line":
         objects = xml_parser.get_lines(path)
-    img_ann_bboxes = [Bbox(obj["bbox"]) for obj in objects]
+    img_ann_bboxes = [obj["bbox"] for obj in objects]
     annotations.append(img_ann_bboxes)
 
 
@@ -74,13 +73,13 @@ for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
 
 #%%
-predictions: list[list[Bbox]] = []
+predictions = []
 
 for result in results:
     img_pred_bboxes = []
     for box_tensor in result.boxes.xyxy:
-        xyxy = [data.item() for data in box_tensor]
-        img_pred_bboxes.append(Bbox(xyxy))
+        box = [data.item() for data in box_tensor]
+        img_pred_bboxes.append(box)
     
     predictions.append(img_pred_bboxes)
 
@@ -92,8 +91,8 @@ logger.info(f"Precision: {precision}, Recall: {recall}, Fscore: {fscore}")
 
 page_region_coverages = []
 for pred, ann in zip(predictions, annotations):
-    pred_polygons = [box.polygon for box in pred]
-    ann_polygons = [box.polygon for box in ann]
+    pred_polygons = [bbox_xyxy_to_polygon(box) for box in pred]
+    ann_polygons = [bbox_xyxy_to_polygon(box) for box in ann]
     coverage = region_coverage(pred_polygons, ann_polygons)
     page_region_coverages.append(coverage)
 
@@ -117,7 +116,7 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, pa
     all_results.append(
         dict(
             img_path = str(img_path),
-            ann_bboxes = [list(bbox) for bbox in ann],
+            ann_bboxes = ann,
             pred_bbox = pred,
             coverage = coverage
         )
