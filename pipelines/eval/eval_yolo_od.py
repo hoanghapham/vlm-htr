@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 
 import torch
 from ultralytics import YOLO
+from tqdm import tqdm
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -20,6 +21,7 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
+parser.add_argument("--batch-size", default=100)
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
@@ -27,12 +29,12 @@ DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DATA_DIR       = Path(args.data_dir)
 MODEL_NAME      = args.model_name
 OBJECT_CLASS    = args.object_class
+BATCH_SIZE      = int(args.batch_size)
 MODEL_PATH      = PROJECT_DIR / f"models/{MODEL_NAME}/weights/best.pt"
 OUTPUT_DIR      = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
-
 
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
@@ -61,7 +63,14 @@ for path in xml_paths:
 # %%
 logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
-results = model.predict(img_paths, verbose=False, device=DEVICE)
+
+results = []
+iterator = list(range(0, len(img_paths), BATCH_SIZE))
+
+for i in tqdm(iterator, total=len(iterator), unit="batch"):
+    batch = img_paths[i:i+BATCH_SIZE]
+    batch_results = model.predict(batch, verbose=False, device=DEVICE)
+    results += batch_results
 
 
 #%%
