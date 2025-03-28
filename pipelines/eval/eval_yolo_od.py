@@ -18,13 +18,13 @@ from src.logger import CustomLogger
 #%%
 
 parser = ArgumentParser()
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
 DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-INPUT_DIR       = Path(args.input_dir)
+DATA_DIR       = Path(args.data_dir)
 MODEL_NAME      = args.model_name
 OBJECT_CLASS    = args.object_class
 MODEL_PATH      = PROJECT_DIR / f"models/{MODEL_NAME}/weights/best.pt"
@@ -37,8 +37,8 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
 #%%
-img_paths = list_files(INPUT_DIR / "images", [".tif", ".jpg"])
-xml_paths = list_files(INPUT_DIR / "page_xmls", [".xml"])
+img_paths = list_files(DATA_DIR / "images", [".tif", ".jpg"])
+xml_paths = list_files(DATA_DIR / "page_xmls", [".xml"])
 matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
 
 assert len(img_paths) == len(xml_paths) == len(matched) > 0, \

@@ -1,13 +1,15 @@
 #%%
 import sys
 from pathlib import Path
-import torch
-from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoProcessor
-from htrflow.evaluate import CER, WER, BagOfWords
 from argparse import ArgumentParser
 
-PROJECT_DIR = Path.cwd().parent
+import torch
+from tqdm import tqdm
+from peft import get_peft_model, LoraConfig
+from transformers import AutoModelForCausalLM, AutoProcessor
+from htrflow.evaluate import CER, WER, BagOfWords
+
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
@@ -19,7 +21,7 @@ from src.file_tools import write_json_file, write_list_to_text_file
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
@@ -34,8 +36,9 @@ DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu
 MODEL_NAME          = args.model_name
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
+REVISION            = 'refs/pr/6'
 
-INPUT_DIR           = Path(args.input_dir)
+DATA_DIR           = Path(args.data_dir)
 LOAD_CHECKPOINT     = args.load_checkpoint
 USER_PROMPT         = args.user_prompt
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
@@ -52,8 +55,11 @@ logger.info("Load model")
 processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
-# Load checkpoint to evaluate
+if "lora" in MODEL_NAME:
+    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
+    model = get_peft_model(model, config)
 
+# Load checkpoint to evaluate
 eval_cp = Checkpoint()
 
 if LOAD_CHECKPOINT == "vanilla":
@@ -74,7 +80,7 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
-test_dataset = FlorenceOCRDataset(INPUT_DIR, custo  m_question=USER_PROMPT)
+test_dataset = FlorenceOCRDataset(DATA_DIR, custom_question=USER_PROMPT)
 
 logger.info(f"Total test samples: {len(test_dataset)}")
 logger.info(f"User prompt: {USER_PROMPT}")

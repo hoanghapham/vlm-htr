@@ -14,7 +14,7 @@ from src.data_process.xml import XMLParser
 
 
 parser = ArgumentParser()
-parser.add_argument("--input-dir", "-i", required=True)
+parser.add_argument("--data-dir", "-i", required=True)
 parser.add_argument("--data-dest-dir", "-dd", required=True)
 parser.add_argument("--yolo-dest-dir", "-yd", required=True)
 parser.add_argument("--copy-images", "-ci", default="false")
@@ -24,7 +24,7 @@ parser.add_argument("--create-line", "-cl", default="false")
 parser.add_argument("--create-region", "-cr", default="false")
 args = parser.parse_args()
 
-INPUT_DIR = Path(args.input_dir)
+DATA_DIR = Path(args.data_dir)
 DATA_DEST_DIR = Path(args.data_dest_dir)
 YOLO_DEST_DIR = Path(args.yolo_dest_dir)
 COPY_IMAGES = args.copy_images == "true"
@@ -33,7 +33,7 @@ CREATE_SYMLINK = args.create_symlink == "true"
 CREATE_LINE = args.create_line == "true"
 CREATE_REGION = args.create_region == "true"
 
-split_info = read_json_file(INPUT_DIR / "split_info.json")
+split_info = read_json_file(DATA_DIR / "split_info.json")
 
 #%%
 # Copy all train, val, test images to one folder

@@ -12,13 +12,13 @@ from src.logger import CustomLogger
 
 
 parser = ArgumentParser()
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--output-dir", required=True)
 parser.add_argument("--img-extension", default=".tif")
 args = parser.parse_args()
 
 # Setup
-INPUT_DIR = Path(args.input_dir)
+DATA_DIR = Path(args.data_dir)
 OUTPUT_DIR = Path(args.output_dir)
 
 if not OUTPUT_DIR.exists():
@@ -27,11 +27,11 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger("create_region_dataset")
 
 #%%
-logger.info(f"Create region dataset for {INPUT_DIR}")
+logger.info(f"Create region dataset for {DATA_DIR}")
 builder = ImageDatasetBuilder()
 
-all_img_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "images", pattern="**/*" + args.img_extension))]
-all_xml_paths = [str(path) for path in sorted(Path.glob(INPUT_DIR / "page_xmls", pattern="**/*.xml"))]
+all_img_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "images", pattern="**/*" + args.img_extension))]
+all_xml_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "page_xmls", pattern="**/*.xml"))]
 
 assert len(all_img_paths) == len(all_xml_paths) > 0, \
     f"Invalid length, or mismatch: {len(all_img_paths)} - {len(all_xml_paths)}"

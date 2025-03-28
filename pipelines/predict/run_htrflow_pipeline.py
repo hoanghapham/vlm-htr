@@ -15,7 +15,7 @@ from src.file_tools import list_files, read_json_file
 from src.logger import CustomLogger
 
 parser = ArgumentParser()
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--split-info-fp", required=False)
 parser.add_argument("--config-path", required=True)
 parser.add_argument("--img-extension", required=True, default=".tif")
@@ -24,7 +24,7 @@ args = parser.parse_args()
 logger = CustomLogger("HTRFlow", log_to_local=True)
 
 # Parse args
-INPUT_DIR       = Path(args.input_dir)
+DATA_DIR       = Path(args.data_dir)
 CONFIG_PATH     = Path(args.config_path)
 
 
@@ -44,7 +44,7 @@ if args.split_info_fp:
 pipe = Pipeline.from_config(config)
 
 # Create collection
-image_files = list_files(INPUT_DIR, extensions=[args.img_extension])
+image_files = list_files(DATA_DIR, extensions=[args.img_extension])
 
 if split_info:
     image_files = [tup for tup in image_files if tup[1].stem in split_info["test"]]

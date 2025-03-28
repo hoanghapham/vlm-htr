@@ -22,14 +22,14 @@ from src.logger import CustomLogger
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--input-dir", required=True)
+parser.add_argument("--data-dir", required=True)
 parser.add_argument("--batch-size", default=15)
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "trocr_base__ft_vanilla",
-#     "--input-dir", str(PROJECT_DIR / "data/hovratt_line"),
+#     "--data-dir", str(PROJECT_DIR / "data/hovratt_line"),
 #     "--use-split-info", "false",
 #     "--load-checkpoint", "vanilla",
 #     "--batch-size", "2"
@@ -37,7 +37,7 @@ args = parser.parse_args()
 
 
 MODEL_NAME      = args.model_name
-INPUT_DIR       = Path(args.input_dir)
+DATA_DIR       = Path(args.data_dir)
 LOAD_CHECKPOINT = args.load_checkpoint
 BATCH_SIZE      = int(args.batch_size)
     
@@ -80,7 +80,7 @@ model.eval()
 # Load test data
 logger.info("Load test data")
 collate_fn = create_collate_fn(processor, DEVICE)
-test_dataset = load_arrow_datasets(INPUT_DIR)
+test_dataset = load_arrow_datasets(DATA_DIR)
 test_loader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=BATCH_SIZE)
 
 logger.info(f"Total samples: {len(test_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(test_loader):,}")
