@@ -87,8 +87,8 @@ for result in results:
 assert len(annotations) == len(predictions), f"predictions & annotations length mismatched"
 # %%
 
-logger.info("Compute metrics")
 precision, recall, fscore = precision_recall_fscore(predictions, annotations)
+logger.info(f"Precision: {precision}, Recall: {recall}, Fscore: {fscore}")
 
 page_region_coverages = []
 for pred, ann in zip(predictions, annotations):
@@ -97,7 +97,8 @@ for pred, ann in zip(predictions, annotations):
     coverage = region_coverage(pred_polygons, ann_polygons)
     page_region_coverages.append(coverage)
 
-avg_region_coverage = np.mean(page_region_coverages)
+avg_region_coverage = float(sum(page_region_coverages)) / len(page_region_coverages)
+logger.info(f"Average region coverage: {avg_region_coverage:.4f}")
 
 # Write metrics
 metrics = dict(

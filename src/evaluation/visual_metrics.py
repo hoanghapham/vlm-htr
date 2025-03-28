@@ -1,5 +1,6 @@
 from sklearn.metrics import precision_recall_fscore_support
 from shapely import Polygon, union_all
+from htrflow.evaluate import Ratio
 
 
 def compute_iou(box1, box2):
@@ -71,4 +72,4 @@ def precision_recall_fscore(detections: list[list], annotations: list[list], iou
 def region_coverage(pred_polygons: list[Polygon], truth_polygons: list[Polygon]):
         truth = union_all(truth_polygons)
         pred = union_all(pred_polygons)
-        return truth.intersection(pred).area / truth.area
+        return Ratio(truth.intersection(pred).area, truth.area)
