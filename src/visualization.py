@@ -1,14 +1,15 @@
+import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image
-import random
+from src.data_processing.visual_tasks import bbox_xyxy_to_xywh
 
 
 def random_color():
     return (random.random(), random.random(), random.random())  # RGBA with transparency
 
 
-def draw_bboxes_xywh(
+def draw_bboxes_xyxy(
     image: Image, 
     bboxes: list[list|tuple], 
     fig_size: int = 15, 
@@ -22,7 +23,7 @@ def draw_bboxes_xywh(
 
     # Draw bboxes
     for idx, bbox in enumerate(bboxes):
-        x, y, width, height = bbox
+        x, y, width, height = bbox_xyxy_to_xywh(bbox)
         rect = patches.Rectangle(
             (x, y), width, height,
             linewidth=2, edgecolor=bbox_color, facecolor='none', label=idx

@@ -1,6 +1,7 @@
-import xml.etree.ElementTree as ET
+import sys
 from pathlib import Path
-
+import xml.etree.ElementTree as ET
+from torch.data.utils.data import Dataset
 
 class XMLParser():
     def __init__(self, verbose: bool = False):
@@ -29,7 +30,6 @@ class XMLParser():
         max_y = max(p[1] for p in polygon)
         return min_x, min_y, max_x, max_y
 
-
     def get_regions(self, xml_path: str | Path):
         """Parses the PAGE XML and extracts region data."""
         root = self._parse_xml(xml_path)
@@ -51,7 +51,6 @@ class XMLParser():
                         print(f"Error parsing region: {e}")
         return regions_data
         
-
     def get_lines(self, xml_path):
         """Parses the PAGE XML and extracts line data."""
         root = self._parse_xml(xml_path)
@@ -73,3 +72,17 @@ class XMLParser():
                         if self.verbose:
                             print(f"Error parsing line: {e}")
         return lines_data
+    
+
+def load_arrow_datasets(parent_dir: str | Path) -> Dataset:
+    dsets = []
+    dir_paths = [path for path in parent_dir.glob("*") if path.is_dir()]
+    for path in dir_paths:
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
+
+    dataset = concatenate_datasets(dsets)
+    return dataset

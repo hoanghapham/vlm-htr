@@ -6,14 +6,14 @@ sys.path.append(str(PROJECT_DIR))
 import typing
 import torch
 from torch.utils.data import Dataset
-from datasets import concatenate_datasets, load_from_disk
 from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 
-from src.data_process.xml import XMLParser
-from src.data_process.visualization import random_color
+from src.data_processing.utils import XMLParser, load_arrow_datasets
+from src.visualization import random_color
+from src.file_tools import list_files
 
 
 class FlorenceTask():
@@ -43,8 +43,8 @@ class FlorenceOCRDataset(Dataset):
     Load locally cached .arrow dataset containing cropped lines/regions
     """
 
-    def __init__(self, data: Dataset, custom_question: str = None):
-        self.data = data
+    def __init__(self, dir_path: str | Path, custom_question: str = None):
+        self.data = load_arrow_datasets(dir_path)
 
         if custom_question:
             self.question = custom_question
@@ -156,11 +156,13 @@ class FlorenceTextODDataset(Dataset):
 
     def __init__(
         self, 
-        img_paths: list[str | Path], 
-        xml_paths: list[str | Path],
+        data_dir: str | Path,
         task: FlorenceTask = FlorenceTask.OD, 
         object_class: str = "region", 
     ):
+        self.data_dir = Path(data_dir)
+        img_paths = list_files(self.data_dir / "images", [".tif", ".jpg"])
+        xml_paths = list_files(self.data_dir / "page_xmls", [".xml"])
         matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
         assert len(img_paths) == len(xml_paths) == matched > 0, \
             f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files"
@@ -222,14 +224,7 @@ class FlorenceTextODDataset(Dataset):
         )
 
     def select(self, indices: typing.Iterable):
-        img_paths = [self.img_paths[idx] for idx in indices]
-        xml_paths = [self.xml_paths[idx] for idx in indices]
-        return FlorenceTextODDataset(
-            img_paths, 
-            xml_paths, 
-            task=self.task, 
-            object_class=self.object_class
-        )
+        return [self.__getitem__(idx) for idx in indices]
 
 
 def draw_bbox(image, data):
@@ -338,20 +333,6 @@ def create_collate_fn(processor, device):
         )
 
     return func
-
-
-def load_arrow_datasets(parent_dir: str | Path) -> Dataset:
-    dsets = []
-    dir_paths = [path for path in parent_dir.glob("*") if path.is_dir()]
-    for path in dir_paths:
-        try:
-            data = load_from_disk(path)
-            dsets.append(data)
-        except Exception as e:
-            print(e)
-
-    dataset = concatenate_datasets(dsets)
-    return dataset
 
 
 def predict(
