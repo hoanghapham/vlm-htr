@@ -21,4 +21,4 @@ python pipelines/eval/eval_yolo_od.py \
     --data-dir $PROJECT_DIR/data/pages/mixed/test \
     --model-name yolo11m__mixed__page__region_od \
     --object-class region \
-    --batch-size 100
+    --batch-size 10
