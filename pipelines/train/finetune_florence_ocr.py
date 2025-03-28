@@ -111,30 +111,11 @@ lr_scheduler = get_scheduler(
     num_training_steps=TOTAL_TRAIN_STEPS
 )
 
-# LoRA
-TARGET_MODULES = [
-    "q_proj", "o_proj", "k_proj", "v_proj", 
-    "linear", "Conv2d", "lm_head", "fc2"
-]
-
-config = LoraConfig(
-    r=8,
-    lora_alpha=8,
-    target_modules=TARGET_MODULES,
-    task_type="CAUSAL_LM",
-    lora_dropout=0.05,
-    bias="none",
-    inference_mode=False,
-    use_rslora=True,
-    init_lora_weights="gaussian",
-    revision=REVISION
-)
-
-
 # Load state
 #%%
 # Train
 if USE_LORA:
+    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
     peft_model = get_peft_model(model, config)
     trainable_params, all_param = peft_model.get_nb_trainable_parameters()
 
