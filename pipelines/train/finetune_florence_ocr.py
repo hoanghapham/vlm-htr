@@ -28,7 +28,7 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-lora", default="false")
-parser.add_argument("--user-prompt", default="<SwedishHTR>What's the text in this image?")
+parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -91,8 +91,9 @@ logger.info("Load data")
 raw_train_data  = load_arrow_datasets(DATA_DIR / "train")
 raw_val_data    = load_arrow_datasets(DATA_DIR / "val")
 
-train_dataset   = FlorenceOCRDataset(raw_train_data)
-val_dataset     = FlorenceOCRDataset(raw_val_data)
+# custom_question can be None
+train_dataset   = FlorenceOCRDataset(raw_train_data, custom_question=USER_PROMPT)
+val_dataset     = FlorenceOCRDataset(raw_val_data, custom_question=USER_PROMPT)
 
 # Create data loader
 collate_fn      = create_collate_fn(processor, DEVICE)

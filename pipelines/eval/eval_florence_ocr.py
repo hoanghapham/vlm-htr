@@ -1,62 +1,64 @@
 #%%
 import sys
 from pathlib import Path
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
+import torch
+from tqdm import tqdm
+from transformers import AutoModelForCausalLM, AutoProcessor
+from htrflow.evaluate import CER, WER, BagOfWords
 from argparse import ArgumentParser
 
-import torch
-from transformers import AutoModelForCausalLM, AutoProcessor
-from tqdm import tqdm
-from htrflow.evaluate import CER, WER, BagOfWords
-
-from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
-from utils import create_dset_from_paths
-from src.data_process.florence import RunningTextDataset
+PROJECT_DIR = Path.cwd().parent
+sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
-from src.file_tools import write_json_file, write_list_to_text_file, read_json_file
+from src.data_process.florence import (
+    FlorenceTask,
+    FlorenceOCRDataset, 
+    load_arrow_datasets, 
+    predict, 
+)
+
+from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
+from src.file_tools import write_json_file, write_list_to_text_file
 #%%
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--input-dir", required=True)
-parser.add_argument("--use-split-info", default="false")
+parser.add_argument("--test-data-dir", required=True)
+parser.add_argument("--test-variant", required=True, default="mixed")
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
-parser.add_argument("--user-prompt", default="<SwedishHTR>")
+parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence_base__ft_htr_line",
-#     "--input-dir", str(PROJECT_DIR / "data/hovratt_line"),
+#     "--test-data-dir", str(PROJECT_DIR / "data/hovratt_line"),
 #     "--use-split-info", "true"
 # ])
 
 # Setup paths
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_NAME = args.model_name
-LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
-REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MODEL_NAME          = args.model_name
+LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
+REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-INPUT_DIR = Path(args.input_dir)
-LOAD_CHECKPOINT = args.load_checkpoint
-USE_SPLIT_INFO = args.use_split_info == "true"
-USER_PROMPT = args.user_prompt
-OUTPUT_DIR = PROJECT_DIR / "output" / MODEL_NAME / INPUT_DIR.stem
+TEST_DATA_DIR       = Path(args.test_data_dir)
+TEST_VARIANT        = args.test_variant
+LOAD_CHECKPOINT     = args.load_checkpoint
+USER_PROMPT         = args.user_prompt
+OUTPUT_DIR          = PROJECT_DIR / "output" / MODEL_NAME / TEST_VARIANT
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
 # Logger
-logger = CustomLogger(f"eval__{MODEL_NAME}__{INPUT_DIR.stem}", log_to_local=True)
+logger = CustomLogger(f"eval__{MODEL_NAME}__{TEST_VARIANT}", log_to_local=True)
 
 #%%
 # Load model
 logger.info("Load model")
-processor = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
-model = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 # Load checkpoint to evaluate
 
@@ -73,33 +75,25 @@ else:
     model.load_state_dict(eval_cp.model_state_dict)
     logger.info(f"Evaluate checkpoint: {eval_cp}")
 
-
 # Set model to evaluation mode
 model.eval()
+
 
 #%%
 # Load test data
 logger.info("Load test data")
+raw_data = load_arrow_datasets(TEST_DATA_DIR)
+test_dataset = FlorenceOCRDataset(raw_data, custom_question=USER_PROMPT)
 
-if USE_SPLIT_INFO:
-    split_info_fp = INPUT_DIR / "split_info.json"
-    split_info = read_json_file(split_info_fp)
-    test_page_names = [Path(path).stem for path in split_info["test"]]
-    test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir() and path.name in test_page_names]
-else:
-    test_data_paths = [path for path in INPUT_DIR.glob("*") if path.is_dir()]
-
-test_data = create_dset_from_paths(test_data_paths, RunningTextDataset)
-
-logger.info(f"Total test samples: {len(test_data)}")
+logger.info(f"Total test samples: {len(test_dataset)}")
+logger.info(f"User prompt: {USER_PROMPT}")
 
 # Evaluate
 #%%
+task = FlorenceTask.OCR
 cer = CER()
 wer = WER()
 bow = BagOfWords()
-
-logger.info(f"User prompt: {USER_PROMPT}")
 
 cer_list = []
 wer_list = []
@@ -108,39 +102,44 @@ bow_extras_list = []
 gt_list = []
 pred_list = []
 
-
 # Can only process one image at a time due to post_process_generation task requiring image size,
 # but image size varies
-for inputs in tqdm(test_data, total=len(test_data), desc="Evaluate"):
+for data in tqdm(test_dataset, desc="Evaluate"):
 
-    image = inputs["image"]
-    troundtruth = inputs["answer"]
-    inputs = processor(text=USER_PROMPT, images=image, return_tensors="pt").to(DEVICE)
-
-    generated_ids = model.generate(
-        input_ids=inputs["input_ids"],
-        pixel_values=inputs["pixel_values"],
-        max_new_tokens=1024,
-        do_sample=False,
-        num_beams=3,
+    groundtruth = data["answer"]
+    raw_output, parsed_output = predict(
+        model, 
+        processor, 
+        task=task,
+        user_prompt=USER_PROMPT, 
+        image=data["image"], 
+        device=DEVICE
     )
 
-    output = processor.batch_decode(generated_ids, skip_special_tokens=False)[0] # 0 because current "batch" size is 1
-    pred = processor.post_process_generation(output, task="<SwedishHTR>", image_size=image.size)
-
     # Calcualte metrics
-    cer_value = cer.compute(pred["<SwedishHTR>"], troundtruth)["cer"]
-    wer_value = wer.compute(pred["<SwedishHTR>"], troundtruth)["wer"]
-    bow_hits_value = bow.compute(pred["<SwedishHTR>"], troundtruth)["bow_hits"]
-    bow_extras_value = bow.compute(pred["<SwedishHTR>"], troundtruth)["bow_extras"]
+    cer_value = cer.compute(parsed_output[task], groundtruth)["cer"]
+    wer_value = wer.compute(parsed_output[task], groundtruth)["wer"]
+    bow_hits_value = bow.compute(parsed_output[task], groundtruth)["bow_hits"]
+    bow_extras_value = bow.compute(parsed_output[task], groundtruth)["bow_extras"]
 
     # Append results
     cer_list.append(cer_value)
     wer_list.append(wer_value)
     bow_hits_list.append(bow_hits_value)
     bow_extras_list.append(bow_extras_value)
-    gt_list.append(troundtruth)
-    pred_list.append(pred)
+    gt_list.append(groundtruth)
+    pred_list.append(parsed_output)
+
+
+#%%
+avg_cer = float(sum(cer_list))
+avg_wer = float(sum(wer_list))
+avg_bow_hits = float(sum(bow_hits_list))
+avg_bow_extras = float(sum(bow_extras_list))
+
+logger.info(f"Avg. CER: {avg_cer:.4f}, Avg. WER: {avg_wer:.4f}")
+logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extras:.4f}")
+
 
 #%%
 avg_cer = float(sum(cer_list))
@@ -183,6 +182,6 @@ write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step_{eval_cp.step_i
 write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-pred_list = [line["<SwedishHTR>"] for line in pred_list]
+pred_list = [pred[task] for pred in pred_list]
 write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_step_{eval_cp.step_idx}.txt")
 
