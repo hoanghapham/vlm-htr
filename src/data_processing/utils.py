@@ -1,7 +1,6 @@
-import sys
-from pathlib import Path
 import xml.etree.ElementTree as ET
-from torch.data.utils.data import Dataset
+from pathlib import Path
+from torch.utils.data import Dataset
 
 class XMLParser():
     def __init__(self, verbose: bool = False):

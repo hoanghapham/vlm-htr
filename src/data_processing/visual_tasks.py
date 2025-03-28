@@ -1,7 +1,11 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 from shapely import Polygon
 from typing import Self, Iterable
 from PIL import Image
-from utils import XMLParser
+from src.data_processing.utils import XMLParser
 from pathlib import Path
 
 
