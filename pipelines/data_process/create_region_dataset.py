@@ -4,22 +4,15 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from argparse import ArgumentParser
 from datasets import Dataset
 
-from src.data_process.running_text import ImageDatasetBuilder
+from src.data_processing.running_text import RunningTextDatasetBuilder
 from src.logger import CustomLogger
-
-
-parser = ArgumentParser()
-parser.add_argument("--data-dir", required=True)
-parser.add_argument("--output-dir", required=True)
-parser.add_argument("--img-extension", default=".tif")
-args = parser.parse_args()
+from src.file_tools import list_files
 
 # Setup
-DATA_DIR = Path(args.data_dir)
-OUTPUT_DIR = Path(args.output_dir)
+DATA_DIR    = PROJECT_DIR / "data/raw/riksarkivet"
+OUTPUT_DIR  = PROJECT_DIR / "data/processed/riksarkivet_region"
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
@@ -27,37 +20,40 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger("create_region_dataset")
 
 #%%
-logger.info(f"Create region dataset for {DATA_DIR}")
-builder = ImageDatasetBuilder()
+builder = RunningTextDatasetBuilder()
 
-all_img_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "images", pattern="**/*" + args.img_extension))]
-all_xml_paths = [str(path) for path in sorted(Path.glob(DATA_DIR / "page_xmls", pattern="**/*.xml"))]
+for dir in DATA_DIR.iterdir():
+    
+    if dir.is_dir():
+        subset_name = dir.stem
+        logger.info(f"Create region dataset for {subset_name}")
 
-assert len(all_img_paths) == len(all_xml_paths) > 0, \
-    f"Invalid length, or mismatch: {len(all_img_paths)} - {len(all_xml_paths)}"
+        img_paths = list_files(dir, [".tif", ".jpg"])
+        xml_paths = list_files(dir, [".xml"])
+        matches = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
+        assert len(img_paths) == len(xml_paths) == len(matches) > 0, \
+            f"Invalid length, or mismatch: {len(img_paths)} - {len(xml_paths)} - {len(matches)}"
+        
+        imgs_xmls = list(zip(
+                sorted(img_paths, key=lambda x: Path(x).stem), 
+                sorted(xml_paths, key=lambda x: Path(x).stem)
+            )
+        )
 
-imgs_xmls = list(zip(
-        sorted(all_img_paths, key=lambda x: Path(x).stem), 
-        sorted(all_xml_paths, key=lambda x: Path(x).stem)
-    )
-)
+        for idx, (img_path, xml_path) in enumerate(imgs_xmls):
 
-ttl_samples = len(all_img_paths)
+            logger.info(f"Process image {idx}/{len(imgs_xmls)}")
+            file_name = Path(img_path).stem
 
-for idx, (img_path, xml_path) in enumerate(imgs_xmls):
+            dataset_obj = Dataset.from_list(
+                [
+                    {
+                        "id": data[0],
+                        "image": data[1]["image"],
+                        "transcription": data[1]["transcription"]
+                    } for data in builder.create_smooth_region_dataset([(img_path, xml_path)])
+                ]   
+            )
 
-    logger.info(f"Process image {idx}/{ttl_samples}")
-    file_name = Path(img_path).stem
-
-    dataset_obj = Dataset.from_list(
-        [
-            {
-                "id": data[0],
-                "image": data[1]["image"],
-                "transcription": data[1]["transcription"]
-            } for data in builder.create_smooth_region_dataset([(img_path, xml_path)])
-        ]   
-    )
-
-    dataset_obj.save_to_disk(OUTPUT_DIR / file_name)
+            dataset_obj.save_to_disk(OUTPUT_DIR / file_name)
     
