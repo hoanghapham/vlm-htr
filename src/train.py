@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from src.file_tools import read_json_file, write_json_file
 
+STEP_IDX_SPACES = 7
 
 def gen_split_indices(
     total_samples: int, 
@@ -53,7 +54,6 @@ def load_split(split_dir: str | Path) -> Dataset:
     return dataset
 
 
-
 class Checkpoint():
     def __init__(
         self,
@@ -73,6 +73,24 @@ class Checkpoint():
         return f"Checkpoint: {self.step_idx}, avg. train loss: {self.avg_train_loss}, avg. validation loss: {self.avg_val_loss}"
 
 
+def load_checkpoint(pt_path: str | Path, device: str = "cpu") -> Checkpoint:
+    cp_states = torch.load(pt_path, weights_only=True, map_location=torch.device(device))
+    step_idx = int(Path(pt_path).stem.split("_")[-1])
+    cp_metadata = {"step_idx": step_idx}
+
+    json_path = Path(pt_path).with_suffix(".json")
+    if json_path.exists():
+        cp_metadata = read_json_file(json_path)
+    
+    return Checkpoint(
+        step_idx                = cp_metadata.get("step_idx"),
+        avg_train_loss          = cp_metadata.get("avg_train_loss"),
+        avg_val_loss            = cp_metadata.get("avg_val_loss"),
+        model_state_dict        = cp_states.get("model_state_dict"),
+        optimizer_state_dict    = cp_states.get("optimizer_state_dict")
+    )
+
+
 def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> Checkpoint:
 
     supported_metrics = ["avg_train_loss", "avg_val_loss"]
@@ -80,54 +98,27 @@ def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss",
 
     paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(Path(model_path).glob("*.json"))}
     best_value = float("inf")
-    best_cp_path = None
-    best_cp_metadata = None
+    best_pt_path = None
 
-    for json_path, state_path in paths_map.items():
+    for json_path, pt_path in paths_map.items():
         metric_dict = read_json_file(json_path)
         
         if metric_dict.get(compare_metric) is not None:
             if metric_dict.get(compare_metric) < best_value:
                 best_value = metric_dict.get(compare_metric)
-                best_cp_path = state_path
-                best_cp_metadata = metric_dict
+                best_pt_path = pt_path
     
-    if best_cp_path:
-        best_cp_states = torch.load(best_cp_path, weights_only=True, map_location=torch.device(device))
-        return Checkpoint(
-            step_idx               = best_cp_metadata.get("step_idx"),
-            avg_train_loss         = best_cp_metadata.get("avg_train_loss"),
-            avg_val_loss           = best_cp_metadata.get("avg_val_loss"),
-            model_state_dict       = best_cp_states.get("model_state_dict"),
-            optimizer_state_dict   = best_cp_states.get("optimizer_state_dict"),
-        )
+    if best_pt_path:
+        return load_checkpoint(best_pt_path, device)
     else:
-        # If cannot determine best checkpoint, return None
         return None
     
 
 def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
-    
     pt_paths = list(sorted(Path(model_path).glob("*.pt")))
-    json_paths = [path.with_suffix(".json") for path in pt_paths]
-
     if pt_paths:
         last_pt_path = pt_paths[-1]
-        last_cp_states = torch.load(last_pt_path, weights_only=True, map_location=torch.device(device))
-        last_cp_step_idx = int(last_pt_path.stem.split("_")[-1])
-        last_cp_metadata = {"step_idx": last_cp_step_idx}
-
-        last_json_path = json_paths[-1]
-        if last_json_path.exists():
-            last_cp_metadata = read_json_file(last_json_path)
-
-        return Checkpoint(
-            step_idx                = last_cp_metadata.get("step_idx"),
-            avg_train_loss          = last_cp_metadata.get("avg_train_loss"),
-            avg_val_loss            = last_cp_metadata.get("avg_val_loss"),
-            model_state_dict        = last_cp_states.get("model_state_dict"),
-            optimizer_state_dict    = last_cp_states.get("optimizer_state_dict")
-        )
+        return load_checkpoint(last_pt_path, device)
     else:
         return None
     
@@ -175,7 +166,6 @@ class Trainer():
         self.logger = logger
         self.tsb_logger = tsb_logger
         self.logging_interval = logging_interval
-        self.step_idx_spaces = 7
 
     def train(self):
 
@@ -274,7 +264,7 @@ class Trainer():
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }
-        step_idx_str = str(step_idx).zfill(self.step_idx_spaces)
+        step_idx_str = str(step_idx).zfill(STEP_IDX_SPACES)
         torch.save(checkpoint_states, self.model_out_dir / f"checkpoint_step_{step_idx_str}.pt")
         
         # Save dict
