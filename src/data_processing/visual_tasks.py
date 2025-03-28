@@ -39,6 +39,15 @@ def bbox_xywh_to_xyxy(bbox):
     return x1, y1, x2, y2
 
 
+def coord_to_bbox_xyxy(coords: list[tuple]):
+    x_coords = [tup[0] for tup in coords]
+    y_coords = [tup[1] for tup in coords]
+    x1 = min(x_coords)
+    y1 = min(y_coords)
+    x2 = max(x_coords)
+    y2 = max(y_coords)
+    return x1, y1, x2, y2
+
 class Bbox():
     def __init__(self, xyxy: tuple):
         self.xyxy = xyxy
@@ -99,7 +108,7 @@ class TextRegionDataset():
         image = Image.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
         objects = self.xmlparser.get_regions(xml)
-        bboxes = [Bbox(data["bbox"]) for data in objects]
+        bboxes = [data["bbox"] for data in objects]
         return dict(
             image=image,
             bboxes=bboxes

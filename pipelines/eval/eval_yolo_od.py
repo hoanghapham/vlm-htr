@@ -118,7 +118,8 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, pa
             img_path = str(img_path),
             ann_bboxes = ann,
             pred_bbox = pred,
-            coverage = coverage
+            coverage_str = str(coverage),
+            coverage_float = float(coverage)
         )
     )
 
