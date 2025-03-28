@@ -19,5 +19,5 @@ cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_trocr_htr.py \
     --model-name trocr_base__ft_htr_line \
-    --input-dir $PROJECT_DIR/data/polis_line \
+    --data-dir $PROJECT_DIR/data/polis_line \
     --use-split-info true

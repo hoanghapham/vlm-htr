@@ -15,12 +15,12 @@
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/htrflow
 
-INPUT_DIR="/proj/uppmax2024-2-24/hapham/data/hovratt/images"
+DATA_DIR="/proj/uppmax2024-2-24/hapham/data/hovratt/images"
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
 python pipelines/predict/run_htrflow_pipeline.py \
-    --input-dir $INPUT_DIR \
+    --data-dir $DATA_DIR \
     --config-path $PROJECT_DIR/configs/htrflow/hovratt_text_recognition.yaml \
     --img-extension .jpg

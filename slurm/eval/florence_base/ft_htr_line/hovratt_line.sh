@@ -19,7 +19,7 @@ cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_florence_htr.py \
     --model-name florence_base__ft_htr_line \
-    --input-dir $PROJECT_DIR/data/hovratt_line \
+    --data-dir $PROJECT_DIR/data/hovratt_line \
     --use-split-info false \
     --load-checkpoint best \
     --user-prompt "<SwedishHTR>Print out the text in this image"

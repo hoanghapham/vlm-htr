@@ -15,11 +15,11 @@
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
-INPUT_DIR="/proj/uppmax2024-2-24/hapham/data/polis"
+DATA_DIR="/proj/uppmax2024-2-24/hapham/data/polis"
 OUTPUT_DIR="$PROJECT_DIR/data/polis_region"
 
 cd $PROJECT_DIR
 
 python workpad/create_region_dataset.py \
-    --input-dir $INPUT_DIR \
+    --data-dir $DATA_DIR \
     --output-dir $OUTPUT_DIR

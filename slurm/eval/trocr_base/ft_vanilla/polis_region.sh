@@ -19,7 +19,7 @@ cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_trocr_htr.py \
     --model-name trocr_base__ft_vanilla \
-    --input-dir $PROJECT_DIR/data/polis_region \
+    --data-dir $PROJECT_DIR/data/polis_region \
     --use-split-info true \
     --batch-size 15 \
     --load-checkpoint vanilla

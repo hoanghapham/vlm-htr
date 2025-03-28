@@ -19,7 +19,7 @@ cd $PROJECT_DIR
 
 python pipelines/evaluate/evaluate_florence_htr.py \
     --model-name florence_base__ft_vanilla \
-    --input-dir $PROJECT_DIR/data/hovratt_line \
+    --data-dir $PROJECT_DIR/data/hovratt_line \
     --use-split-info false \
     --load-checkpoint vanilla \
     --user-prompt "<OCR>"

@@ -18,6 +18,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_yolo_od.py \
-    --input-dir $PROJECT_DIR/data/pages/mixed/test \
+    --data-dir $PROJECT_DIR/data/pages/mixed/test \
     --model-name yolo11m__mixed__page__line_od \
     --object-class line
