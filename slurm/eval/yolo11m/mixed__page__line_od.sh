@@ -20,4 +20,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_yolo_od.py \
     --data-dir $PROJECT_DIR/data/pages/mixed/test \
     --model-name yolo11m__mixed__page__line_od \
-    --object-class line
+    --object-class line \
+    --batch-size 100
