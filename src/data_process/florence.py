@@ -4,17 +4,17 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 import typing
-import random
-
 import torch
 from torch.utils.data import Dataset
+from datasets import concatenate_datasets, load_from_disk
 from PIL import Image
-from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
 
 from src.data_process.xml import XMLParser
 from src.data_process.visualization import random_color
+
 
 class FlorenceTask():
     OD = "<OD>"
@@ -37,11 +37,19 @@ class FlorenceTask():
     def __str__(self):
         pass
 
-class RunningTextDataset(Dataset):
 
-    def __init__(self, data, question: str = "<SwedishHTR>"):
+class FlorenceOCRDataset(Dataset):
+    """
+    Load locally cached .arrow dataset containing cropped lines/regions
+    """
+
+    def __init__(self, data: Dataset, custom_question: str = None):
         self.data = data
-        self.question = question
+
+        if custom_question:
+            self.question = custom_question
+        else:
+            self.question = FlorenceTask.OCR
 
     def __len__(self):
         return len(self.data)
@@ -59,7 +67,7 @@ class RunningTextDataset(Dataset):
     
     def select(self, indices: typing.Iterable):
         subset = [self.data[int(idx)] for idx in indices]
-        return RunningTextDataset(subset)
+        return FlorenceOCRDataset(subset)
 
 
 def construct_bbox(xml_obj: PageXMLTextLine | PageXMLTextRegion):
@@ -148,10 +156,15 @@ class FlorenceTextODDataset(Dataset):
 
     def __init__(
         self, 
-        imgs_xmls: list[tuple | list], 
+        img_paths: list[str | Path], 
+        xml_paths: list[str | Path],
         task: FlorenceTask = FlorenceTask.OD, 
         object_class: str = "region", 
     ):
+        matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
+        assert len(img_paths) == len(xml_paths) == matched > 0, \
+            f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files"
+        
         assert object_class in ["region", "line"]
         super().__init__()
         
@@ -162,25 +175,26 @@ class FlorenceTextODDataset(Dataset):
         self.xmlparser = XMLParser()
 
         # Validate that the xml files have regions
-        valid_pairs = []
+        self.img_paths = []
+        self.xml_paths = []
+
         objects = []
-        for img, xml in imgs_xmls:
+        for img, xml in zip(img_paths, xml_paths):
             if self.object_class == "region":
                 objects = self.xmlparser.get_regions(xml)
             elif self.object_class == "line":
                 objects = self.xmlparser.get_lines(xml)
 
             if len(objects) > 0:
-                valid_pairs.append((img, xml))
-        
-        self.imgs_xmls = valid_pairs
+                self.img_paths.append(img)
+                self.xml_paths.append(xml)
 
     def __len__(self):
-        return len(self.imgs_xmls)
+        return len(self.img_paths)
     
     def __getitem__(self, idx):
-        image = Image.open(self.imgs_xmls[idx][0]).convert("RGB")
-        xml = self.imgs_xmls[idx][1]
+        image = Image.open(self.img_paths[idx]).convert("RGB")
+        xml = self.xml_paths[idx]
         
         if self.object_class == "region":
             objects = self.xmlparser.get_regions(xml)
@@ -198,8 +212,6 @@ class FlorenceTextODDataset(Dataset):
             bbox_text = self.object_class + "".join([f"<loc_{val}>" for val in bbox])
             bbox_texts.append(bbox_text)
 
-        # Output text is of format </s><s>object_class<loc_...><loc_...><loc_...><loc_...>...</s>
-        # answer = "</s><s>" + "".join(bbox_texts) + "</s>"
         # Output text is of format "object_class<loc_...><loc_...><loc_...><loc_...>..."
         answer = "".join(bbox_texts)
         
@@ -207,12 +219,17 @@ class FlorenceTextODDataset(Dataset):
             question=self.task,
             answer=answer,
             image=image,
-            # bboxes=bboxes,
         )
 
     def select(self, indices: typing.Iterable):
-        pairs = [self.imgs_xmls[idx] for idx in indices]
-        return FlorenceTextODDataset(pairs)
+        img_paths = [self.img_paths[idx] for idx in indices]
+        xml_paths = [self.xml_paths[idx] for idx in indices]
+        return FlorenceTextODDataset(
+            img_paths, 
+            xml_paths, 
+            task=self.task, 
+            object_class=self.object_class
+        )
 
 
 def draw_bbox(image, data):
@@ -306,8 +323,13 @@ def create_collate_fn(processor, device):
         answers = [data["answer"] for data in batch]
         images = [data["image"] for data in batch]
         
-        inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
-        labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
+        inputs = processor(text=questions, images=images, return_tensors="pt", padding=True).to(device)
+        labels = processor.tokenizer(
+            text=answers, 
+            return_tensors="pt", 
+            padding=True, 
+            return_token_type_ids=False
+        ).input_ids.to(device)
         
         return dict(
             input_ids=inputs["input_ids"], 
@@ -316,3 +338,50 @@ def create_collate_fn(processor, device):
         )
 
     return func
+
+
+def load_arrow_datasets(parent_dir: str | Path) -> Dataset:
+    dsets = []
+    dir_paths = [path for path in parent_dir.glob("*") if path.is_dir()]
+    for path in dir_paths:
+        try:
+            data = load_from_disk(path)
+            dsets.append(data)
+        except Exception as e:
+            print(e)
+
+    dataset = concatenate_datasets(dsets)
+    return dataset
+
+
+def predict(
+    model, 
+    processor, 
+    user_prompt: str, 
+    image: Image, 
+    task: FlorenceTask = None, 
+    device: str = "cpu", 
+) -> tuple[list, list]:
+    
+    if task:
+        input_text = task
+    else:
+        input_text = user_prompt
+
+    inputs = processor(text=input_text, images=image, return_tensors="pt").to(device)
+
+    generated_ids = model.generate(
+        input_ids=inputs["input_ids"],
+        pixel_values=inputs["pixel_values"],
+        max_new_tokens=1024,
+        do_sample=False,
+        num_beams=3,
+    )
+
+    raw_output = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+    parsed_output = None
+
+    if task:
+        parsed_output = processor.post_process_generation(raw_output, task=task, image_size=image.size)
+    
+    return raw_output, parsed_output

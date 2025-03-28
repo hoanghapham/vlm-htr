@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 from datasets import concatenate_datasets, load_from_disk
 from peft import LoraConfig, get_peft_model
 
-from src.data_process.florence import RunningTextDataset
+from src.data_process.florence import FlorenceOCRDataset, load_arrow_datasets, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -28,7 +28,7 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--use-lora", default="false")
-parser.add_argument("--question", default="<SwedishHTR>")
+parser.add_argument("--user-prompt", default="<SwedishHTR>What's the text in this image?")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -49,7 +49,7 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 USE_LORA            = args.use_lora == "true"
 DATA_DIR            = Path(args.data_dir)
-QUESTION            = args.question
+USER_PROMPT         = args.user_prompt  # Can be used as the custom question
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
@@ -88,52 +88,16 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-def load_split(split_dir: str | Path) -> Dataset:
-    dsets = []
-    for path in split_dir.glob("*"):
-        try:
-            data = load_from_disk(path)
-            dsets.append(data)
-        except Exception as e:
-            print(e)
+raw_train_data  = load_arrow_datasets(DATA_DIR / "train")
+raw_val_data    = load_arrow_datasets(DATA_DIR / "val")
 
-    dataset = concatenate_datasets(dsets)
-    return dataset
-
-
-raw_train_data  = load_split(DATA_DIR / "train")
-raw_val_data    = load_split(DATA_DIR / "val")
-
-train_dataset   = RunningTextDataset(raw_train_data, question=QUESTION)
-val_dataset     = RunningTextDataset(raw_val_data, question=QUESTION)
-
+train_dataset   = FlorenceOCRDataset(raw_train_data)
+val_dataset     = FlorenceOCRDataset(raw_val_data)
 
 # Create data loader
-def create_collate_fn(processor, device):
-    def func(batch):
-        questions = [data["question"] for data in batch]
-        answers = [data["answer"] for data in batch]
-        images = [data["image"] for data in batch]
-        
-        inputs = processor(text=list(questions), images=list(images), return_tensors="pt", padding=True).to(device)
-        labels = processor.tokenizer(text=answers, return_tensors="pt", padding=True, return_token_type_ids=False).input_ids.to(device)
-        
-        return dict(
-            input_ids=inputs["input_ids"], 
-            pixel_values=inputs["pixel_values"], 
-            labels=labels,
-        )
-
-    return func
-
-
-collate_fn = create_collate_fn(processor, DEVICE)
-
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
-                          collate_fn=collate_fn, num_workers=0, shuffle=True)
-
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
-                          collate_fn=collate_fn, num_workers=0)
+collate_fn      = create_collate_fn(processor, DEVICE)
+train_loader    = DataLoader(train_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn, shuffle=True)
+val_loader      = DataLoader(val_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn)
 
 logger.info(f"Total train samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 
