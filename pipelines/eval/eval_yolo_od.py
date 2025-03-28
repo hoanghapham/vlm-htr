@@ -40,6 +40,10 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 split = "test"
 img_paths = list_files(INPUT_DIR / "images" / split, [".tif", ".jpg"])
 xml_paths = list_files(INPUT_DIR / "page_xmls" / split, [".xml"])
+matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
+
+assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
+    f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
 
 # Get annotations
 xml_parser = XMLParser()
