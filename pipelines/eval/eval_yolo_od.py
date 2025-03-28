@@ -48,7 +48,7 @@ assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
 
 # Get annotations
 xml_parser = XMLParser()
-annotations = []
+annotations: list[list[Bbox]] = []
 
 logger.info("Get annotations")
 for path in xml_paths:
@@ -74,7 +74,7 @@ for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
 
 #%%
-predictions = []
+predictions: list[list[Bbox]] = []
 
 for result in results:
     img_pred_bboxes = []
@@ -117,7 +117,7 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, pa
     all_results.append(
         dict(
             img_path = str(img_path),
-            ann_bboxes = ann,
+            ann_bboxes = [list(bbox) for bbox in ann],
             pred_bbox = pred,
             coverage = coverage
         )

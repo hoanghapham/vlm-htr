@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from torch.utils.data import Dataset
+from datasets import load_from_disk, concatenate_datasets
 
 class XMLParser():
     def __init__(self, verbose: bool = False):

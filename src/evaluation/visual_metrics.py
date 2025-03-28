@@ -1,7 +1,10 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 from sklearn.metrics import precision_recall_fscore_support
 from shapely import Polygon, union_all
 from htrflow.evaluate import Ratio
-
+from src.evaluation.utils import Ratio
 
 def compute_iou(box1, box2):
     x1, y1, x2, y2 = box1
