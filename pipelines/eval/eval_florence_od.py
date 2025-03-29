@@ -24,12 +24,14 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--object-class", default="region")
+parser.add_argument("--mode", required=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "florence_base__mixed__page__region_od",
+#     "--model-name", "florence_base__mixed__page__region_od__lora",
 #     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
 #     "--load-checkpoint", "best",
+#     "--mode", "debug"
 # ])
 
 # Setup paths
@@ -39,6 +41,8 @@ LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 REVISION            = 'refs/pr/6'
 OBJECT_CLASS        = args.object_class
+DEBUG               = args.mode == "debug"
+MAX_ITERS           = 2
 
 DATA_DIR            = Path(args.data_dir)
 LOAD_CHECKPOINT     = args.load_checkpoint
@@ -54,11 +58,12 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 # Load model
 logger.info("Load model")
 processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+vanilla_model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
-# if "lora" in MODEL_NAME:
-#     config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-#     model = get_peft_model(model, config)
+if "lora" in MODEL_NAME:
+    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
+    model = get_peft_model(model, config)
 
 # Load checkpoint to evaluate
 
@@ -81,14 +86,16 @@ model.eval()
 test_dataset = FlorenceTextODDataset(DATA_DIR / "test", task=FlorenceTask.OD, object_class="region")
 logger.info(f"Total test samples: {len(test_dataset)}")
 
+
 # Evaluate
-#%%
 task = FlorenceTask.OD
 
 full_results    = []
 predictions     = []
 annotations     = []
 coverage_ratios = []
+
+counter = 0
 
 for data in tqdm(test_dataset, desc="Evaluate"):
 
@@ -122,11 +129,18 @@ for data in tqdm(test_dataset, desc="Evaluate"):
         )
     )
 
+    if DEBUG:
+        counter += 1
+        if counter >= MAX_ITERS:
+            break
+
 precision, recall, fscore = precision_recall_fscore(predictions, annotations, iou_threshold=0.5)
 avg_region_coverage = float(sum(coverage_ratios))
 
 logger.info(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Fscore: {fscore:.4f}, Avg. region coverage: {avg_region_coverage:.4f}")
 
+
+#%%
 metrics = dict(
     precision=precision,
     recall=recall,
@@ -138,5 +152,3 @@ write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
 write_json_file(metrics, OUTPUT_DIR / "metrics.json")
     
 logger.info(f"Wrote results to {OUTPUT_DIR}")
-
-
