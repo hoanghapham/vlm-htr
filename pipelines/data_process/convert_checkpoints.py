@@ -12,7 +12,6 @@ from transformers import (
     VisionEncoderDecoderModel, 
     AutoModelForCausalLM, 
     TrOCRProcessor
-
 )
 from peft import get_peft_model, LoraConfig
 from src.file_tools import read_json_file
@@ -21,11 +20,8 @@ from src.train import save_checkpoint
 
 parser = ArgumentParser()
 parser.add_argument(nargs='+', dest="model_dirs")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "models/florence_base__mixed__line__ocr"
-])
 
 #%%
 
