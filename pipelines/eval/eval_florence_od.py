@@ -90,7 +90,7 @@ predictions     = []
 annotations     = []
 coverage_ratios = []
 
-for data in tqdm(test_dataset.select(range(5)), desc="Evaluate"):
+for data in tqdm(test_dataset, desc="Evaluate"):
 
     ann = data["original_bboxes"]
 
