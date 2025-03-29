@@ -56,8 +56,8 @@ REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
 
 logger.info(f"Load model. Use device: {DEVICE}")
 
-processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
+processor   = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
+model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
 model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
 model.config.pad_token_id           = processor.tokenizer.pad_token_id
 model.config.vocab_size             = model.config.decoder.vocab_size

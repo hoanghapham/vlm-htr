@@ -3,20 +3,27 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from argparse import ArgumentParser
+
 import torch
 from torch.optim import AdamW
 from transformers import (
     VisionEncoderDecoderModel, 
     AutoModelForCausalLM, 
+    TrOCRProcessor
 
 )
 from peft import get_peft_model, LoraConfig
 from src.file_tools import read_json_file
 from src.train import save_checkpoint
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model_dirs = (PROJECT_DIR / "models").iterdir()
+parser = ArgumentParser()
+parser.add_argument(nargs='+', dest="model_dirs", required=True)
+args = parser.parse_args()
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model_dirs = [Path(model_dir) for model_dir in args.model_dirs]
 
 for model_dir in model_dirs:
 
@@ -43,8 +50,13 @@ for model_dir in model_dirs:
 
     elif "trocr" in model_dir.name:
         REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
-        model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
-        optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.0001)
+        processor   = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
+        optimizer   = AdamW(model.parameters(), lr=2e-5, weight_decay=0.0001)
+        
+        model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
+        model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
+        model.config.pad_token_id           = processor.tokenizer.pad_token_id
+        model.config.vocab_size             = model.config.decoder.vocab_size
 
     else:
         continue
