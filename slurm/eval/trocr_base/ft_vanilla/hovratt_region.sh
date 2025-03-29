@@ -7,7 +7,7 @@
 #SBATCH -t 24:00:00
 #SBATCH -J eval/trocr_base/ft_vanilla/hovratt_region
 #SBATCH -o logs_uppmax/eval/trocr_base/ft_vanilla/hovratt_region.out
-#SBATCH -e logs_uppmax/eval/trocr_base/ft_vanilla/hovratt_region.err
+#SBATCH -e logs_uppmax/eval/trocr_base/ft_vanilla/hovratt_region.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

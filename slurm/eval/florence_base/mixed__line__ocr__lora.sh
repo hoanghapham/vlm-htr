@@ -7,7 +7,7 @@
 #SBATCH -t 3-00:00
 #SBATCH -J eval/florence_base/mixed__line__ocr__lora
 #SBATCH -o logs_uppmax/eval/florence_base/mixed__line__ocr__lora.out
-#SBATCH -e logs_uppmax/eval/florence_base/mixed__line__ocr__lora.err
+#SBATCH -e logs_uppmax/eval/florence_base/mixed__line__ocr__lora.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

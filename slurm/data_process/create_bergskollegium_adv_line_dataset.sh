@@ -7,7 +7,7 @@
 #SBATCH -t 24:00:00
 #SBATCH -J data_process/create_bergskollegium_adv_line_dataset
 #SBATCH -o logs_uppmax/data_process/create_bergskollegium_adv_line_dataset.out
-#SBATCH -e logs_uppmax/data_process/create_bergskollegium_adv_line_dataset.err
+#SBATCH -e logs_uppmax/data_process/create_bergskollegium_adv_line_dataset.out
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 

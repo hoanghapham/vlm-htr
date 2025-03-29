@@ -7,7 +7,7 @@
 #SBATCH -t 2-00:00
 #SBATCH -J convert_checkpoints
 #SBATCH -o logs_uppmax/convert_checkpoints.out
-#SBATCH -e logs_uppmax/convert_checkpoints.err
+#SBATCH -e logs_uppmax/convert_checkpoints.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

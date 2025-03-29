@@ -8,7 +8,7 @@
 #SBATCH -C mem512GB
 #SBATCH -J create_region_dataset
 #SBATCH -o logs_uppmax/data_process/create_region_dataset.out
-#SBATCH -e logs_uppmax/data_process/create_region_dataset.err
+#SBATCH -e logs_uppmax/data_process/create_region_dataset.out
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 

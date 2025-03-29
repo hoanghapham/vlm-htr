@@ -7,7 +7,7 @@
 #SBATCH -t 3-00:00
 #SBATCH -J finetune/florence_base/mixed__page__region_od__demo
 #SBATCH -o logs_uppmax/finetune/florence_base/mixed__page__region_od__demo.out
-#SBATCH -e logs_uppmax/finetune/florence_base/mixed__page__region_od__demo.err
+#SBATCH -e logs_uppmax/finetune/florence_base/mixed__page__region_od__demo.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

@@ -7,7 +7,7 @@
 #SBATCH -t 24:00:00
 #SBATCH -J eval/florence_base/ft_htr_region/poliskammare_region
 #SBATCH -o logs_uppmax/eval/florence_base/ft_htr_region/poliskammare_region.out
-#SBATCH -e logs_uppmax/eval/florence_base/ft_htr_region/poliskammare_region.err
+#SBATCH -e logs_uppmax/eval/florence_base/ft_htr_region/poliskammare_region.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

@@ -7,7 +7,7 @@
 #SBATCH -t 12:00:00
 #SBATCH -J eval/florence_base/ft_vanilla/hovratt_line
 #SBATCH -o logs_uppmax/eval/florence_base/ft_vanilla/hovratt_line.out
-#SBATCH -e logs_uppmax/eval/florence_base/ft_vanilla/hovratt_line.err
+#SBATCH -e logs_uppmax/eval/florence_base/ft_vanilla/hovratt_line.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

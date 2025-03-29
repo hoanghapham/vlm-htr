@@ -7,7 +7,7 @@
 #SBATCH -t 12:00:00
 #SBATCH -J eval/yolo11m/mixed__page__line_od
 #SBATCH -o logs_uppmax/eval/yolo11m/mixed__page__line_od.out
-#SBATCH -e logs_uppmax/eval/yolo11m/mixed__page__line_od.err
+#SBATCH -e logs_uppmax/eval/yolo11m/mixed__page__line_od.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
