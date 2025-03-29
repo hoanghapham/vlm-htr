@@ -58,7 +58,6 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 # Load model
 logger.info("Load model")
 processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
-vanilla_model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 if "lora" in MODEL_NAME:
@@ -71,11 +70,11 @@ if LOAD_CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
     if LOAD_CHECKPOINT == "last":
-        model, _, cp_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
+        model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
     elif LOAD_CHECKPOINT == "best":
-        model, _, cp_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
+        model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
 
-    logger.info(f"Evaluate checkpoint: {cp_metrics}")
+    logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
 # Set model to evaluation mode
 model.eval()
@@ -148,7 +147,11 @@ metrics = dict(
     avg_region_coverage=avg_region_coverage
 )
 
-write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
-write_json_file(metrics, OUTPUT_DIR / "metrics.json")
+metrics.update(cp_train_metrics)
+
+step_idx_str = str(cp_train_metrics["step_idx"]).zfill(10)
+
+write_ndjson_file(full_results, OUTPUT_DIR / f"full_results_step_{step_idx_str}.json")
+write_json_file(metrics, OUTPUT_DIR / f"metrics_{step_idx_str}.json")
     
 logger.info(f"Wrote results to {OUTPUT_DIR}")

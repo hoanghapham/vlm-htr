@@ -1,3 +1,4 @@
+#%%
 import sys
 from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -20,7 +21,13 @@ from src.train import save_checkpoint
 
 parser = ArgumentParser()
 parser.add_argument(nargs='+', dest="model_dirs")
-args = parser.parse_args()
+# args = parser.parse_args()
+
+args = parser.parse_args([
+    "models/florence_base__mixed__line__ocr"
+])
+
+#%%
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_dirs = [Path(model_dir) for model_dir in args.model_dirs]
@@ -81,3 +88,4 @@ for model_dir in model_dirs:
             metrics=metrics
         )
         print("Saved")
+# %%
