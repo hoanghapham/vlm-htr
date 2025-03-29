@@ -29,10 +29,6 @@ for model_dir in model_dirs:
 
     print(f"Model: {model_dir.name}")
 
-    if "lora" in model_dir.name:
-        print("skip")
-        continue
-
     if "florence" in model_dir.name:
         REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
         REVISION = 'refs/pr/6'
