@@ -96,7 +96,7 @@ for pred, ann in zip(predictions, annotations):
     coverage = region_coverage(pred_polygons, ann_polygons)
     page_region_coverages.append(coverage)
 
-avg_region_coverage = float(sum(page_region_coverages)) / len(page_region_coverages)
+avg_region_coverage = float(sum(page_region_coverages))
 logger.info(f"Average region coverage: {avg_region_coverage:.4f}")
 
 # Write metrics
@@ -117,7 +117,7 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, pa
         dict(
             img_path = str(img_path),
             ann_bboxes = ann,
-            pred_bbox = pred,
+            pred_bboxes = pred,
             coverage_str = str(coverage),
             coverage_float = float(coverage)
         )

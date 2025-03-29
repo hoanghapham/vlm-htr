@@ -13,6 +13,7 @@ plots/*
 **/runs/*
 eval/*
 workpad/*
+evaluations/*
 
 # files
 .python-version

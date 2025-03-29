@@ -3,55 +3,17 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from logging import Logger
 
-import numpy as np
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
-from datasets import concatenate_datasets, load_from_disk
+from transformers import PreTrainedModel
 from tqdm import tqdm
-
 from src.file_tools import read_json_file, write_json_file
 
-STEP_IDX_SPACES = 7
 
-def gen_split_indices(
-    total_samples: int, 
-    seed: int = 42, 
-    train_ratio: float = 0.7, 
-    val_ratio: float = 0.15, 
-    test_ratio: float = 0.15
-) -> tuple[list[int], list[int], list[int]]:
-    np.random.seed(seed)
-    all_indices = range(total_samples)
-
-    train_indices = np.random.choice(all_indices, size=int(train_ratio * total_samples), replace=False)
-    val_indices = np.random.choice(
-        [idx for idx in all_indices if idx not in train_indices], 
-        size = int(val_ratio * total_samples), 
-        replace = False
-    )
-    test_indices = np.random.choice(
-        [idx for idx in all_indices if idx not in np.concatenate([train_indices, val_indices])], 
-        size = max(total_samples - len(train_indices) - len(val_indices), int(test_ratio * total_samples)),
-        replace = False
-    )
-
-    return train_indices, val_indices, test_indices
-
-
-def load_split(split_dir: str | Path) -> Dataset:
-    dsets = []
-    for path in split_dir.glob("*"):
-        try:
-            data = load_from_disk(path)
-            dsets.append(data)
-        except Exception as e:
-            print(e)
-
-    dataset = concatenate_datasets(dsets)
-    return dataset
+STEP_IDX_SPACES = 10
 
 
 class Checkpoint():
@@ -72,56 +34,6 @@ class Checkpoint():
     def __str__(self):
         return f"Checkpoint: {self.step_idx}, avg. train loss: {self.avg_train_loss}, avg. validation loss: {self.avg_val_loss}"
 
-
-def load_checkpoint(pt_path: str | Path, device: str = "cpu") -> Checkpoint:
-    cp_states = torch.load(pt_path, weights_only=True, map_location=torch.device(device))
-    step_idx = int(Path(pt_path).stem.split("_")[-1])
-    cp_metadata = {"step_idx": step_idx}
-
-    json_path = Path(pt_path).with_suffix(".json")
-    if json_path.exists():
-        cp_metadata = read_json_file(json_path)
-    
-    return Checkpoint(
-        step_idx                = cp_metadata.get("step_idx"),
-        avg_train_loss          = cp_metadata.get("avg_train_loss"),
-        avg_val_loss            = cp_metadata.get("avg_val_loss"),
-        model_state_dict        = cp_states.get("model_state_dict"),
-        optimizer_state_dict    = cp_states.get("optimizer_state_dict")
-    )
-
-
-def load_best_checkpoint(model_path: Path, compare_metric: str = "avg_val_loss", device: str = "cpu") -> Checkpoint:
-
-    supported_metrics = ["avg_train_loss", "avg_val_loss"]
-    assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
-
-    paths_map = {str(path): str(path.with_suffix(".pt")) for path in sorted(Path(model_path).glob("*.json"))}
-    best_value = float("inf")
-    best_pt_path = None
-
-    for json_path, pt_path in paths_map.items():
-        metric_dict = read_json_file(json_path)
-        
-        if metric_dict.get(compare_metric) is not None:
-            if metric_dict.get(compare_metric) < best_value:
-                best_value = metric_dict.get(compare_metric)
-                best_pt_path = pt_path
-    
-    if best_pt_path:
-        return load_checkpoint(best_pt_path, device)
-    else:
-        return None
-    
-
-def load_last_checkpoint(model_path: Path, device: str) -> Checkpoint:
-    pt_paths = list(sorted(Path(model_path).glob("*.pt")))
-    if pt_paths:
-        last_pt_path = pt_paths[-1]
-        return load_checkpoint(last_pt_path, device)
-    else:
-        return None
-    
 
 class Trainer():
 
@@ -176,17 +88,20 @@ class Trainer():
 
         # Init model from the last checkpoint state
         if self.resume:
-            last_cp = load_last_checkpoint(self.model_out_dir, self.device)
-
-            if last_cp is not None:
-                # Update model & optimizer with last checkpoint
-                self.model.load_state_dict(last_cp.model_state_dict)
-                self.optimizer.load_state_dict(last_cp.optimizer_state_dict)
-
-                # Start training from the next step
-                self.logger.info(f"Start from {last_cp}")
-                self.start_step = last_cp.step_idx + 1
+            try:
+                last_cp_metrics = load_last_checkpoint(
+                    model=self.model,
+                    optimizer=self.optimizer,
+                    model_path=self.model_out_dir,
+                    device=self.device
+                )
+                self.logger.info(f"Start from {last_cp_metrics}")
+                self.start_step = last_cp_metrics["step_idx"] + 1
         
+            except Exception as e:
+                self.logger.warning(e)
+                last_cp_metrics = None
+                self.logger.info("Start training from beginning")
         else: 
             self.logger.info("Start training from beginning")
         
@@ -259,18 +174,100 @@ class Trainer():
         return avg_val_loss
 
     def _save_checkpoint(self, step_idx: int, avg_train_loss: float, avg_val_loss: float):
-        # Save pt
-        checkpoint_states = {
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-        }
-        step_idx_str = str(step_idx).zfill(STEP_IDX_SPACES)
-        torch.save(checkpoint_states, self.model_out_dir / f"checkpoint_step_{step_idx_str}.pt")
-        
-        # Save dict
+        cp_out_dir = self.model_out_dir / f"checkpoint_step_{str(step_idx).zfill(STEP_IDX_SPACES)}"
+
         checkpoint_metrics = dict(
             step_idx        = step_idx,
             avg_train_loss  = avg_train_loss,
             avg_val_loss    = avg_val_loss,
         )
-        write_json_file(checkpoint_metrics, self.model_out_dir / f"checkpoint_step_{step_idx_str}.json")
+
+        save_checkpoint(model=self.model, optimizer=self.optimizer, metrics=checkpoint_metrics, out_dir=cp_out_dir)
+
+
+# Helper functions
+
+def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str | Path, metrics: dict = None):
+    """Save checkpoint to disk."""
+    # Save model
+    model.save_pretrained(out_dir)
+
+    # Doublecheck config of florence2 modsel and correct missing vision model type
+    config = read_json_file(out_dir / "config.json")
+    if config["model_type"] == "florence2":
+        if config["vision_config"]["model_type"] == "":
+            config["vision_config"]["model_type"] = "davit"
+            write_json_file(config, out_dir / "config.json")
+
+    # Save optimizer state dict
+    optimizer_state_dict = optimizer.state_dict()
+    torch.save(optimizer_state_dict, out_dir / "optimizer_state_dict.pt")
+    
+    # Save metrics
+    if metrics is None:
+        metrics = {}
+
+    write_json_file(metrics, out_dir / "metrics.json")
+
+
+def load_checkpoint(model: PreTrainedModel, optimizer: Optimizer, cp_dir: str | Path, device: str = "cpu"):
+    """Load checkpoint from disk. Directly modify the model and optimizer states."""
+    model.from_pretrained(cp_dir, device_map=device, trust_remote_code=True)
+    optimizer_state_dict = torch.load(cp_dir / "optimizer_state_dict.pt", map_location=device)
+    optimizer.load_state_dict(optimizer_state_dict)
+    metrics = read_json_file(cp_dir / "metrics.json")
+    return metrics
+
+
+def load_best_checkpoint(
+    model: PreTrainedModel, 
+    optimizer: Optimizer, 
+    model_path: str | Path, 
+    device: str = "cpu", 
+    compare_metric: str = "avg_val_loss"
+) -> dict:
+    """Load best checkpoint from disk. Directly modify the model and optimizer states."""
+    # Checks
+    supported_metrics = ["avg_train_loss", "avg_val_loss"]
+    assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
+    
+    cp_paths = [path for path in sorted(model_path.glob("checkpoint_step_*")) if path.is_dir()]
+    assert cp_paths != [], f"No checkpoints found in {model_path}"
+
+    # Load
+    best_value = float("inf")
+    best_cp_path = cp_paths[-1]
+
+    for cp_path in cp_paths:
+        metrics = read_json_file(cp_path / "metrics.json")
+        if metrics[compare_metric] < best_value:
+            best_value = metrics[compare_metric]
+            best_cp_path = cp_path
+    
+    metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=best_cp_path, device=device)
+    return metrics
+
+
+def load_last_checkpoint(
+    model: PreTrainedModel, 
+    optimizer: Optimizer, 
+    model_path: str | Path, 
+    device: str = "cpu"
+) -> dict:
+    """Load last checkpoint from disk. Directly modify the model and optimizer states."""
+    # Check
+    cp_paths = [path for path in sorted(model_path.glob("checkpoint_step_*")) if path.is_dir()]
+    assert cp_paths != [], f"No checkpoints found in {model_path}"
+    
+    # Load
+    last_cp_path = cp_paths[-1] 
+    metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=last_cp_path, device=device)
+    return metrics
+    
+
+def compare_models(model1, model2):
+    model1_params_sum = sum([param.sum() for param in model1.parameters()])
+    model2_params_sum = sum([param.sum() for param in model2.parameters()])
+    print(f"Model 1 params sum: {model1_params_sum:,}")
+    print(f"Model 2 params sum: {model2_params_sum:,}")
+    print(f"Difference: {model1_params_sum - model2_params_sum}")
