@@ -17,4 +17,4 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python pipelines/data_process/convert_checkpoints.py
+python pipelines/data_process/convert_checkpoints.py models/trocr_base__mixed__line__ocr/
