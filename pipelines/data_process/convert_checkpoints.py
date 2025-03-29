@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-PROJECT_DIR = Path.cwd().parent
+PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 import torch
