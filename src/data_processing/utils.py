@@ -77,7 +77,7 @@ class XMLParser():
 
 def load_arrow_datasets(parent_dir: str | Path) -> Dataset:
     dsets = []
-    dir_paths = [path for path in parent_dir.glob("*") if path.is_dir()]
+    dir_paths = [path for path in parent_dir.iterdir() if path.is_dir()]
     for path in dir_paths:
         try:
             data = load_from_disk(path)
