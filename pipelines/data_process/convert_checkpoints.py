@@ -19,7 +19,7 @@ from src.train import save_checkpoint
 
 
 parser = ArgumentParser()
-parser.add_argument(nargs='+', dest="model_dirs", required=True)
+parser.add_argument(nargs='+', dest="model_dirs")
 args = parser.parse_args()
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
