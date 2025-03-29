@@ -22,6 +22,10 @@ for model_dir in model_dirs:
 
     print(f"Model: {model_dir.name}")
 
+    if "lora" in model_dir.name:
+        print("skip")
+        continue
+
     if "florence" in model_dir.name:
         REMOTE_MODEL_PATH = "microsoft/Florence-2-base-ft"
         REVISION = 'refs/pr/6'
@@ -31,9 +35,9 @@ for model_dir in model_dirs:
             revision=REVISION
         ).to(DEVICE)
 
-        if "lora" in model_dir.name:
-            config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-            model = get_peft_model(model, config)
+        # if "lora" in model_dir.name:
+            # config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
+            # model = get_peft_model(model, config)
 
         optimizer = AdamW(model.parameters(), lr=1e-6)
 
