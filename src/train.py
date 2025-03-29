@@ -52,16 +52,18 @@ class Trainer():
         resume: bool = True,
         logging_interval: int = 100
     ):
-        self.model = model
-        self.device = model.device
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
+        self.model          = model
+        self.optimizer      = optimizer
+        self.lr_scheduler   = lr_scheduler
+        self.device         = model.device
+        self.model_out_dir  = Path(model_out_dir)
 
-        self.train_loader = train_loader
-        self.val_loader = val_loader
+        self.train_loader   = train_loader
+        self.val_loader     = val_loader
         
-        self.num_train_epochs = num_train_epochs
-        self.start_step = 1
+        self.num_train_epochs   = num_train_epochs
+        self.start_step         = 1
+        self.resume             = resume
 
         # Determine max training steps
         if max_train_steps is None:
@@ -69,14 +71,12 @@ class Trainer():
         else:
             self.max_train_steps = min(max_train_steps, num_train_epochs * len(train_loader))
 
-        self.resume = resume
-
-        self.train_losses = []
-        self.val_losses = []
+        self.train_losses   = []
+        self.val_losses     = []
         
-        self.model_out_dir = Path(model_out_dir)
-        self.logger = logger
-        self.tsb_logger = tsb_logger
+        # Logging
+        self.logger         = logger
+        self.tsb_logger     = tsb_logger
         self.logging_interval = logging_interval
 
     def train(self):
@@ -89,7 +89,7 @@ class Trainer():
         # Init model from the last checkpoint state
         if self.resume:
             try:
-                last_cp_metrics = load_last_checkpoint(
+                self.model, self.optimizer, last_cp_metrics = load_last_checkpoint(
                     model=self.model,
                     optimizer=self.optimizer,
                     model_path=self.model_out_dir,
@@ -211,12 +211,15 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str |
 
 
 def load_checkpoint(model: PreTrainedModel, optimizer: Optimizer, cp_dir: str | Path, device: str = "cpu"):
-    """Load checkpoint from disk. Directly modify the model and optimizer states."""
-    model.from_pretrained(cp_dir, device_map=device, trust_remote_code=True)
-    optimizer_state_dict = torch.load(cp_dir / "optimizer_state_dict.pt", map_location=device)
-    optimizer.load_state_dict(optimizer_state_dict)
+    """Load checkpoint from disk."""
+    model = model.from_pretrained(cp_dir, device_map=device)
     metrics = read_json_file(cp_dir / "metrics.json")
-    return metrics
+    
+    if optimizer is not None:
+        optimizer_state_dict = torch.load(cp_dir / "optimizer_state_dict.pt", map_location=device)
+        optimizer.load_state_dict(optimizer_state_dict)
+
+    return model, optimizer, metrics
 
 
 def load_best_checkpoint(
@@ -225,8 +228,8 @@ def load_best_checkpoint(
     model_path: str | Path, 
     device: str = "cpu", 
     compare_metric: str = "avg_val_loss"
-) -> dict:
-    """Load best checkpoint from disk. Directly modify the model and optimizer states."""
+):
+    """Load best checkpoint from disk."""
     # Checks
     supported_metrics = ["avg_train_loss", "avg_val_loss"]
     assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
@@ -244,25 +247,25 @@ def load_best_checkpoint(
             best_value = metrics[compare_metric]
             best_cp_path = cp_path
     
-    metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=best_cp_path, device=device)
-    return metrics
+    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=best_cp_path, device=device)
+    return model, optimizer, metrics
 
 
 def load_last_checkpoint(
     model: PreTrainedModel, 
-    optimizer: Optimizer, 
+    optimizer: Optimizer,
     model_path: str | Path, 
     device: str = "cpu"
-) -> dict:
-    """Load last checkpoint from disk. Directly modify the model and optimizer states."""
+):
+    """Load last checkpoint from disk."""
     # Check
     cp_paths = [path for path in sorted(model_path.glob("checkpoint_step_*")) if path.is_dir()]
     assert cp_paths != [], f"No checkpoints found in {model_path}"
     
     # Load
     last_cp_path = cp_paths[-1] 
-    metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=last_cp_path, device=device)
-    return metrics
+    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=last_cp_path, device=device)
+    return model, optimizer, metrics
     
 
 def compare_models(model1, model2):

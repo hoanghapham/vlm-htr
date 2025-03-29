@@ -15,13 +15,13 @@ def draw_bboxes_xyxy(
     fig_size: int = 15, 
     bbox_color: str = "red", 
     label_facecolor: str = "lightcoral",
-    label_color: str = "black"
+    label_color: str = "black",
 ):
 
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
     ax.imshow(image)
 
-    # Draw bboxes
+    # Draw pred bboxes
     for idx, bbox in enumerate(bboxes):
         x, y, width, height = bbox_xyxy_to_xywh(bbox)
         rect = patches.Rectangle(
@@ -29,7 +29,13 @@ def draw_bboxes_xyxy(
             linewidth=2, edgecolor=bbox_color, facecolor='none', label=idx
         )
         ax.add_patch(rect)
-        plt.text(x,y, idx, color=label_color,fontsize=8,bbox=dict(facecolor=label_facecolor, alpha=1))
+        plt.text(
+            x, y, 
+            idx, 
+            color = label_color, 
+            fontsize = 8, 
+            bbox = dict(facecolor=label_facecolor, alpha=1)
+        )
     
     ax.axis('off')
     plt.show()

@@ -89,14 +89,14 @@ assert len(annotations) == len(predictions), f"predictions & annotations length 
 precision, recall, fscore = precision_recall_fscore(predictions, annotations)
 logger.info(f"Precision: {precision}, Recall: {recall}, Fscore: {fscore}")
 
-page_region_coverages = []
+coverage_ratios = []
 for pred, ann in zip(predictions, annotations):
     pred_polygons = [bbox_xyxy_to_polygon(box) for box in pred]
     ann_polygons = [bbox_xyxy_to_polygon(box) for box in ann]
     coverage = region_coverage(pred_polygons, ann_polygons)
-    page_region_coverages.append(coverage)
+    coverage_ratios.append(coverage)
 
-avg_region_coverage = float(sum(page_region_coverages))
+avg_region_coverage = float(sum(coverage_ratios))
 logger.info(f"Average region coverage: {avg_region_coverage:.4f}")
 
 # Write metrics
@@ -110,10 +110,10 @@ metrics = dict(
 write_json_file(metrics, OUTPUT_DIR / "metrics.json")
 
 # Write results
-all_results = []
+full_results = []
 
-for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, page_region_coverages):
-    all_results.append(
+for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, coverage_ratios):
+    full_results.append(
         dict(
             img_path = str(img_path),
             ann_bboxes = ann,
@@ -123,6 +123,6 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, pa
         )
     )
 
-write_ndjson_file(all_results, OUTPUT_DIR / "predictions.json")
+write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
 
 logger.info(f"Wrote results to {OUTPUT_DIR}")

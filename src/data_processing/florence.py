@@ -164,8 +164,8 @@ class FlorenceTextODDataset(Dataset):
         img_paths = list_files(self.data_dir / "images", [".tif", ".jpg"])
         xml_paths = list_files(self.data_dir / "page_xmls", [".xml"])
         matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
-        assert len(img_paths) == len(xml_paths) == matched > 0, \
-            f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files"
+        assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
+            f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
         
         assert object_class in ["region", "line"]
         super().__init__()
@@ -203,6 +203,7 @@ class FlorenceTextODDataset(Dataset):
         elif self.object_class == "line":
             objects = self.xmlparser.get_lines(xml)
 
+        # Original bbox in xyxy format
         bboxes = [data["bbox"] for data in objects]
 
         # Quantize bbox to coordinates relative to 1000 bins
@@ -215,12 +216,17 @@ class FlorenceTextODDataset(Dataset):
             bbox_texts.append(bbox_text)
 
         # Output text is of format "object_class<loc_...><loc_...><loc_...><loc_...>..."
+        # bbox Format: xyxy
         answer = "".join(bbox_texts)
         
         return dict(
             question=self.task,
             answer=answer,
             image=image,
+            original_bboxes=bboxes,
+            quantized_bboxes=quantized_bboxes,
+            image_path=self.img_paths[idx],
+            xml_path=self.xml_paths[idx]
         )
 
     def select(self, indices: typing.Iterable):
@@ -338,9 +344,9 @@ def create_collate_fn(processor, device):
 def predict(
     model, 
     processor, 
-    user_prompt: str, 
     image: Image, 
     task: FlorenceTask = None, 
+    user_prompt: str = None, 
     device: str = "cpu", 
 ) -> tuple[list, list]:
     
