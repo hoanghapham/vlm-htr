@@ -43,17 +43,17 @@ for model_dir in model_dirs:
         ).to(DEVICE)
 
         # if "lora" in model_dir.name:
-            # config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-            # model = get_peft_model(model, config)
+        #     config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
+        #     model = get_peft_model(model, config)
 
         optimizer = AdamW(model.parameters(), lr=1e-6)
 
     elif "trocr" in model_dir.name:
         REMOTE_MODEL_PATH = "microsoft/trocr-base-handwritten"
         processor   = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
+        model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
         optimizer   = AdamW(model.parameters(), lr=2e-5, weight_decay=0.0001)
         
-        model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
         model.config.decoder_start_token_id = processor.tokenizer.eos_token_id
         model.config.pad_token_id           = processor.tokenizer.pad_token_id
         model.config.vocab_size             = model.config.decoder.vocab_size
