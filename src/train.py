@@ -278,8 +278,8 @@ def load_last_checkpoint(
 def compare_models(model1, model2):
     model1.eval()
     model2.eval()
-    model1_params_sum = sum([param.sum() for param in model1.parameters().detach()])
-    model2_params_sum = sum([param.sum() for param in model2.parameters().detach()])
+    model1_params_sum = sum([param.sum() for param in model1.parameters()])
+    model2_params_sum = sum([param.sum() for param in model2.parameters()])
     print(f"Model 1 params sum: {model1_params_sum:,}")
     print(f"Model 2 params sum: {model2_params_sum:,}")
     print(f"Difference: {model1_params_sum - model2_params_sum}")
