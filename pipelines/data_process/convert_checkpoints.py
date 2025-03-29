@@ -42,10 +42,6 @@ for model_dir in model_dirs:
             revision=REVISION
         ).to(DEVICE)
 
-        # if "lora" in model_dir.name:
-        #     config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-        #     model = get_peft_model(model, config)
-
         optimizer = AdamW(model.parameters(), lr=1e-6)
 
     elif "trocr" in model_dir.name:
@@ -60,7 +56,13 @@ for model_dir in model_dirs:
 
     else:
         continue
+    
+    # If the model is lora, then need to treat it differently
+    if "lora" in model_dir.name:
+        config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
+        model = get_peft_model(model, config)
 
+    # Read old json and pt files
     json_files  = sorted(model_dir.glob("*.json"))
     pt_files    = sorted(model_dir.glob("*.pt"))
 

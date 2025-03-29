@@ -18,4 +18,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python workpad/convert_checkpoints.py --model-dir models/florence-2-base-ft-htr-region
+python workpad/convert_checkpoints.py --model-dir \
+    florence_base__mixed__page__line_od__lora \
+    florence_base__mixed__page__region_od__lora \

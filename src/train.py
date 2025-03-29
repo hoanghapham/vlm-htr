@@ -8,10 +8,12 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
-from transformers import PreTrainedModel
-from tqdm import tqdm
-from src.file_tools import read_json_file, write_json_file
 
+from transformers import PreTrainedModel
+from peft.peft_model import PeftModel
+from tqdm import tqdm
+
+from src.file_tools import read_json_file, write_json_file
 
 STEP_IDX_SPACES = 10
 
@@ -89,18 +91,18 @@ class Trainer():
         # Init model from the last checkpoint state
         if self.resume:
             try:
-                self.model, self.optimizer, last_cp_metrics = load_last_checkpoint(
+                self.model, self.optimizer, last_metrics = load_last_checkpoint(
                     model=self.model,
                     optimizer=self.optimizer,
                     model_path=self.model_out_dir,
                     device=self.device
                 )
-                self.logger.info(f"Start from {last_cp_metrics}")
-                self.start_step = last_cp_metrics["step_idx"] + 1
+                self.logger.info(f"Start from {last_metrics}")
+                self.start_step = last_metrics["step_idx"] + 1
         
             except Exception as e:
                 self.logger.warning(e)
-                last_cp_metrics = None
+                last_metrics = None
                 self.logger.info("Start training from beginning")
         else: 
             self.logger.info("Start training from beginning")
@@ -193,8 +195,9 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str |
     model.save_pretrained(out_dir)
 
     # Doublecheck config of florence2 modsel and correct missing vision model type
-    config = read_json_file(out_dir / "config.json")
-    if config["model_type"] == "florence2":
+    # Only Florence2 needs this
+    if "Florence-2" in model.name_or_path:
+        config = read_json_file(out_dir / "config.json")
         if config["vision_config"]["model_type"] == "":
             config["vision_config"]["model_type"] = "davit"
             write_json_file(config, out_dir / "config.json")
@@ -210,14 +213,18 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str |
     write_json_file(metrics, out_dir / "metrics.json")
 
 
-def load_checkpoint(model: PreTrainedModel, optimizer: Optimizer, cp_dir: str | Path, device: str = "cpu"):
+def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, cp_path: str | Path, device: str = "cpu"):
     """Load checkpoint from disk."""
-    model = model.from_pretrained(cp_dir, device_map=device)
-    metrics = read_json_file(cp_dir / "metrics.json")
+    if isinstance(model, PeftModel):
+        model = model.from_pretrained(model.base_model.model, model_id=cp_path, device_map=device)
+    else:
+        model = model.from_pretrained(cp_path, device_map=device)
+    
+    metrics = read_json_file(cp_path / "metrics.json")
     
     if optimizer is not None:
-        optimizer_state_dict = torch.load(cp_dir / "optimizer_state_dict.pt", map_location=device)
-        optimizer.load_state_dict(optimizer_state_dict)
+        optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
+        optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
 
     return model, optimizer, metrics
 
@@ -247,7 +254,7 @@ def load_best_checkpoint(
             best_value = metrics[compare_metric]
             best_cp_path = cp_path
     
-    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=best_cp_path, device=device)
+    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_path=best_cp_path, device=device)
     return model, optimizer, metrics
 
 
@@ -264,7 +271,7 @@ def load_last_checkpoint(
     
     # Load
     last_cp_path = cp_paths[-1] 
-    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_dir=last_cp_path, device=device)
+    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_path=last_cp_path, device=device)
     return model, optimizer, metrics
     
 
