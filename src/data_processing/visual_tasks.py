@@ -193,6 +193,12 @@ class HTRDataset(GeneratorBasedBuilder):
             features=text_recognition_features,
         ),
         HTRDatasetConfig(
+            name="text_recognition_bbox",
+            description="textline dataset for text recognition within bounding box",
+            process_func="text_recognition_bbox",
+            features=text_recognition_features,
+        ),
+        HTRDatasetConfig(
             name="inst_seg_lines_within_regions",
             description="Cropped text region images with text line annotations",
             process_func="inst_seg_lines_within_regions",
@@ -299,7 +305,7 @@ class HTRDataset(GeneratorBasedBuilder):
     def _generate_examples(self, imgs_xmls):
         process_func = getattr(self, self.config.process_func)
         return process_func(imgs_xmls)
-
+    
     def text_recognition(self, imgs_xmls):
         """Process for line dataset with cropped images and transcriptions."""
         for img, xml in imgs_xmls:
@@ -309,7 +315,43 @@ class HTRDataset(GeneratorBasedBuilder):
 
             for i, line in enumerate(lines_data):
                 line_id = str(i).zfill(4)
-                cropped_image = self.crop_line_image(image_array, line["coords"])
+                try:
+                    cropped_image = self.crop_line_image(image_array, line["coords"])
+                except Exception as e:
+                    print(f"Error image: {img_filename}: {e}")
+                    continue
+                
+                transcription = line["transcription"]
+
+                if not transcription:
+                    print(f"Invalid transcription: {transcription}")
+                    continue
+
+                unique_key = f"{volume}_{img_filename}_{line_id}"
+                yield {
+                    "unique_key": unique_key, 
+                    "img_filename": img_filename, 
+                    "image": cropped_image, 
+                    "transcription": transcription
+                }
+
+    def text_recognition_bbox(self, imgs_xmls):
+        """Process for line dataset with cropped images from bbox, and transcriptions."""
+        for img, xml in imgs_xmls:
+            img_filename, volume = self._extract_filename_and_volume(img, xml)
+            lines_data = self.parse_pagexml(xml)
+            image_array = cv2.imread(img)
+
+            for i, line in enumerate(lines_data):
+                line_id = str(i).zfill(4)
+                bbox = polygon_to_bbox_xyxy(line["coords"])
+                bbox_polygon = bbox_xyxy_to_polygon(bbox)
+                try:
+                    cropped_image = self.crop_line_image(image_array, bbox_polygon)
+                except Exception as e:
+                    print(f"Error image: {img_filename}: {e}")
+                    continue 
+
                 transcription = line["transcription"]
 
                 if not transcription:
