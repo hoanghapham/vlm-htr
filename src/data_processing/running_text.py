@@ -539,3 +539,6 @@ class RunningTextDatasetBuilder():
         return PILImage.fromarray(cv2_image_rgb)
     
 
+class RegionDatasetBuilder():
+    def __init__(self):
+        pass

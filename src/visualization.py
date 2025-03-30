@@ -41,40 +41,36 @@ def draw_bboxes_xyxy(
     plt.show()
 
 
-def show_poliskammare_img(image_path: str, xml_path: str, show_large_bbox=False, show_line_bbox=False, fig_size=15):
-
-    # Get data
-    content = parse_pagexml_file(xml_path)
-    region_data = content.get_regions()
-    line_data = content.get_lines()
-
+def draw_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_bbox=False, fig_size=15):
 
     # Show image
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
-    image = Image.open(image_path)
     ax.imshow(image)
+    ax.set_axis_off()
 
+    lines_data = []
+    for region in regions_with_lines:
+        lines_data += region["lines"]
 
     # Color for lines
-    line_colors = [random_color() for _ in range(len(line_data))]
+    line_colors = [random_color() for _ in range(len(lines_data))]
 
-    if show_large_bbox:
+    if show_region_bbox:
         # Draw bbox for each large region
-        for idx, region in enumerate(region_data):
-            bbox = region.coords.points
+        for idx, region in enumerate(regions_with_lines):
+            x, y, width, height = bbox_xyxy_to_xywh(region["bbox"])
 
-            # bbox is not guaranteed to be a rectangle, and can actually be of weird shapes
-            rect = patches.Polygon(
-                bbox,
+            # bbox is not guaranteed to be a rectangle, and can actually have weird shapes
+            rect = patches.Rectangle(
+                (x, y), width, height,
                 linewidth=2, edgecolor='r', facecolor='none', label="Bounding Box"
             )
             ax.add_patch(rect)
 
-
     # Color lines
-    for idx, poly in enumerate(line_data):
-        seg_x = [x for (x, y) in poly.coords.points]
-        seg_y = [y for (x, y) in poly.coords.points]
+    for idx, line in enumerate(lines_data):
+        seg_x = [x for (x, y) in line["polygon"]]
+        seg_y = [y for (x, y) in line["polygon"]]
         ax.fill(
             seg_x, seg_y, 
             facecolor=line_colors[idx], 
@@ -83,17 +79,44 @@ def show_poliskammare_img(image_path: str, xml_path: str, show_large_bbox=False,
             linewidth=2, label="Segmentation"
         )
 
-
     if show_line_bbox:
         # Construct bbox for each line
-        for idx, region in enumerate(region_data):
-            region_lines = region.get_lines()
             
-            for idx, poly in enumerate(region_lines):
-                anchor_x, anchor_y, width, height = construct_line_bbox(poly)
+        for idx, line in enumerate(lines_data):
+            x, y, width, height = bbox_xyxy_to_xywh(line["bbox"])
 
-                rect = patches.Rectangle(
-                    (anchor_x, anchor_y), width, height,
-                    linewidth=2, edgecolor='r', facecolor='none', label="Bounding Box"
-                )
-                ax.add_patch(rect)
+            rect = patches.Rectangle(
+                (x, y), width, height,
+                linewidth=2, edgecolor='r', facecolor='none', label="Bounding Box"
+            )
+            ax.add_patch(rect)
+
+
+def draw_segment_masks(image: Image, masks: list[list[tuple | list]], fig_size=15):
+    """Draw segmentation masks from provided polygons
+
+    Parameters
+    ----------
+    image : Image
+    masks : list[list[tuple  |  list]]
+        List of masks, each mask is a list of (x, y) coordinates
+    fig_size : int, optional
+    """
+    # Show image
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+    ax.imshow(image)
+    ax.set_axis_off()
+
+    # Color for lines
+    line_colors = [random_color() for _ in range(len(masks))]
+
+    for idx, poly in enumerate(masks):
+        seg_x = [x for (x, y) in poly]
+        seg_y = [y for (x, y) in poly]
+        ax.fill(
+            seg_x, seg_y, 
+            facecolor=line_colors[idx], 
+            alpha=0.5, 
+            edgecolor=line_colors[idx], 
+            linewidth=2, label="Segmentation"
+        )
