@@ -67,9 +67,9 @@ process_funcs = {
 
 logger.info(f"Create dataset: {DATASET_TYPE}")
 
-processed_pages = set([file.parent for file in list_files(OUTPUT_DIR, [".arrow"])])
+processed_pages = set([file.parent.stem for file in list_files(OUTPUT_DIR, [".arrow"])])
 
-for dir_path in RAW_DATA_DIR.iterdir():
+for dir_path in sorted(RAW_DATA_DIR.iterdir()):
     
     if dir_path.is_dir():
         subset_name = dir_path.stem
