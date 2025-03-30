@@ -21,4 +21,4 @@ cd $PROJECT_DIR
 python pipelines/data_process/create_dataset.py \
     --raw-data-dir $PROJECT_DIR/data/raw/riksarkivet \
     --dataset-type inst_seg_lines_within_regions \
-    --processed-data-dir $PROJECT_DIR/data/processed/riskarkivet/inst_seg_lines_within_regions
+    --processed-data-dir $PROJECT_DIR/data/processed/riksarkivet

@@ -1,152 +1,117 @@
-import os
+# %%
 import sys
 from pathlib import Path
-from PIL import Image
-from tqdm import tqdm
-from shutil import copy
-from argparse import ArgumentParser
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
+PROJECT_DIR = Path.cwd().parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import read_json_file, write_json_file, write_list_to_text_file
-from src.data_process.xml import XMLParser
+import yaml
+from src.data_processing.utils import load_arrow_datasets
+from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
+from src.data_processing.visual_tasks import polygon_to_yolo_seg
+from tqdm import tqdm
 
 
-parser = ArgumentParser()
-parser.add_argument("--data-dir", "-i", required=True)
-parser.add_argument("--data-dest-dir", "-dd", required=True)
-parser.add_argument("--yolo-dest-dir", "-yd", required=True)
-parser.add_argument("--copy-images", "-ci", default="false")
-parser.add_argument("--copy-xmls", "-cx", default="false")
-parser.add_argument("--create-symlink", "-sl", default="false")
-parser.add_argument("--create-line", "-cl", default="false")
-parser.add_argument("--create-region", "-cr", default="false")
-args = parser.parse_args()
+dataset_name    = "inst_seg_lines_within_regions"
+SOURCE_DATA_DIR = PROJECT_DIR / "data/processed/riksarkivet" / dataset_name
+YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/mixed/{dataset_name}"
 
-DATA_DIR = Path(args.data_dir)
-DATA_DEST_DIR = Path(args.data_dest_dir)
-YOLO_DEST_DIR = Path(args.yolo_dest_dir)
-COPY_IMAGES = args.copy_images == "true"
-COPY_XMLS = args.copy_xmls == "true"
-CREATE_SYMLINK = args.create_symlink == "true"
-CREATE_LINE = args.create_line == "true"
-CREATE_REGION = args.create_region == "true"
 
-split_info = read_json_file(DATA_DIR / "split_info.json")
-
-#%%
-# Copy all train, val, test images to one folder
-
-if COPY_IMAGES:
-    print("Copy images")
-
-if COPY_XMLS:
-    print("Copy XMLs")
-
-split_img_paths = {}
-
-for split, img_xml_paths in split_info.items():
-    split_img_paths[split] = []
-
-    for src_img, src_xml in tqdm(img_xml_paths, desc=split):
-        
-        dest_img = DATA_DEST_DIR / "images" / split / Path(src_img).name
-        dest_xml = DATA_DEST_DIR / "page_xmls" / split / Path(src_xml).name
-
-        if not dest_img.parent.exists():
-            dest_img.parent.mkdir(parents=True)
-
-        if not dest_xml.parent.exists():
-            dest_xml.parent.mkdir(parents=True)
-
-        if COPY_IMAGES:
-            copy(src_img, dest_img)
-        
-        if COPY_XMLS:
-            copy(src_xml, dest_xml)
-
-        split_img_paths[split].append(str(dest_img))
-        
-# write_json_file(split_img_paths, DATA_DEST_DIR / "split_info.json")
-
-# %%
-
-# Create symlink from all_images to 
-if CREATE_SYMLINK:
-    print("Create symlinks")
-    tasks = ["line_detection", "region_detection"]
-
-    for task in tasks:
-
-        for split, img_paths in split_img_paths.items():
-            dest_dir = PROJECT_DIR / f"data/yolo/{task}/images/{split}"
-            if not dest_dir.exists():
-                dest_dir.mkdir(parents=True)
-
-            for img in tqdm(img_paths, desc=f"{task} - {split}"):
-                os.symlink(img, dest_dir / Path(img).name)
+# Load data
+full_dataset    = load_arrow_datasets(SOURCE_DATA_DIR)
+split_info      = read_json_file(PROJECT_DIR / "data/split_info/mixed.json")
 
 
 # %%
+# Prepare dirs
 
-parser = XMLParser()
+train_dest = YOLO_DATA_DIR / "train"
+val_dest = YOLO_DATA_DIR / "val"
+test_dest = YOLO_DATA_DIR / "test"
 
-def convert_to_yolo_format(bboxes: list[tuple], img_width, img_height, class_id=0):
+train_image_dir = YOLO_DATA_DIR / "train/images"
+val_image_dir = YOLO_DATA_DIR / "val/images"
+test_image_dir = YOLO_DATA_DIR / "test/images"
+
+train_label_dir = YOLO_DATA_DIR / "train/labels"
+val_label_dir = YOLO_DATA_DIR / "val/labels"
+test_label_dir = YOLO_DATA_DIR / "test/labels"
+
+if not train_image_dir.exists():
+    train_image_dir.mkdir(parents=True)
+
+if not val_image_dir.exists():
+    val_image_dir.mkdir(parents=True)
+
+if not test_image_dir.exists():
+    test_image_dir.mkdir(parents=True)
+
+if not train_label_dir.exists():
+    train_label_dir.mkdir(parents=True)
+
+if not val_label_dir.exists():  
+    val_label_dir.mkdir(parents=True)
+
+if not test_label_dir.exists():
+    test_label_dir.mkdir(parents=True)
+
+# %%
+# Write config file
+
+yolo_data_config = {
+    "path": str(YOLO_DATA_DIR),
+    "train": "images/train",
+    "val": "images/val",
+    "test": "images/test",
+    "names": {0: "line"},
+    "nc": 1
+}
+
+yaml.safe_dump(yolo_data_config, open(YOLO_DATA_DIR / "config.yaml", "w"))
+
+# %%
+# Prepare normalized names
+
+norm_train_names = [normalize_name(name) for name in split_info["train"]]
+norm_val_names = [normalize_name(name) for name in split_info["val"]]
+norm_test_names = [normalize_name(name) for name in split_info["test"]]
+
+split_page_names = {
+    "train": norm_train_names,
+    "val": norm_val_names,
+    "test": norm_test_names
+}
+
+# %%
+# Write data
+count_train = 0
+count_val = 0
+count_test = 0
+
+for data in tqdm(full_dataset):
+    img_filename = normalize_name(data["img_filename"])
+    image = data["image"]
+    annotations = data["annotations"]
+    polygons = []
     yolo_annotations = []
+
+    for ann in annotations:
+        polygons.append(ann["polygon"])
+        yolo_annotations.append(polygon_to_yolo_seg(ann["polygon"], image.width, image.height))
+
+    if img_filename in split_page_names["train"]:
+        image.save(train_dest / "images/" / f"{img_filename}.png")
+        write_list_to_text_file(yolo_annotations, train_dest / "labels/" / f"{img_filename}.txt")
+        count_train += 1
+
+    elif img_filename in split_page_names["val"]:
+        image.save(val_dest / "images/" / f"{img_filename}.png")
+        write_list_to_text_file(yolo_annotations, val_dest / "labels/" / f"{img_filename}.txt")
+        count_val += 1
+
+    elif img_filename in split_page_names["test"]:
+        image.save(test_dest / "images/" / f"{img_filename}.png")
+        write_list_to_text_file(yolo_annotations, test_dest / "labels/" / f"{img_filename}.txt")
+        count_test += 1
+
+print(f"Wrote {count_train} train, {count_val} val, {count_test} test images.")
     
-    for (xmin, ymin, xmax, ymax) in bboxes:
-        x_center = (xmin + xmax) / 2 / img_width
-        y_center = (ymin + ymax) / 2 / img_height
-        width = (xmax - xmin) / img_width
-        height = (ymax - ymin) / img_height
-
-        yolo_annotations.append(f"{class_id} {x_center} {y_center} {width} {height}")
-    
-    return yolo_annotations
-
-
-#%%
-# Create regions data
-if CREATE_REGION:
-    print("Create region labels")
-
-    for split, img_xml_paths in split_info.items():
-        for img, xml in tqdm(img_xml_paths, desc=split):
-            # Get image info
-            image = Image.open(img)
-
-            # Get bbox info
-            regions = parser.get_regions(xml)
-            bboxes = [reg["bbox"] for reg in regions]
-            yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
-
-            # Write
-            dest_dir = YOLO_DEST_DIR / "region_detection/labels" / split
-            if not dest_dir.exists():
-                dest_dir.mkdir(parents=True)
-
-            write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
-
-# %%
-# Create lines data
-if CREATE_LINE:
-    print("Create line labels")
-
-    for split, img_xml_paths in split_info.items():
-        for img, xml in tqdm(img_xml_paths, desc=split):
-            # Get image info
-            image = Image.open(img)
-
-            # Get bbox info
-            lines = parser.get_lines(xml)
-            bboxes = [line["bbox"] for line in lines]
-            yolo_bboxes = convert_to_yolo_format(bboxes, img_width=image.width, img_height=image.height, class_id=0)
-
-            # Write
-            dest_dir = YOLO_DEST_DIR / "line_detection/labels" / split
-            if not dest_dir.exists():
-                dest_dir.mkdir(parents=True)
-
-            write_list_to_text_file(yolo_bboxes, dest_dir / Path(img).with_suffix(".txt").name)
-
