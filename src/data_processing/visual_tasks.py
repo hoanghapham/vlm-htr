@@ -327,8 +327,7 @@ class HTRDataset(GeneratorBasedBuilder):
 
                 unique_key = f"{volume}_{img_filename}_{reg_id}"
                 try:
-                    yield
-                        {
+                    yield {
                             "unique_key": unique_key,
                             "img_filename": img_filename,
                             # "image": {"bytes": self._image_to_bytes(cropped_region_image)},
