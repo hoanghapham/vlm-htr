@@ -92,6 +92,9 @@ for dir_path in RAW_DATA_DIR.iterdir():
 
             data_list = list(process_funcs[DATASET_TYPE]([img_xml]))
 
+            if len(data_list) == 0:
+                continue
+
             data = Dataset.from_list(data_list)
             data.save_to_disk(OUTPUT_DIR / file_name)
     
