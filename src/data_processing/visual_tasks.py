@@ -333,7 +333,7 @@ class HTRDataset(GeneratorBasedBuilder):
                             # "image": {"bytes": self._image_to_bytes(cropped_region_image)},
                             "image": cropped_region_image,
                             "annotations": annotations,
-                        },
+                        }
                 except Exception as e:
                     print("still error", e)
                     continue

@@ -73,8 +73,8 @@ for dir_path in RAW_DATA_DIR.iterdir():
         subset_name = dir_path.stem
         logger.info(f"Process {subset_name}")
 
-        img_paths = list_files(dir, image_extensions)
-        xml_paths = list_files(dir, [".xml"])
+        img_paths = list_files(dir_path, image_extensions)
+        xml_paths = list_files(dir_path, [".xml"])
         matches = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
         assert len(img_paths) == len(xml_paths) == len(matches) > 0, \
             f"Invalid length, or mismatch: {len(img_paths)} - {len(xml_paths)} - {len(matches)}"
