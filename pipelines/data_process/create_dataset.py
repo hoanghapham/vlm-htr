@@ -67,6 +67,8 @@ process_funcs = {
 
 logger.info(f"Create dataset: {DATASET_TYPE}")
 
+processed_pages = set([file.parent for file in list_files(OUTPUT_DIR, [".arrow"])])
+
 for dir_path in RAW_DATA_DIR.iterdir():
     
     if dir_path.is_dir():
@@ -86,15 +88,22 @@ for dir_path in RAW_DATA_DIR.iterdir():
         )
 
         for idx, img_xml in enumerate(imgs_xmls):
-
-            logger.info(f"Process image {idx}/{len(imgs_xmls)}")
             file_name = Path(img_xml[0]).stem
-
-            data_list = list(process_funcs[DATASET_TYPE]([img_xml]))
+            
+            if file_name in processed_pages:
+                logger.info(f"Already processed: {file_name}")
+                continue
+            
+            logger.info(f"Process image {idx}/{len(imgs_xmls)}")
+            try:
+                data_list = list(process_funcs[DATASET_TYPE]([img_xml]))
+            except Exception as e:
+                logger.warning(f"Process {file_name} failed: {e}")
+                continue
 
             if len(data_list) == 0:
                 continue
 
             data = Dataset.from_list(data_list)
-            data.save_to_disk(OUTPUT_DIR / file_name)
+            data.save_to_disk(OUTPUT_DIR / subset_name / file_name)
     

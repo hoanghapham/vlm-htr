@@ -7,7 +7,7 @@ import unicodedata
 import pandas as pd
 
 
-def list_files(input_path: Path | str, extensions) -> dict:
+def list_files(input_path: Path | str, extensions) -> list[Path]:
     if not isinstance(input_path, Path):
         input_path = Path(input_path)
 
