@@ -62,6 +62,7 @@ process_funcs = {
     
     # Original images with both region and line annotations, can be used for full object detection 
     "inst_seg_regions_and_lines": builder.inst_seg_regions_and_lines,       
+    "text_recognition_bbox": builder.text_recognition_bbox
 }
 
 
