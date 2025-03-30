@@ -94,11 +94,11 @@ for dir_path in sorted(RAW_DATA_DIR.iterdir()):
                 logger.info(f"Already processed: {file_name}")
                 continue
             
-            logger.info(f"Process image {idx}/{len(imgs_xmls)}")
+            logger.info(f"Subset: {subset_name}, image {idx}/{len(imgs_xmls)}")
             try:
                 data_list = list(process_funcs[DATASET_TYPE]([img_xml]))
             except Exception as e:
-                logger.warning(f"Process {file_name} failed: {e}")
+                logger.warning(f"Image {file_name} failed: {e}")
                 continue
 
             if len(data_list) == 0:
