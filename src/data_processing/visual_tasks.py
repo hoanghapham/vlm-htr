@@ -4,6 +4,7 @@ from typing import Self, Iterable
 from glob import glob
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
+import torch
 import cv2
 import numpy as np
 from datasets import (
@@ -22,6 +23,7 @@ from shapely.geometry import Polygon
 import xml.etree.ElementTree as ET
 
 from src.data_processing.utils import XMLParser
+
 
 
 def bbox_xyxy_to_polygon(bbox):
@@ -54,7 +56,7 @@ def bbox_xywh_to_xyxy(bbox):
     return x1, y1, x2, y2
 
 
-def coord_to_bbox_xyxy(coords: list[tuple]):
+def polygon_to_bbox_xyxy(coords: list[tuple]):
     x_coords = [tup[0] for tup in coords]
     y_coords = [tup[1] for tup in coords]
     x1 = min(x_coords)

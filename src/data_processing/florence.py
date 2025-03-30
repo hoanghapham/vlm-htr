@@ -9,11 +9,12 @@ from torch.utils.data import Dataset
 from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion, PageXMLPage
+from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
 from src.visualization import random_color
 from src.file_tools import list_files
+from src.data_processing.visual_tasks import polygon_to_bbox_xyxy
 
 
 class FlorenceTask():
@@ -31,11 +32,100 @@ class FlorenceTask():
     OCR = "<OCR>"
     OCR_WITH_REGION = "<OCR_WITH_REGION>"
 
-    def __init__(self):
-        pass
+
+def extract_florence_seg_polygon(task, parsed_result):
+    segm = parsed_result[task]["polygons"][0][0]
+    seg_x = segm[0::2]
+    seg_y = segm[1::2]
+    polygon = list(zip(seg_x, seg_y))
+    return polygon
+
+
+def bbox_xyxy_to_florence(boxes, box_quantizer, image):
+    quantized_bboxes = box_quantizer.quantize(torch.Tensor(boxes), size=image.size)
+    bbox_texts = []
+    for bbox in quantized_bboxes:
+        text = "".join([f"<loc_{val}>" for val in bbox])
+        bbox_texts.append(text)
     
-    def __str__(self):
-        pass
+    return bbox_texts
+
+
+def polygons_to_florence(polygons, coords_quantizer, image):
+    polygon_texts = []
+
+    for polygon in polygons:
+        quant_poly = coords_quantizer.quantize(torch.Tensor(polygon), size=image.size)
+        points_str = ""
+        for point in quant_poly:
+            points_str += f"<loc_{point[0]}><loc_{point[1]}>"
+
+        polygon_texts.append(points_str)
+    return polygon_texts
+
+
+class FlorenceSegDataset(Dataset):
+    def __init__(self, data, task: FlorenceTask = FlorenceTask.REGION_TO_SEGMENTATION):
+        self.data = data
+        self.task = task
+        self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
+        self.coords_quantizer = CoordinatesQuantizer(mode="floor", bins=(1000, 1000))
+
+        total_lines = 0
+        reg_to_lines = {}
+        line_to_reg = []
+        line_to_local_line = []
+
+        # Create map
+        current_idx = 0
+
+        for reg_idx, sample in enumerate(data):
+            n_lines = len(sample["annotations"])
+            total_lines += n_lines
+            reg_to_lines[reg_idx] = list(range(current_idx, current_idx + n_lines))
+            
+            # List containing duplicates of reg_idx to match (global) line idx to region
+            line_to_reg += [reg_idx] * n_lines
+
+            # List containing local line idx, used to map global to local linie idx
+            line_to_local_line += list(range(n_lines))
+
+            current_idx += n_lines
+        
+        self.total_lines = total_lines
+        self.reg_to_lines = reg_to_lines
+        self.line_to_reg = line_to_reg
+        self.line_to_local_line = line_to_local_line
+
+    def __len__(self):
+        return self.total_lines
+
+    def __getitem__(self, idx):
+        
+        reg_idx = self.line_to_reg[idx]
+        local_line_idx = self.line_to_local_line[idx]
+
+        example = self.data[reg_idx]
+        image = example["image"].convert("RGB")
+
+        line = example["annotations"][local_line_idx]
+        polygon = line["polygon"]
+        bboxes = polygon_to_bbox_xyxy(polygon)
+
+        florence_bbox = bbox_xyxy_to_florence([bboxes], self.box_quantizer, image)[0]
+        florence_polygon = polygons_to_florence([polygon], self.coords_quantizer, image)[0]
+        
+        question = self.task + florence_bbox
+
+        return dict(
+            task=self.task,
+            question=question,
+            answer=florence_polygon,
+            image=image 
+        )
+    
+    def select(self, indices: typing.Iterable):
+        return [self.__getitem__(idx) for idx in indices]
 
 
 class FlorenceOCRDataset(Dataset):
@@ -68,88 +158,6 @@ class FlorenceOCRDataset(Dataset):
     def select(self, indices: typing.Iterable):
         subset = [self.data[int(idx)] for idx in indices]
         return FlorenceOCRDataset(subset)
-
-
-def construct_bbox(xml_obj: PageXMLTextLine | PageXMLTextRegion):
-
-    seg_x = [x for (x, y) in xml_obj.coords.points]
-    seg_y = [y for (x, y) in xml_obj.coords.points]
-
-    xmin = min(seg_x)
-    ymin = min(seg_y)
-    xmax = max(seg_x)
-    ymax = max(seg_y)
-
-    # Can return this if want to draw using Rectangle
-    anchor_x = xmin
-    anchor_y =  ymin
-    width = xmax - xmin
-    height = ymax - ymin
-
-    return xmin, ymin, xmax, ymax
-    
-
-# From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
-class BoxQuantizer(object):
-    def __init__(self, mode, bins):
-        self.mode = mode
-        self.bins = bins
-
-    def quantize(self, boxes: torch.Tensor, size):
-        bins_w, bins_h = self.bins  # Quantization bins.
-        size_w, size_h = size       # Original image size.
-        size_per_bin_w = size_w / bins_w
-        size_per_bin_h = size_h / bins_h
-        xmin, ymin, xmax, ymax = boxes.split(1, dim=-1)  # Shape: 4 * [N, 1].
-
-        if self.mode == 'floor':
-            quantized_xmin = (
-                xmin / size_per_bin_w).floor().clamp(0, bins_w - 1)
-            quantized_ymin = (
-                ymin / size_per_bin_h).floor().clamp(0, bins_h - 1)
-            quantized_xmax = (
-                xmax / size_per_bin_w).floor().clamp(0, bins_w - 1)
-            quantized_ymax = (
-                ymax / size_per_bin_h).floor().clamp(0, bins_h - 1)
-
-        elif self.mode == 'round':
-            raise NotImplementedError()
-
-        else:
-            raise ValueError('Incorrect quantization type.')
-
-        quantized_boxes = torch.cat(
-            (quantized_xmin, quantized_ymin, quantized_xmax, quantized_ymax), dim=-1
-        ).int()
-
-        return quantized_boxes
-
-    def dequantize(self, boxes: torch.Tensor, size):
-        bins_w, bins_h = self.bins  # Quantization bins.
-        size_w, size_h = size       # Original image size.
-        size_per_bin_w = size_w / bins_w
-        size_per_bin_h = size_h / bins_h
-        xmin, ymin, xmax, ymax = boxes.split(1, dim=-1)  # Shape: 4 * [N, 1].
-
-        if self.mode == 'floor':
-            # Add 0.5 to use the center position of the bin as the coordinate.
-            dequantized_xmin = (xmin + 0.5) * size_per_bin_w
-            dequantized_ymin = (ymin + 0.5) * size_per_bin_h
-            dequantized_xmax = (xmax + 0.5) * size_per_bin_w
-            dequantized_ymax = (ymax + 0.5) * size_per_bin_h
-
-        elif self.mode == 'round':
-            raise NotImplementedError()
-
-        else:
-            raise ValueError('Incorrect quantization type.')
-
-        dequantized_boxes = torch.cat(
-            (dequantized_xmin, dequantized_ymin,
-             dequantized_xmax, dequantized_ymax), dim=-1
-        )
-
-        return dequantized_boxes    
 
 
 class FlorenceTextODDataset(Dataset):
@@ -233,31 +241,130 @@ class FlorenceTextODDataset(Dataset):
         return [self.__getitem__(idx) for idx in indices]
 
 
-def draw_bbox(image, data):
-    """
-    Plot BBox
-    """
-    fig, ax = plt.subplots(figsize=(15, 10))
-    ax.imshow(image)
 
-    for bbox, label in zip(data['bboxes'], data['labels']):
-        x1, y1, x2, y2 = bbox
-        rect = patches.Rectangle((x1, y1),
-                                 x2 - x1,
-                                 y2 - y1,
-                                 linewidth=2,
-                                 edgecolor='lime',
-                                 facecolor='none')
-        ax.add_patch(rect)
-        plt.text(x1,
-                 y1,
-                 label,
-                 color='black',
-                 fontsize=8,
-                 bbox=dict(facecolor='lime', alpha=1))
+# From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
+class BoxQuantizer(object):
+    def __init__(self, mode, bins):
+        self.mode = mode
+        self.bins = bins
 
-    ax.axis('off')
-    plt.show()
+    def quantize(self, boxes: torch.Tensor, size):
+        bins_w, bins_h = self.bins  # Quantization bins.
+        size_w, size_h = size       # Original image size.
+        size_per_bin_w = size_w / bins_w
+        size_per_bin_h = size_h / bins_h
+        xmin, ymin, xmax, ymax = boxes.split(1, dim=-1)  # Shape: 4 * [N, 1].
+
+        if self.mode == 'floor':
+            quantized_xmin = (
+                xmin / size_per_bin_w).floor().clamp(0, bins_w - 1)
+            quantized_ymin = (
+                ymin / size_per_bin_h).floor().clamp(0, bins_h - 1)
+            quantized_xmax = (
+                xmax / size_per_bin_w).floor().clamp(0, bins_w - 1)
+            quantized_ymax = (
+                ymax / size_per_bin_h).floor().clamp(0, bins_h - 1)
+
+        elif self.mode == 'round':
+            raise NotImplementedError()
+
+        else:
+            raise ValueError('Incorrect quantization type.')
+
+        quantized_boxes = torch.cat(
+            (quantized_xmin, quantized_ymin, quantized_xmax, quantized_ymax), dim=-1
+        ).int()
+
+        return quantized_boxes
+
+    def dequantize(self, boxes: torch.Tensor, size):
+        bins_w, bins_h = self.bins  # Quantization bins.
+        size_w, size_h = size       # Original image size.
+        size_per_bin_w = size_w / bins_w
+        size_per_bin_h = size_h / bins_h
+        xmin, ymin, xmax, ymax = boxes.split(1, dim=-1)  # Shape: 4 * [N, 1].
+
+        if self.mode == 'floor':
+            # Add 0.5 to use the center position of the bin as the coordinate.
+            dequantized_xmin = (xmin + 0.5) * size_per_bin_w
+            dequantized_ymin = (ymin + 0.5) * size_per_bin_h
+            dequantized_xmax = (xmax + 0.5) * size_per_bin_w
+            dequantized_ymax = (ymax + 0.5) * size_per_bin_h
+
+        elif self.mode == 'round':
+            raise NotImplementedError()
+
+        else:
+            raise ValueError('Incorrect quantization type.')
+
+        dequantized_boxes = torch.cat(
+            (dequantized_xmin, dequantized_ymin,
+             dequantized_xmax, dequantized_ymax), dim=-1
+        )
+
+        return dequantized_boxes    
+
+
+class CoordinatesQuantizer(object):
+    """
+    Quantize coornidates (Nx2)
+    """
+
+    def __init__(self, mode, bins):
+        self.mode = mode
+        self.bins = bins
+
+    def quantize(self, coordinates: torch.Tensor, size):
+        bins_w, bins_h = self.bins  # Quantization bins.
+        size_w, size_h = size       # Original image size.
+        size_per_bin_w = size_w / bins_w
+        size_per_bin_h = size_h / bins_h
+        assert coordinates.shape[-1] == 2, 'coordinates should be shape (N, 2)'
+        x, y = coordinates.split(1, dim=-1)  # Shape: 4 * [N, 1].
+
+        if self.mode == 'floor':
+            quantized_x = (x / size_per_bin_w).floor().clamp(0, bins_w - 1)
+            quantized_y = (y / size_per_bin_h).floor().clamp(0, bins_h - 1)
+
+        elif self.mode == 'round':
+            raise NotImplementedError()
+
+        else:
+            raise ValueError('Incorrect quantization type.')
+
+        quantized_coordinates = torch.cat(
+            (quantized_x, quantized_y), dim=-1
+        ).int()
+
+        return quantized_coordinates
+
+    def dequantize(self, coordinates: torch.Tensor, size):
+        bins_w, bins_h = self.bins  # Quantization bins.
+        size_w, size_h = size       # Original image size.
+        size_per_bin_w = size_w / bins_w
+        size_per_bin_h = size_h / bins_h
+        assert coordinates.shape[-1] == 2, 'coordinates should be shape (N, 2)'
+        x, y = coordinates.split(1, dim=-1)  # Shape: 4 * [N, 1].
+
+        if self.mode == 'floor':
+            # Add 0.5 to use the center position of the bin as the coordinate.
+            dequantized_x = (x + 0.5) * size_per_bin_w
+            dequantized_y = (y + 0.5) * size_per_bin_h
+
+        elif self.mode == 'round':
+            raise NotImplementedError()
+
+        else:
+            raise ValueError('Incorrect quantization type.')
+
+        dequantized_coordinates = torch.cat(
+            (dequantized_x, dequantized_y), dim=-1
+        )
+
+        return dequantized_coordinates
+
+
+
 
 
 # def draw_ocr_bboxes(image, prediction):
@@ -280,42 +387,6 @@ def draw_bbox(image, data):
 #     display(image)
 
 
-
-def draw_seg_mask(img_obj: Image, bboxes: list, polygons: list, size: int=10):
-
-    colors = [random_color() for _ in range(len(bboxes))]
-
-    # Create figure and axis
-    fig, ax = plt.subplots(figsize=(size, size))
-
-    # Show the image
-    ax.imshow(img_obj)
-
-    # Draw the bounding box
-    for idx, ann in enumerate(polygons):
-        bbox = bboxes[idx]
-        segm = polygons[idx]
-        rect = patches.Rectangle(
-            (bbox[0], bbox[1]), bbox[2], bbox[3],
-            linewidth=2, edgecolor='lime', facecolor='none', label="Bounding Box"
-        )
-        ax.add_patch(rect)
-        ax.text(bbox[0], bbox[1] - 10, str(idx), color = "lime", size=11)
-
-        # Draw the segmentation mask
-        seg_x = segm[0::2]
-        seg_y = segm[1::2]
-        ax.fill(seg_x, seg_y, facecolor=colors[idx], alpha=0.4, edgecolor=colors[idx], linewidth=2, label="Segmentation")
-
-    # Set axis limits
-    ax.set_xlim(0, img_obj.width)
-    ax.set_ylim(img_obj.height, 0)  # Invert y-axis to match image coordinates
-
-    # Labels and legend
-    # ax.set_title(file_name)
-    # ax.legend()
-    # Show the plot
-    plt.show()
 
 
 def create_collate_fn(processor, device):
@@ -345,13 +416,17 @@ def predict(
     model, 
     processor, 
     image: Image, 
-    task: FlorenceTask = None, 
+    task_prompt: FlorenceTask = None, 
     user_prompt: str = None, 
     device: str = "cpu", 
 ) -> tuple[list, list]:
     
-    if task:
-        input_text = task
+    # if task involve regions, need to concat task name and user prompt
+    if task_prompt is not None:
+        if user_prompt is None: 
+            input_text = task_prompt
+        else:
+            input_text = task_prompt + user_prompt
     else:
         input_text = user_prompt
 
@@ -368,7 +443,7 @@ def predict(
     raw_output = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
     parsed_output = None
 
-    if task:
-        parsed_output = processor.post_process_generation(raw_output, task=task, image_size=image.size)
+    if task_prompt is not None:
+        parsed_output = processor.post_process_generation(raw_output, task=task_prompt, image_size=image.size)
     
     return raw_output, parsed_output

@@ -103,7 +103,7 @@ for data in tqdm(test_dataset, desc="Evaluate"):
     raw_output, parsed_output = predict(
         model, 
         processor, 
-        task=task,
+        task_prompt=task,
         user_prompt=None, 
         image=data["image"], 
         device=DEVICE
