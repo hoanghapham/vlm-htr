@@ -21,23 +21,23 @@ YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/mixed/{dataset_name}"
 dsets = []
 print("Load all datasets")
 dir_paths = sorted([path for path in SOURCE_DATA_DIR.iterdir() if path.is_dir()])
-for path in tqdm(dir_paths):
-    try:
-        data = load_from_disk(path)
-        dsets.append(data)
-    except Exception as e:
-        print(e)
-        continue
+# for path in tqdm(dir_paths):
+#     try:
+#         data = load_from_disk(path)
+#         dsets.append(data)
+#     except Exception as e:
+#         print(e)
+#         continue
 
-full_dataset = dsets[0]
+# full_dataset = dsets[0]
 
-for idx, dset in enumerate(dsets[1:]):
-    print(f"Concat dset {idx}/{len(dsets)}: dir")
-    try:
-        full_dataset = concatenate_datasets([full_dataset, dset])
-    except Exception as e:
-        print(e)
-        continue
+# for idx, dset in enumerate(dsets[1:]):
+#     print(f"Concat dset {idx}/{len(dsets)}: dir")
+#     try:
+#         full_dataset = concatenate_datasets([full_dataset, dset])
+#     except Exception as e:
+#         print(e)
+#         continue
 
 # full_dataset = concatenate_datasets(dsets)
 
@@ -111,31 +111,41 @@ count_train = 0
 count_val = 0
 count_test = 0
 
-for data in tqdm(full_dataset):
-    img_filename = normalize_name(data["img_filename"])
-    image = data["image"]
-    annotations = data["annotations"]
-    polygons = []
-    yolo_annotations = []
 
-    for ann in annotations:
-        polygons.append(ann["polygon"])
-        yolo_annotations.append(polygon_to_yolo_seg(ann["polygon"], image.width, image.height))
+for idx, path in enumerate(dir_paths):
+    print(f"Process dataset {idx}/{len(dir_paths)}")
+    try:
+        dataset = load_from_disk(path)
+    except Exception as e:
+        print(e)
+        continue
 
-    if img_filename in split_page_names["train"]:
-        image.save(train_dest / "images/" / f"{img_filename}.png")
-        write_list_to_text_file(yolo_annotations, train_dest / "labels/" / f"{img_filename}.txt")
-        count_train += 1
+    # Iterate through datapoints
+    for data in tqdm(dataset):
+        img_filename = normalize_name(data["img_filename"])
+        image = data["image"]
+        annotations = data["annotations"]
+        polygons = []
+        yolo_annotations = []
 
-    elif img_filename in split_page_names["val"]:
-        image.save(val_dest / "images/" / f"{img_filename}.png")
-        write_list_to_text_file(yolo_annotations, val_dest / "labels/" / f"{img_filename}.txt")
-        count_val += 1
+        for ann in annotations:
+            polygons.append(ann["polygon"])
+            yolo_annotations.append(polygon_to_yolo_seg(ann["polygon"], image.width, image.height))
 
-    elif img_filename in split_page_names["test"]:
-        image.save(test_dest / "images/" / f"{img_filename}.png")
-        write_list_to_text_file(yolo_annotations, test_dest / "labels/" / f"{img_filename}.txt")
-        count_test += 1
+        if img_filename in split_page_names["train"]:
+            image.save(train_dest / "images/" / f"{img_filename}.png")
+            write_list_to_text_file(yolo_annotations, train_dest / "labels/" / f"{img_filename}.txt")
+            count_train += 1
+
+        elif img_filename in split_page_names["val"]:
+            image.save(val_dest / "images/" / f"{img_filename}.png")
+            write_list_to_text_file(yolo_annotations, val_dest / "labels/" / f"{img_filename}.txt")
+            count_val += 1
+
+        elif img_filename in split_page_names["test"]:
+            image.save(test_dest / "images/" / f"{img_filename}.png")
+            write_list_to_text_file(yolo_annotations, test_dest / "labels/" / f"{img_filename}.txt")
+            count_test += 1
 
 print(f"Wrote {count_train} train, {count_val} val, {count_test} test images.")
     
