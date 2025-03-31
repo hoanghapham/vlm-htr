@@ -4,7 +4,7 @@
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
-#SBATCH -t 24:00:00
+#SBATCH -t 2-00:00
 #SBATCH -C mem512GB
 #SBATCH -J create_text_recognition_bbox
 #SBATCH -o logs_uppmax/data_process/create_text_recognition_bbox.out
