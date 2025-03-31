@@ -7,14 +7,10 @@ import typing
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from pagexml.model.pagexml_document_model import PageXMLTextLine, PageXMLTextRegion
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.visualization import random_color
-from src.file_tools import list_files
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy
+from src.file_tools import list_files
 
 
 class FlorenceTask():

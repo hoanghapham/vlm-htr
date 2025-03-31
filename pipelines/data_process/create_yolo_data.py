@@ -8,6 +8,7 @@ import yaml
 from src.data_processing.utils import load_arrow_datasets
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
 from src.data_processing.visual_tasks import polygon_to_yolo_seg
+from datasets import load_from_disk, concatenate_datasets
 from tqdm import tqdm
 
 
@@ -17,7 +18,30 @@ YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/mixed/{dataset_name}"
 
 
 # Load data
-full_dataset    = load_arrow_datasets(SOURCE_DATA_DIR)
+dsets = []
+print("Load all datasets")
+dir_paths = sorted([path for path in SOURCE_DATA_DIR.iterdir() if path.is_dir()])
+for path in tqdm(dir_paths):
+    try:
+        data = load_from_disk(path)
+        dsets.append(data)
+    except Exception as e:
+        print(e)
+        continue
+
+full_dataset = dsets[0]
+
+for idx, dset in enumerate(dsets[1:]):
+    print(f"Concat dset {idx}/{len(dsets)}: dir")
+    try:
+        full_dataset = concatenate_datasets([full_dataset, dset])
+    except Exception as e:
+        print(e)
+        continue
+
+# full_dataset = concatenate_datasets(dsets)
+
+# full_dataset    = load_arrow_datasets(SOURCE_DATA_DIR)
 split_info      = read_json_file(PROJECT_DIR / "data/split_info/mixed.json")
 
 
