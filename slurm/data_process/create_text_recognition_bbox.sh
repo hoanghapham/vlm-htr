@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python pipelines/data_process/create_dataset.py \
+python pipelines/data_process/create_arrow_datasets.py \
     --raw-data-dir $PROJECT_DIR/data/raw/riksarkivet \
     --dataset-type text_recognition_bbox \
     --processed-data-dir $PROJECT_DIR/data/processed/riksarkivet

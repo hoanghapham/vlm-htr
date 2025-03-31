@@ -1,3 +1,4 @@
+# Script to create arrow datasets that is caches locally. Possible usages: datasets of cropped lines, cropped regions etc...
 #%%
 import sys
 from pathlib import Path
@@ -92,7 +93,7 @@ for dir_path in sorted(RAW_DATA_DIR.iterdir()):
             file_name = Path(img_xml[0]).stem
             
             if file_name in processed_pages:
-                logger.info(f"Already processed: {file_name}")
+                logger.info(f"Already processed, skip: {file_name}")
                 continue
             
             logger.info(f"Subset: {subset_name}, image {idx}/{len(imgs_xmls)}")
