@@ -13,7 +13,7 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
-from src.train import load_best_checkpoint, load_last_checkpoint
+from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
 from src.data_processing.trocr import create_collate_fn
 from src.data_processing.utils import load_arrow_datasets
 from src.file_tools import write_json_file, write_list_to_text_file
@@ -24,7 +24,8 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--batch-size", default=15)
-parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
+parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--debug", default="false")
 args = parser.parse_args()
 
@@ -43,6 +44,7 @@ LOAD_CHECKPOINT = args.load_checkpoint
 BATCH_SIZE      = int(args.batch_size)
 DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
+CHECKPOINT_PATH = Path(args.checkpoint_path)
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
@@ -72,6 +74,9 @@ else:
     elif LOAD_CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, compare_metric="avg_val_loss", device=DEVICE)
 
+    if LOAD_CHECKPOINT == "specific":
+        model, _, cp_train_metrics = load_checkpoint(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
+    
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
 
