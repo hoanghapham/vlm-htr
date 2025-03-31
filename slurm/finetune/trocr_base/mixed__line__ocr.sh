@@ -19,7 +19,7 @@ PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_trocr_ocr.py \
-    --data-dir $PROJECT_DIR/data/lines/mixed/test/ \
+    --data-dir $PROJECT_DIR/data/lines/mixed/ \
     --model-name trocr_base__mixed__line__ocr \
     --num-train-epochs 4 \
     --max-train-steps 140000 \
