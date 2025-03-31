@@ -19,9 +19,7 @@ from tqdm import tqdm
 parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
 parser.add_argument("--object-class", default="region")
-# args = parser.parse_args()
-
-args = parser.parse_args([])
+args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
 OBJECT_CLASS    = args.object_class
@@ -34,7 +32,7 @@ assert OBJECT_CLASS in supported_object_classes, f"{OBJECT_CLASS} must be in: {s
 
 
 DATASET_NAME = f"{OBJECT_CLASS}_od"
-SOURCE_DATA_DIR = PROJECT_DIR / "data/raw/riksarkivet_sample"
+SOURCE_DATA_DIR = PROJECT_DIR / "data/raw/riksarkivet"
 YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/" / SPLIT_TYPE / DATASET_NAME
 
 
