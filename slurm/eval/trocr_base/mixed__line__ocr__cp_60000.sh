@@ -22,5 +22,5 @@ python pipelines/eval/eval_trocr_ocr.py \
     --model-name trocr_base__mixed__line__ocr \
     --data-dir $PROJECT_DIR/data/lines/mixed/test/ \
     --load-checkpoint specific \
-    --checkpoint-path $PROJECT_DIR/checkpoints/trocr_base/mixed__line__ocr/checkpoint_step_0060000 \
+    --checkpoint-path $PROJECT_DIR/models/trocr_base/mixed__line__ocr/checkpoint_step_0060000 \
     --batch-size 10

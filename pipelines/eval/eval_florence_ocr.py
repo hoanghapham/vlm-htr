@@ -14,14 +14,15 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
 from src.data_processing.florence import FlorenceTask, FlorenceOCRDataset, predict
-from src.train import load_best_checkpoint, load_last_checkpoint
+from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
 from src.file_tools import write_json_file, write_list_to_text_file
 #%%
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
-parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
+parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--user-prompt", required=False)
 parser.add_argument("--mode", required=False)
 args = parser.parse_args()
@@ -36,10 +37,12 @@ args = parser.parse_args()
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_NAME          = args.model_name
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
+CHECKPOINT_PATH     = Path(args.checkpoint_path)
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 REVISION            = 'refs/pr/6'
 DEBUG               = args.mode == "debug"
 MAX_ITERS           = 2
+
 
 DATA_DIR           = Path(args.data_dir)
 LOAD_CHECKPOINT     = args.load_checkpoint
@@ -72,6 +75,8 @@ else:
         model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
     elif LOAD_CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
+    elif LOAD_CHECKPOINT == "specific":
+        model, _, cp_train_metrics = load_checkpoint(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
 
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
