@@ -19,5 +19,5 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/data_process/convert_checkpoints.py \
-    models/florence_base__mixed__page__line_od__lora \
-    models/florence_base__mixed__page__region_od__lora
+    models/florence_base__mixed__line__ocr \
+    models/florence_base__mixed__line__ocr_lora
