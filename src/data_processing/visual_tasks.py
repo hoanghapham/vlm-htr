@@ -24,6 +24,7 @@ from shapely.geometry import Polygon
 import xml.etree.ElementTree as ET
 
 from src.data_processing.utils import XMLParser
+from src.file_tools import list_files
 
 
 IMAGE_EXTENSIONS = [
@@ -148,10 +149,27 @@ class Bbox():
 
 
 class BaseImgXMLDataset(ABC):
-    """Base dataset that accept image and xml paths"""
+    """Base dataset that load data from folders containing images & XML pairs
+    The folder structure should be something like this:
+    parent_folder/
+        child_folder/
+            images/
+                image1.jpg
+                image2.jpg
+            page_xmls/
+                image1.xml
+                image2.xml
+    
+    """
 
-    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
+    def __init__(self, data_dir: str | Path):
+        self.data_dir = Path(data_dir)
+        img_paths = list_files(self.data_dir / "images", IMAGE_EXTENSIONS)
+        xml_paths = list_files(self.data_dir / "page_xmls", [".xml"])
+        
+        # Validate that the img and xml files match
         matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
+
         assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
             f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
 
@@ -171,22 +189,18 @@ class BaseImgXMLDataset(ABC):
     def __len__(self):
         return len(self.img_paths)
     
+    def select(self, indices: Iterable):
+        return [self.__getitem__(idx) for idx in indices]
+    
     @abstractmethod
     def __getitem__(self, idx):
         pass
 
-    @abstractmethod
-    def select(self, indices: Iterable):
-        pass
     
-
 class TextRegionBboxDataset(BaseImgXMLDataset):
 
-    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
-        super().__init__(
-            img_paths=img_paths,
-            xml_paths=xml_paths
-        )
+    def __init__(self, data_dir: str | Path):
+        super().__init__(data_dir=data_dir)
 
     def __getitem__(self, idx):
         img_filename = Path(self.img_paths[idx]).stem
@@ -204,19 +218,11 @@ class TextRegionBboxDataset(BaseImgXMLDataset):
             xml_path=self.xml_paths[idx]
         )
 
-    def select(self, indices: Iterable):
-        img_paths = [self.img_paths[idx] for idx in indices]
-        xml_paths = [self.xml_paths[idx] for idx in indices]
-        return TextRegionBboxDataset(img_paths, xml_paths)
-
-
+        
 class TextLineBboxDataset(BaseImgXMLDataset):
 
-    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
-        super().__init__(
-            img_paths=img_paths,
-            xml_paths=xml_paths
-        )
+    def __init__(self, data_dir: str | Path):
+        super().__init__(data_dir=data_dir)
 
     def __getitem__(self, idx):
         img_filename = Path(self.img_paths[idx]).stem
@@ -234,10 +240,6 @@ class TextLineBboxDataset(BaseImgXMLDataset):
             xml_path=self.xml_paths[idx]
         )
 
-    def select(self, indices: Iterable):
-        img_paths = [self.img_paths[idx] for idx in indices]
-        xml_paths = [self.xml_paths[idx] for idx in indices]
-        return TextLineBboxDataset(img_paths, xml_paths)
 
 
 # Reuse code from Riksarkivet, with some modifications

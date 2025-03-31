@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from peft import LoraConfig, get_peft_model
 
 from src.data_processing.florence import FlorenceTextODDataset, create_collate_fn
 from src.train import Trainer
@@ -27,15 +26,14 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--use-lora", default="false")
 parser.add_argument("--detect-class", default="region")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--data-dir", "/Users/hoanghapham/Projects/thesis-data/riksarkivet",
+#     "--data-dir", str(PROJECT_DIR / "data/pages/sbs"),
 #     "--model-name", "demo",
 #     "--num-train-epochs", "5",
-#     "--max-train-steps", "11",
+#     "--max-train-steps", "2",
 #     "--batch-size", "2",
 #     "--logging-interval", "3"
 # ])
@@ -49,15 +47,14 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
-USE_LORA            = args.use_lora == "true"
 DETECT_CLASS        = args.detect_class
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
 
 # Setup loggers
-logger = CustomLogger(MODEL_NAME, log_to_local=True)
-tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
+logger      = CustomLogger(MODEL_NAME, log_to_local=True)
+tsb_logger  = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
 
 #%%
 # Load model
@@ -93,13 +90,13 @@ val_dataset     = FlorenceTextODDataset(DATA_DIR / "val", object_class="region")
 
 # Create data loader
 
-collate_fn = create_collate_fn(processor, DEVICE)
+collate_fn      = create_collate_fn(processor, DEVICE)
 
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
-                          collate_fn=collate_fn, num_workers=0, shuffle=True)
+train_loader    = DataLoader(train_dataset, batch_size=BATCH_SIZE,
+                            collate_fn=collate_fn, num_workers=0, shuffle=True)
 
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
-                          collate_fn=collate_fn, num_workers=0)
+val_loader      = DataLoader(val_dataset, batch_size=BATCH_SIZE,
+                            collate_fn=collate_fn, num_workers=0)
 
 logger.info(f"Total samples: {len(train_dataset):,}. Batch size: {BATCH_SIZE}. Total batches: {len(train_loader):,}. Max train steps: {MAX_TRAIN_STEPS:,}")
 #%%
@@ -121,24 +118,8 @@ lr_scheduler = get_scheduler(
 logger.info(f"Start training")
 
 
-if USE_LORA:
-    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-    peft_model = get_peft_model(model, config)
-    trainable_params, all_param = peft_model.get_nb_trainable_parameters()
-
-    logger.info(
-        f"trainable params: {trainable_params:,d} || "
-        f"all params: {all_param:,d} || "
-        f"trainable%: {100 * trainable_params / all_param:.4f}"
-    )
-
-    selected_model = peft_model
-else:
-    selected_model = model
-
-
 trainer = Trainer(
-    model                = selected_model,
+    model                = model,
     optimizer            = optimizer,
     lr_scheduler         = lr_scheduler,
     train_loader         = train_loader,

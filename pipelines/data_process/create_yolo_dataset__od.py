@@ -57,9 +57,9 @@ for key, paths in target_dirs.items():
 
 yolo_data_config = {
     "path": str(YOLO_DATA_DIR),
-    "train": "images/train",
-    "val": "images/val",
-    "test": "images/test",
+    "train": "train/images",
+    "val": "val/images",
+    "test": "test/images",
     "names": {0: OBJECT_CLASS},
     "nc": 1
 }

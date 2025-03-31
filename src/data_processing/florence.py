@@ -9,8 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.data_processing.visual_tasks import polygon_to_bbox_xyxy
-from src.file_tools import list_files
+from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy
 
 
 class FlorenceTask():
@@ -156,7 +155,7 @@ class FlorenceOCRDataset(Dataset):
         return FlorenceOCRDataset(subset)
 
 
-class FlorenceTextODDataset(Dataset):
+class FlorenceTextODDataset(BaseImgXMLDataset):
 
     def __init__(
         self, 
@@ -164,15 +163,8 @@ class FlorenceTextODDataset(Dataset):
         task: FlorenceTask = FlorenceTask.OD, 
         object_class: str = "region", 
     ):
-        self.data_dir = Path(data_dir)
-        img_paths = list_files(self.data_dir / "images", [".tif", ".jpg"])
-        xml_paths = list_files(self.data_dir / "page_xmls", [".xml"])
-        matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
-        assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
-            f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
-        
         assert object_class in ["region", "line"]
-        super().__init__()
+        super().__init__(data_dir=data_dir)
         
         self.object_class = object_class
         self.task = task
@@ -180,24 +172,6 @@ class FlorenceTextODDataset(Dataset):
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
         self.xmlparser = XMLParser()
 
-        # Validate that the xml files have regions
-        self.img_paths = []
-        self.xml_paths = []
-
-        objects = []
-        for img, xml in zip(img_paths, xml_paths):
-            if self.object_class == "region":
-                objects = self.xmlparser.get_regions(xml)
-            elif self.object_class == "line":
-                objects = self.xmlparser.get_lines(xml)
-
-            if len(objects) > 0:
-                self.img_paths.append(img)
-                self.xml_paths.append(xml)
-
-    def __len__(self):
-        return len(self.img_paths)
-    
     def __getitem__(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
@@ -232,9 +206,6 @@ class FlorenceTextODDataset(Dataset):
             image_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
-
-    def select(self, indices: typing.Iterable):
-        return [self.__getitem__(idx) for idx in indices]
 
 
 
