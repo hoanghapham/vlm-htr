@@ -19,7 +19,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 # Should train for 20 epochs
-python pipelines/train/finetune_yolo_od.py \
+python pipelines/train/finetune_yolo.py \
     --data-dir $PROJECT_DIR/data/yolo/mixed/line_od \
     --data-fraction 1 \
     --base-model-path $PROJECT_DIR/models/yolo_base/yolo11m.pt \
