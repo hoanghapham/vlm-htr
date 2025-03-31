@@ -48,6 +48,7 @@ split_info      = read_json_file(PROJECT_DIR / "data/split_info/mixed.json")
 # %%
 # Prepare dirs
 
+print(f"Create dirs in {YOLO_DATA_DIR}")
 train_dest = YOLO_DATA_DIR / "train"
 val_dest = YOLO_DATA_DIR / "val"
 test_dest = YOLO_DATA_DIR / "test"

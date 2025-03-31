@@ -6,7 +6,7 @@
 #SBATCH -N 1
 #SBATCH -t 24:00:00
 #SBATCH -C mem512GB
-#SBATCH -J create_inst_seg_lines_within_regions_yolo
+#SBATCH -J data_process/create_inst_seg_lines_within_regions_yolo
 #SBATCH -o logs_uppmax/data_process/create_inst_seg_lines_within_regions_yolo.out
 #SBATCH -e logs_uppmax/data_process/create_inst_seg_lines_within_regions_yolo.out
 #SBATCH --mail-type=BEGIN,END,FAIL
