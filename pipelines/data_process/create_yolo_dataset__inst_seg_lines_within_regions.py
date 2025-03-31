@@ -4,45 +4,31 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from argparse import ArgumentParser
+
 import yaml
-from src.data_processing.utils import load_arrow_datasets
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
 from src.data_processing.visual_tasks import polygon_to_yolo_seg
-from datasets import load_from_disk, concatenate_datasets
+from datasets import load_from_disk
 from tqdm import tqdm
 
 
+parser = ArgumentParser()
+parser.add_argument("--split-type", default="sbs")
+args = parser.parse_args()
+
+SPLIT_TYPE      = args.split_type
+
 dataset_name    = "inst_seg_lines_within_regions"
 SOURCE_DATA_DIR = PROJECT_DIR / "data/processed/riksarkivet" / dataset_name
-YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/mixed/{dataset_name}"
+YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/{SPLIT_TYPE}/{dataset_name}"
 
 
 # Load data
 dsets = []
 print("Load all datasets")
-dir_paths = sorted([path for path in SOURCE_DATA_DIR.iterdir() if path.is_dir()])
-# for path in tqdm(dir_paths):
-#     try:
-#         data = load_from_disk(path)
-#         dsets.append(data)
-#     except Exception as e:
-#         print(e)
-#         continue
-
-# full_dataset = dsets[0]
-
-# for idx, dset in enumerate(dsets[1:]):
-#     print(f"Concat dset {idx}/{len(dsets)}: dir")
-#     try:
-#         full_dataset = concatenate_datasets([full_dataset, dset])
-#     except Exception as e:
-#         print(e)
-#         continue
-
-# full_dataset = concatenate_datasets(dsets)
-
-# full_dataset    = load_arrow_datasets(SOURCE_DATA_DIR)
-split_info      = read_json_file(PROJECT_DIR / "data/split_info/mixed.json")
+dir_paths   = sorted([path for path in SOURCE_DATA_DIR.iterdir() if path.is_dir()])
+split_info  = read_json_file(PROJECT_DIR / f"data/split_info/{SPLIT_TYPE}.json")
 
 
 # %%
@@ -84,9 +70,9 @@ if not test_label_dir.exists():
 
 yolo_data_config = {
     "path": str(YOLO_DATA_DIR),
-    "train": "images/train",
-    "val": "images/val",
-    "test": "images/test",
+    "train": "train/images",
+    "val": "val/images",
+    "test": "test/images",
     "names": {0: "line"},
     "nc": 1
 }
