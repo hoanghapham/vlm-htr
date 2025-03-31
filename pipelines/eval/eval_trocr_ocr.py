@@ -13,7 +13,7 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
-from src.train import load_best_checkpoint, load_last_checkpoint, Checkpoint
+from src.train import load_best_checkpoint, load_last_checkpoint
 from src.data_processing.trocr import create_collate_fn
 from src.data_processing.utils import load_arrow_datasets
 from src.file_tools import write_json_file, write_list_to_text_file
@@ -25,22 +25,25 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--batch-size", default=15)
 parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--debug", default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "trocr_base__ft_vanilla",
-#     "--data-dir", str(PROJECT_DIR / "data/hovratt_line"),
-#     "--use-split-info", "false",
-#     "--load-checkpoint", "vanilla",
-#     "--batch-size", "2"
+#     "--model-name", "trocr_base__mixed__line__ocr",
+#     "--data-dir", str(PROJECT_DIR / "data/lines/mixed/test"),
+#     "--load-checkpoint", "best",
+#     "--batch-size", "2",
+#     "--debug", "true"
 # ])
 
 
 MODEL_NAME      = args.model_name
-DATA_DIR       = Path(args.data_dir)
+DATA_DIR        = Path(args.data_dir)
 LOAD_CHECKPOINT = args.load_checkpoint
 BATCH_SIZE      = int(args.batch_size)
-    
+DEBUG           = args.debug == "true"
+MAX_ITERS       = 5
+
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
@@ -54,22 +57,22 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 
 #%%
 # Load model
-processor = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
+processor   = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
+model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DEVICE)
+
 
 # Load checkpoint to evaluate
-eval_cp = Checkpoint()
+cp_train_metrics = {}
 
 if LOAD_CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
     if LOAD_CHECKPOINT == "last":
-        eval_cp = load_last_checkpoint(LOCAL_MODEL_PATH, DEVICE)
+        model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
     elif LOAD_CHECKPOINT == "best":
-        eval_cp = load_best_checkpoint(LOCAL_MODEL_PATH, "avg_val_loss", DEVICE)
+        model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, compare_metric="avg_val_loss", device=DEVICE)
 
-    model.load_state_dict(eval_cp.model_state_dict)
-    logger.info(f"Evaluate checkpoint: {eval_cp}")
+    logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
 
 # Set model to evaluation mode
@@ -79,9 +82,9 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
-collate_fn = create_collate_fn(processor, DEVICE)
-test_dataset = load_arrow_datasets(DATA_DIR)
-test_loader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=BATCH_SIZE)
+collate_fn      = create_collate_fn(processor, DEVICE)
+test_dataset    = load_arrow_datasets(DATA_DIR)
+test_loader     = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=BATCH_SIZE)
 
 logger.info(f"Total samples: {len(test_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(test_loader):,}")
 
@@ -99,10 +102,12 @@ pred_list = []
 
 range_start = 0
 range_end = BATCH_SIZE
+counter = 0
+
 
 for inputs in tqdm(test_loader, desc="Evaluate"):
 
-    groundtruths = [data["answer"] for data in test_dataset.select(range(range_start, range_end))]
+    groundtruths = [data["transcription"] for data in test_dataset.select(range(range_start, range_end))]
 
     generated_ids = model.generate(inputs=inputs["pixel_values"])
     preds = processor.batch_decode(generated_ids, skip_special_tokens=True)
@@ -124,6 +129,11 @@ for inputs in tqdm(test_loader, desc="Evaluate"):
     range_start += BATCH_SIZE
     range_end = min(len(test_dataset), range_end + BATCH_SIZE)
 
+    if DEBUG:
+        counter += 1
+        if counter >= MAX_ITERS:
+            break
+
 
 # %%
 avg_cer = float(sum(cer_list))
@@ -142,16 +152,18 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 logger.info(f"Save result to {EVAL_DIR}")
 
 metrics_aggr = {
-    "step_idx": eval_cp.step_idx,
-    "avg_train_loss": eval_cp.avg_train_loss,
-    "avg_val_loss": eval_cp.avg_val_loss,
+    "step_idx": cp_train_metrics["step_idx"],
+    "avg_train_loss": cp_train_metrics["avg_train_loss"],
+    "avg_val_loss": cp_train_metrics["avg_val_loss"],
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
     "bow_extras": avg_bow_extras
 }
 
-write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_step_{eval_cp.step_idx}.json")
+step_idx_str = cp_train_metrics["step_idx"]
+
+write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_step_{step_idx_str}.json")
 
 # Detailed results
 metrics_lists = {
@@ -161,11 +173,11 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, EVAL_DIR / f"metrics_lists_step_{eval_cp.step_idx}.json")
+write_json_file(metrics_lists, EVAL_DIR / f"metrics_lists_step_{step_idx_str}.json")
 
 # Write ground text for reference
 write_list_to_text_file(gt_list, EVAL_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-write_list_to_text_file(pred_list, EVAL_DIR / f"prediction_step_{eval_cp.step_idx}.txt")
+write_list_to_text_file(pred_list, EVAL_DIR / f"prediction_step_{step_idx_str}.txt")
 

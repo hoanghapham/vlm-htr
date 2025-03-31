@@ -63,6 +63,8 @@ if "lora" in MODEL_NAME:
     model = get_peft_model(model, config)
 
 # Load checkpoint to evaluate
+cp_train_metrics = {}
+
 if LOAD_CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
@@ -80,7 +82,7 @@ model.eval()
 #%%
 # Load test data
 logger.info("Load test data")
-test_dataset = FlorenceOCRDataset(DATA_DIR / "test", custom_question=USER_PROMPT)
+test_dataset = FlorenceOCRDataset(DATA_DIR, custom_question=USER_PROMPT)
 
 logger.info(f"Total test samples: {len(test_dataset)}")
 logger.info(f"User prompt: {USER_PROMPT}")

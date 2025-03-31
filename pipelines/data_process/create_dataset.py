@@ -106,5 +106,5 @@ for dir_path in sorted(RAW_DATA_DIR.iterdir()):
                 continue
 
             data = Dataset.from_list(data_list)
-            data.save_to_disk(OUTPUT_DIR / subset_name / file_name)
+            data.save_to_disk(OUTPUT_DIR / file_name)
     
