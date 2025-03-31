@@ -2,6 +2,7 @@ import io, os, sys
 from pathlib import Path, PurePath
 from typing import Self, Iterable
 from glob import glob
+from abc import ABC, abstractmethod
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import torch
@@ -24,6 +25,22 @@ import xml.etree.ElementTree as ET
 
 from src.data_processing.utils import XMLParser
 
+
+IMAGE_EXTENSIONS = [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".bmp",
+            ".tif",
+            ".tiff",
+            ".JPG",
+            ".JPEG",
+            ".PNG",
+            ".GIF",
+            ".BMP",
+            ".TIF",
+            ".TIFF",]
 
 
 def bbox_xyxy_to_polygon(bbox):
@@ -66,7 +83,23 @@ def polygon_to_bbox_xyxy(coords: list[tuple]):
     return x1, y1, x2, y2
 
 
-def bbox_xyxy_to_yolo_format(bboxes: list[tuple], img_width, img_height, class_id=0):
+def bboxes_xyxy_to_yolo_format(bboxes: list[tuple], img_width: int, img_height: int, class_id=0) -> list[str]:
+    """Accept a list of bboxes in xyxy format and convert to YOLO format:
+        {class_id} {x_center} {y_center} {width} {height}
+
+    Parameters
+    ----------
+    bboxes : list[tuple]
+    img_width : int
+    img_height : int
+    class_id : int, optional
+        Class of the object, by default 0
+
+    Returns
+    -------
+    list[str]
+        List of YOLO formatted annotations
+    """
     yolo_annotations = []
     
     for (xmin, ymin, xmax, ymax) in bboxes:
@@ -114,7 +147,8 @@ class Bbox():
         return str(self.xyxy)
 
 
-class TextRegionDataset():
+class BaseImgXMLDataset(ABC):
+    """Base dataset that accept image and xml paths"""
 
     def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
         matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
@@ -137,22 +171,77 @@ class TextRegionDataset():
     def __len__(self):
         return len(self.img_paths)
     
+    @abstractmethod
     def __getitem__(self, idx):
+        pass
+
+    @abstractmethod
+    def select(self, indices: Iterable):
+        pass
+    
+
+class TextRegionBboxDataset(BaseImgXMLDataset):
+
+    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
+        super().__init__(
+            img_paths=img_paths,
+            xml_paths=xml_paths
+        )
+
+    def __getitem__(self, idx):
+        img_filename = Path(self.img_paths[idx]).stem
+        img_volume = Path(self.img_paths[idx]).parent.name
         image = PILImage.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
         objects = self.xmlparser.get_regions(xml)
         bboxes = [data["bbox"] for data in objects]
         return dict(
             image=image,
-            bboxes=bboxes
+            bboxes=bboxes,
+            img_volume=img_volume,
+            img_filename=img_filename,
+            img_path=self.img_paths[idx],
+            xml_path=self.xml_paths[idx]
         )
 
     def select(self, indices: Iterable):
         img_paths = [self.img_paths[idx] for idx in indices]
         xml_paths = [self.xml_paths[idx] for idx in indices]
-        return TextRegionDataset(img_paths, xml_paths)
-    
+        return TextRegionBboxDataset(img_paths, xml_paths)
 
+
+class TextLineBboxDataset(BaseImgXMLDataset):
+
+    def __init__(self, img_paths: list[str | Path], xml_paths: list[str | Path]):
+        super().__init__(
+            img_paths=img_paths,
+            xml_paths=xml_paths
+        )
+
+    def __getitem__(self, idx):
+        img_filename = Path(self.img_paths[idx]).stem
+        img_volume = Path(self.img_paths[idx]).parent.name
+        image = PILImage.open(self.img_paths[idx]).convert("RGB")
+        xml = self.xml_paths[idx]
+        objects = self.xmlparser.get_lines(xml)
+        bboxes = [data["bbox"] for data in objects]
+        return dict(
+            image=image,
+            bboxes=bboxes,
+            img_volume=img_volume,
+            img_filename=img_filename,
+            img_path=self.img_paths[idx],
+            xml_path=self.xml_paths[idx]
+        )
+
+    def select(self, indices: Iterable):
+        img_paths = [self.img_paths[idx] for idx in indices]
+        xml_paths = [self.xml_paths[idx] for idx in indices]
+        return TextLineBboxDataset(img_paths, xml_paths)
+
+
+# Reuse code from Riksarkivet, with some modifications
+# https://huggingface.co/datasets/Riksarkivet/goteborgs_poliskammare_fore_1900/blob/main/goteborgs_poliskammare_fore_1900.py
 class HTRDatasetConfig(BuilderConfig):
     """Configuration for each dataset variant."""
 
