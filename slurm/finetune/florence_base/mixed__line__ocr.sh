@@ -19,7 +19,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/train/finetune_florence_ocr.py \
-    --data-dir $PROJECT_DIR/data/variants/mixed/line/ \
+    --data-dir $PROJECT_DIR/data/lines/mixed/ \
     --model-name florence_base__mixed__line__ocr \
     --num-train-epochs 2 \
     --max-train-steps 220000 \
