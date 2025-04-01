@@ -16,7 +16,7 @@ Old prompt: <SwedishHTR>Print out the text in this image
 
 bergskollegium_adv:     Riksarkivet/bergskollegium_advokatfiskalskontoret_seg
 bergskollegium_rel:     Riksarkivet/bergskollegium_relationer_och_skrivelser_seg
-frihetstidens:          Riksarkivet/frihetstidens_utskottshandlingar_seg
+frihetstidens:          Riksarkivet/frihetstidens_utskottshandlingar
 gota_hovratt:           Riksarkivet/gota_hovratt_seg
 jonkopings_radhusratts: Riksarkivet/jonkopings_radhusratts_och_magistrat_seg
 krigshovrattens:        Riksarkivet/krigshovrattens_dombocker_seg
