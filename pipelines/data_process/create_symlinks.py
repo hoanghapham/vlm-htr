@@ -33,9 +33,9 @@ split_info = read_json_file(SPLIT_INFO_PATH)
 #%%
 # Create symplink for florence
 
-src_page_dirs = [path for path in sorted(SOURCE_DATA_DIR.glob("*")) if path.is_dir()]
+master_pages = [path for path in sorted(SOURCE_DATA_DIR.glob("*")) if path.is_dir()]
 
-print(f"Total pages: {len(src_page_dirs)}")
+print(f"Total pages: {len(master_pages)}")
 
 #%%
 
@@ -52,11 +52,12 @@ for split, page_names in split_info.items():
     if not dest_split_dir.exists():
         dest_split_dir.mkdir(parents=True)
 
-    for src_page in tqdm(src_page_dirs, desc=split):
-        if normalize_name(src_page.stem) in norm_page_names:
+    for target_page in tqdm(master_pages, desc=split):
+        if normalize_name(target_page.stem) in norm_page_names:
+            src = dest_split_dir / target_page.stem
             os.symlink(
-                src_page,
-                dest_split_dir / src_page.stem,
+                src,
+                target_page,
                 target_is_directory=True
             )
             
