@@ -56,7 +56,8 @@ for split, page_names in split_info.items():
         if normalize_name(src_page.stem) in norm_page_names:
             os.symlink(
                 src_page,
-                dest_split_dir / src_page.stem
+                dest_split_dir / src_page.stem,
+                target_is_directory=True
             )
             
             counts[split] += 1
