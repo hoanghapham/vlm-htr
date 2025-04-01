@@ -256,7 +256,7 @@ class HTRDatasetConfig(BuilderConfig):
         self.features = features
 
 
-class HTRDataset(GeneratorBasedBuilder):
+class HTRDatasetBuilder(GeneratorBasedBuilder):
     # Define feature structures for each dataset type
     text_recognition_features = Features(
         {
@@ -281,15 +281,15 @@ class HTRDataset(GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         HTRDatasetConfig(
-            name="text_recognition",
+            name="text_recognition__line_seg",
             description="textline dataset for text recognition of historical Swedish",
-            process_func="text_recognition",
+            process_func="text_recognition__line_seg",
             features=text_recognition_features,
         ),
         HTRDatasetConfig(
-            name="text_recognition_bbox",
+            name="text_recognition__line_bbox",
             description="textline dataset for text recognition within bounding box",
-            process_func="text_recognition_bbox",
+            process_func="text_recognition__line_bbox",
             features=text_recognition_features,
         ),
         HTRDatasetConfig(
@@ -400,7 +400,7 @@ class HTRDataset(GeneratorBasedBuilder):
         process_func = getattr(self, self.config.process_func)
         return process_func(imgs_xmls)
     
-    def text_recognition(self, imgs_xmls):
+    def text_recognition__line_seg(self, imgs_xmls):
         """Process for line dataset with cropped images and transcriptions."""
         for img, xml in imgs_xmls:
             img_filename, volume = self._extract_filename_and_volume(img, xml)
@@ -429,7 +429,7 @@ class HTRDataset(GeneratorBasedBuilder):
                     "transcription": transcription
                 }
 
-    def text_recognition_bbox(self, imgs_xmls):
+    def text_recognition__line_bbox(self, imgs_xmls):
         """Process for line dataset with cropped images from bbox, and transcriptions."""
         for img, xml in imgs_xmls:
             img_filename, volume = self._extract_filename_and_volume(img, xml)

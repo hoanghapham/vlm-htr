@@ -8,15 +8,24 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 from datasets import Dataset
 
-from src.data_processing.visual_tasks import HTRDataset
+from src.data_processing.visual_tasks import HTRDatasetBuilder
 from src.logger import CustomLogger
 from src.file_tools import list_files
 
 
+dataset_types = [
+    "text_recognition",
+    "inst_seg_lines",
+    "inst_seg_regions",
+    "inst_seg_lines_within_regions",
+    "inst_seg_regions_and_lines",
+    "text_recognition_bbox"
+]
+
 parser = ArgumentParser()
 parser.add_argument("--raw-data-dir", required=True)
-parser.add_argument("--dataset-type", default="text_recognition")
-parser.add_argument("--processed-data-dir", default="data/processed")
+parser.add_argument("--dataset-type", default="text_recognition", choices=dataset_types)
+parser.add_argument("--output-data-dir", required=True)
 args = parser.parse_args()
 
 
@@ -24,7 +33,7 @@ args = parser.parse_args()
 RAW_DATA_DIR        = Path(args.raw_data_dir)
 PROCESSED_DATA_DIR  = Path(args.processed_data_dir)
 DATASET_TYPE        = args.dataset_type
-OUTPUT_DIR          = PROCESSED_DATA_DIR / DATASET_TYPE
+OUTPUT_DIR          = Path(args.output_data_dir)
 
 
 if not OUTPUT_DIR.exists():
@@ -51,10 +60,12 @@ image_extensions = [
             ".TIF",
             ".TIFF",]
 
-builder = HTRDataset(config_name=DATASET_TYPE)
+builder = HTRDatasetBuilder(config_name=DATASET_TYPE)
 
 process_funcs = {
-    "text_recognition": builder.text_recognition,   # cropped lines & transcription
+    "text_recognition__line_seg": builder.text_recognition__line_seg,           # cropped lines (polygon) & transcription
+    "text_recognition__line_bbox": builder.text_recognition__line_bbox, # cropped lines (bbox) & transcription
+
     "inst_seg_lines": builder.inst_seg_lines,       # Original images with text line annotations only
     "inst_seg_regions": builder.inst_seg_regions,   # Original images with text region annotations only
 
@@ -63,7 +74,6 @@ process_funcs = {
     
     # Original images with both region and line annotations, can be used for full object detection 
     "inst_seg_regions_and_lines": builder.inst_seg_regions_and_lines,       
-    "text_recognition_bbox": builder.text_recognition_bbox
 }
 
 

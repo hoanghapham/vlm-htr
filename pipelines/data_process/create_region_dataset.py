@@ -6,7 +6,7 @@ sys.path.append(str(PROJECT_DIR))
 
 from datasets import Dataset
 
-from src.data_processing.visual_tasks import HTRDataset
+from src.data_processing.visual_tasks import HTRDatasetBuilder
 from src.logger import CustomLogger
 from src.file_tools import list_files
 
@@ -20,7 +20,7 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger("create_region_dataset")
 
 #%%
-builder = HTRDataset(config_name="text_recognition")
+builder = HTRDatasetBuilder(config_name="text_recognition")
 
 for dir_path in DATA_DIR.iterdir():
     
