@@ -6,9 +6,9 @@
 #SBATCH -N 1
 #SBATCH -t 24:00:00
 #SBATCH -C mem512GB
-#SBATCH -J create_inst_seg_lines_within_regions
-#SBATCH -o logs_uppmax/data_process/create_inst_seg_lines_within_regions.out
-#SBATCH -e logs_uppmax/data_process/create_inst_seg_lines_within_regions.out
+#SBATCH -J data_process/create_text_recognition__line_seg
+#SBATCH -o logs_uppmax/data_process/create_text_recognition__line_seg.out
+#SBATCH -e logs_uppmax/data_process/create_text_recognition__line_seg.out
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 
@@ -20,5 +20,5 @@ cd $PROJECT_DIR
 
 python pipelines/data_process/create_dataset.py \
     --raw-data-dir $PROJECT_DIR/data/raw/riksarkivet \
-    --dataset-type inst_seg_lines_within_regions \
-    --processed-data-dir $PROJECT_DIR/data/processed/riksarkivet
+    --dataset-type text_recognition__line_seg \
+    --output-data-dir $PROJECT_DIR/data/processed/riksarkivet/text_recognition__line_seg
