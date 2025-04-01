@@ -43,8 +43,22 @@ IMAGE_EXTENSIONS = [
             ".TIF",
             ".TIFF",]
 
+def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
+    x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
-def bbox_xyxy_to_polygon(bbox: list[tuple], output_raw=False) -> list[tuple] | list[Polygon]:
+    # Order coords counter-clockwise
+    x2 = x1 
+    y2 = y1 + height
+
+    x3 = x1 + width
+    y3 = y1 + height
+
+    x4 = x1 + width
+    y4 = y1
+
+    return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+
+def bbox_xyxy_to_polygon(bbox: list[tuple]) -> list[Polygon]:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
     # Order polygon points counter-clockwise
@@ -57,10 +71,7 @@ def bbox_xyxy_to_polygon(bbox: list[tuple], output_raw=False) -> list[tuple] | l
     x4 = x1 + width
     y4 = y1
 
-    if output_raw:
-        return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-    else:
-        return Polygon([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
+    return Polygon([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
 
 
 def bbox_xyxy_to_xywh(bbox):
@@ -439,9 +450,9 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
             for i, line in enumerate(lines_data):
                 line_id = str(i).zfill(4)
                 bbox = polygon_to_bbox_xyxy(line["coords"])
-                bbox_polygon = bbox_xyxy_to_polygon(bbox)
+                bbox_coords = bbox_xyxy_to_coords(bbox)
                 try:
-                    cropped_image = self.crop_line_image(image_array, bbox_polygon)
+                    cropped_image = self.crop_line_image(image_array, bbox_coords)
                 except Exception as e:
                     print(f"Error image: {img_filename}: {e}")
                     continue 
