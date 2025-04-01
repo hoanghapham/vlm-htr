@@ -66,6 +66,8 @@ if "lora" in MODEL_NAME:
 
 # Load checkpoint to evaluate
 
+cp_train_metrics = {}
+
 if CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
