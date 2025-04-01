@@ -38,7 +38,7 @@ args = parser.parse_args()
 MODEL_NAME          = args.model_name
 DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.checkpoint
-CHECKPOINT_PATH     = Path(args.checkpoint_path)
+CHECKPOINT_PATH     = args.checkpoint_path
 OBJECT_CLASS        = args.object_class
 DEBUG               = args.mode == "true"
 MAX_ITERS           = 2

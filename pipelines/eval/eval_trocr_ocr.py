@@ -42,7 +42,7 @@ MODEL_NAME      = args.model_name
 DATA_DIR        = Path(args.data_dir)
 BATCH_SIZE      = int(args.batch_size)
 CHECKPOINT      = args.checkpoint
-CHECKPOINT_PATH = Path(args.checkpoint_path)
+CHECKPOINT_PATH = args.checkpoint_path
 DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
 
@@ -166,7 +166,7 @@ metrics_aggr = {
     "bow_extras": avg_bow_extras
 }
 
-step_idx_str = cp_train_metrics["step_idx"]
+step_idx_str = str(cp_train_metrics["step_idx"]).zfill(10)
 
 write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_step_{step_idx_str}.json")
 
