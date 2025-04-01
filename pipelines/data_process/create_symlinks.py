@@ -39,6 +39,12 @@ print(f"Total pages: {len(src_page_dirs)}")
 
 #%%
 
+counts = {
+    "train": 0,
+    "val": 0,
+    "test": 0
+}
+
 for split, page_names in split_info.items():
     norm_page_names = [normalize_name(name) for name in page_names]
     dest_split_dir = DEST_DATA_DIR / split
@@ -53,3 +59,6 @@ for split, page_names in split_info.items():
                 dest_split_dir / src_page.stem
             )
             
+            counts[split] += 1
+
+print("Created symlinks:", counts)
