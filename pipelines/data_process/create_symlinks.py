@@ -52,12 +52,12 @@ for split, page_names in split_info.items():
     if not dest_split_dir.exists():
         dest_split_dir.mkdir(parents=True)
 
-    for target_page in tqdm(master_pages, desc=split):
-        if normalize_name(target_page.stem) in norm_page_names:
-            src = dest_split_dir / target_page.stem
+    for src in tqdm(master_pages, desc=split):
+        if normalize_name(src.stem) in norm_page_names:
+            dst = dest_split_dir / src.stem
             os.symlink(
                 src,
-                target_page,
+                dst,
                 target_is_directory=True
             )
             
