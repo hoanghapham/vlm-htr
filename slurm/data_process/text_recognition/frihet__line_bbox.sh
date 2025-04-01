@@ -6,9 +6,9 @@
 #SBATCH -N 1
 #SBATCH -t 24:00:00
 #SBATCH -C mem512GB
-#SBATCH -J data_process/create_line_bbox_frihets
-#SBATCH -o logs_uppmax/data_process/create_line_bbox_frihets.out
-#SBATCH -e logs_uppmax/data_process/create_line_bbox_frihets.out
+#SBATCH -J data_process/create_frihetstiden__line_bbox
+#SBATCH -o logs_uppmax/data_process/create_frihetstiden__line_bbox.out
+#SBATCH -e logs_uppmax/data_process/create_frihetstiden__line_bbox.out
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 
