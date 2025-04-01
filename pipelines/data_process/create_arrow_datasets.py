@@ -113,8 +113,10 @@ for dir_path in sorted(RAW_DATA_DIR.iterdir()):
                 continue
 
             if len(data_list) == 0:
+                logger.warning(f"No data to write")
                 continue
-
+            
+            logger.info(f"Write data to {OUTPUT_DATA_DIR / file_name}")
             data = Dataset.from_list(data_list)
             data.save_to_disk(OUTPUT_DATA_DIR / file_name)
     
