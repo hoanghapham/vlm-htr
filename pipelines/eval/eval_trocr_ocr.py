@@ -41,7 +41,7 @@ args = parser.parse_args()
 MODEL_NAME      = args.model_name
 DATA_DIR        = Path(args.data_dir)
 BATCH_SIZE      = int(args.batch_size)
-CHECKPOINT      = args.CHECKPOINT
+CHECKPOINT      = args.checkpoint
 CHECKPOINT_PATH = Path(args.checkpoint_path)
 DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
