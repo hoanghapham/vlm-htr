@@ -40,7 +40,7 @@ DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.checkpoint
 CHECKPOINT_PATH     = args.checkpoint_path
 OBJECT_CLASS        = args.object_class
-DEBUG               = args.mode == "true"
+DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
 
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
