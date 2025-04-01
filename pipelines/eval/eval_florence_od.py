@@ -22,31 +22,31 @@ from src.evaluation.visual_metrics import precision_recall_fscore, region_covera
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
-parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--object-class", default="region")
-parser.add_argument("--mode", required=False)
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence_base__mixed__page__region_od__lora",
 #     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
-#     "--load-checkpoint", "best",
+#     "--checkpoint", "best",
 #     "--mode", "debug"
 # ])
 
 # Setup paths
-DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_NAME          = args.model_name
-LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
-REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
-REVISION            = 'refs/pr/6'
+DATA_DIR            = Path(args.data_dir)
+CHECKPOINT          = args.CHECKPOINT
 OBJECT_CLASS        = args.object_class
-DEBUG               = args.mode == "debug"
+DEBUG               = args.mode == "true"
 MAX_ITERS           = 2
 
-DATA_DIR            = Path(args.data_dir)
-LOAD_CHECKPOINT     = args.load_checkpoint
+LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
+REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
+REVISION            = 'refs/pr/6'
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
@@ -66,12 +66,12 @@ if "lora" in MODEL_NAME:
 
 # Load checkpoint to evaluate
 
-if LOAD_CHECKPOINT == "vanilla":
+if CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
-    if LOAD_CHECKPOINT == "last":
+    if CHECKPOINT == "last":
         model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
-    elif LOAD_CHECKPOINT == "best":
+    elif CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
 
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")

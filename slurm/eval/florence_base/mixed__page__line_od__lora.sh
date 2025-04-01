@@ -21,5 +21,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__mixed__page__line_od__lora \
     --data-dir $PROJECT_DIR/data/pages/mixed \
-    --load-checkpoint best \
+    --checkpoint best \
     --object-class line

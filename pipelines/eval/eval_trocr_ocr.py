@@ -24,7 +24,7 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--batch-size", default=15)
-parser.add_argument("--load-checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
+parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
 parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--debug", default="false")
 args = parser.parse_args()
@@ -32,7 +32,7 @@ args = parser.parse_args()
 # args = parser.parse_args([
 #     "--model-name", "trocr_base__mixed__line__ocr",
 #     "--data-dir", str(PROJECT_DIR / "data/lines/mixed/test"),
-#     "--load-checkpoint", "best",
+#     "--checkpoint", "best",
 #     "--batch-size", "2",
 #     "--debug", "true"
 # ])
@@ -40,16 +40,16 @@ args = parser.parse_args()
 
 MODEL_NAME      = args.model_name
 DATA_DIR        = Path(args.data_dir)
-LOAD_CHECKPOINT = args.load_checkpoint
 BATCH_SIZE      = int(args.batch_size)
+CHECKPOINT      = args.CHECKPOINT
+CHECKPOINT_PATH = Path(args.checkpoint_path)
 DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
-CHECKPOINT_PATH = Path(args.checkpoint_path)
 
-DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
 EVAL_DIR            = PROJECT_DIR / "evaluations" / MODEL_NAME
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if not EVAL_DIR.exists():
     EVAL_DIR.mkdir(parents=True)
@@ -66,16 +66,16 @@ model       = VisionEncoderDecoderModel.from_pretrained(REMOTE_MODEL_PATH).to(DE
 # Load checkpoint to evaluate
 cp_train_metrics = {}
 
-if LOAD_CHECKPOINT == "vanilla":
+if CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
-    if LOAD_CHECKPOINT == "last":
+    if CHECKPOINT == "last":
         model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
-    elif LOAD_CHECKPOINT == "best":
+    elif CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, compare_metric="avg_val_loss", device=DEVICE)
 
-    if LOAD_CHECKPOINT == "specific":
-        model, _, cp_train_metrics = load_checkpoint(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
+    if CHECKPOINT == "specific":
+        model, _, cp_train_metrics = CHECKPOINT(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
     
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 

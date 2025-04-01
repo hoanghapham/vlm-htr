@@ -21,4 +21,4 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_florence_ocr.py \
     --model-name florence_base__mixed__line__ocr__lora \
     --data-dir $PROJECT_DIR/data/lines/mixed/test/ \
-    --load-checkpoint best
+    --checkpoint best

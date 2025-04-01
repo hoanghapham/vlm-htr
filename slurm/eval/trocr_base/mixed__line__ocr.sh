@@ -21,5 +21,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_trocr_ocr.py \
     --model-name trocr_base__mixed__line__ocr \
     --data-dir $PROJECT_DIR/data/lines/mixed/test/ \
-    --load-checkpoint best \
+    --checkpoint best \
     --batch-size 10

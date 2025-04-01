@@ -21,7 +21,7 @@ parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--batch-size", default=10)
-parser.add_argument("--epoch-checkpoint", default="best")
+parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
@@ -30,8 +30,9 @@ DATA_DIR            = Path(args.data_dir)
 MODEL_NAME          = args.model_name
 OBJECT_CLASS        = args.object_class
 BATCH_SIZE          = int(args.batch_size)
-EPOCH_CHECKPOINT    = args.epoch_checkpoint
-MODEL_PATH          = PROJECT_DIR / f"models/{MODEL_NAME}/weights/{EPOCH_CHECKPOINT}.pt"
+CHECKPOINT          = args.checkpoint
+MODEL_PATH          = PROJECT_DIR / "models/yolo_base/yolo11m.pt" if CHECKPOINT == "vanilla" else \
+                        PROJECT_DIR / f"models/{MODEL_NAME}/weights/{CHECKPOINT}.pt"
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if not OUTPUT_DIR.exists():
