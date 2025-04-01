@@ -38,6 +38,7 @@ args = parser.parse_args()
 MODEL_NAME          = args.model_name
 DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.CHECKPOINT
+CHECKPOINT_PATH     = Path(args.checkpoint_path)
 OBJECT_CLASS        = args.object_class
 DEBUG               = args.mode == "true"
 MAX_ITERS           = 2
@@ -75,6 +76,8 @@ else:
         model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
     elif CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
+    elif CHECKPOINT == "specific":
+        model, _, cp_train_metrics = CHECKPOINT(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
 
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
