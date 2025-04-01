@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_ndjson_file, write_json_file
-from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
+from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, IMAGE_EXTENSIONS
 from src.data_processing.utils import XMLParser
 from src.evaluation.visual_metrics import precision_recall_fscore, region_coverage
 from src.logger import CustomLogger
@@ -21,16 +21,18 @@ parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--batch-size", default=10)
+parser.add_argument("--epoch-checkpoint", default="best")
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 
-DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DATA_DIR        = Path(args.data_dir)
-MODEL_NAME      = args.model_name
-OBJECT_CLASS    = args.object_class
-BATCH_SIZE      = int(args.batch_size)
-MODEL_PATH      = PROJECT_DIR / f"models/{MODEL_NAME}/weights/best.pt"
-OUTPUT_DIR      = PROJECT_DIR / "evaluations" / MODEL_NAME
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DATA_DIR            = Path(args.data_dir)
+MODEL_NAME          = args.model_name
+OBJECT_CLASS        = args.object_class
+BATCH_SIZE          = int(args.batch_size)
+EPOCH_CHECKPOINT    = args.epoch_checkpoint
+MODEL_PATH          = PROJECT_DIR / f"models/{MODEL_NAME}/weights/{EPOCH_CHECKPOINT}.pt"
+OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
@@ -38,7 +40,7 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
 #%%
-img_paths = list_files(DATA_DIR / "images", [".tif", ".jpg"])
+img_paths = list_files(DATA_DIR / "images", IMAGE_EXTENSIONS)
 xml_paths = list_files(DATA_DIR / "page_xmls", [".xml"])
 matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
 
