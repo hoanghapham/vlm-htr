@@ -28,7 +28,7 @@ parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "florence_base__mixed__line__ocr",
+#     "--model-name", "florence_base__mixed__line_seg__ocr",
 #     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/lines/mixed",
 #     "--mode", "debug"
 # ])

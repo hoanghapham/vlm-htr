@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J eval/florence_base/mixed__line__ocr__lora
-#SBATCH -o logs_uppmax/eval/florence_base/mixed__line__ocr__lora.out
-#SBATCH -e logs_uppmax/eval/florence_base/mixed__line__ocr__lora.out
+#SBATCH -J eval/florence_base/mixed__line_seg__ocr__lora
+#SBATCH -o logs_uppmax/eval/florence_base/mixed__line_seg__ocr__lora.out
+#SBATCH -e logs_uppmax/eval/florence_base/mixed__line_seg__ocr__lora.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,6 +19,6 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_ocr.py \
-    --model-name florence_base__mixed__line__ocr__lora \
+    --model-name florence_base__mixed__line_seg__ocr__lora \
     --data-dir $PROJECT_DIR/data/lines/mixed/test/ \
     --checkpoint best

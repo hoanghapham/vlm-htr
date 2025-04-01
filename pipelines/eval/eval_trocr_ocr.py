@@ -30,7 +30,7 @@ parser.add_argument("--debug", default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "trocr_base__mixed__line__ocr",
+#     "--model-name", "trocr_base__mixed__line_seg__ocr",
 #     "--data-dir", str(PROJECT_DIR / "data/lines/mixed/test"),
 #     "--checkpoint", "best",
 #     "--batch-size", "2",
