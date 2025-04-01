@@ -51,13 +51,14 @@ for split, page_names in split_info.items():
 
     if not dest_split_dir.exists():
         dest_split_dir.mkdir(parents=True)
-
-    os.chdir(dest_split_dir)
     
     for src in tqdm(master_pages, desc=split):
+
         if normalize_name(src.stem) in norm_page_names:
-            dst = src.stem
-            os.symlink(src, dst)
+            dst = dest_split_dir / src.name
+            src_abs = src.resolve()
+            dst_abs = dst.resolve()
+            os.symlink(src_abs, dst_abs)
             
             counts[split] += 1
 
