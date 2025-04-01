@@ -44,18 +44,19 @@ for dirname in test_dirs:
     names   = [path.stem for path in images]
     test_names += names
 
-print("Train-val & test:\t", len(train_val_names), len(test_names))
+print(f"Total images: {len(train_val_names) + len(test_names)}")
+
+print(f"Train-val {len(train_val_names)}, test {len(test_names)}")
 
 # Split
 train_indices, val_indices = train_test_split(range(len(train_val_names)), test_size=0.07)
-
-print("Train & val:\t\t", len(train_indices), len(val_indices))
-
 
 assert len(train_indices) + len(val_indices) == len(train_val_names)
 
 train_names = [train_val_names[idx] for idx in train_indices]
 val_names   = [train_val_names[idx] for idx in val_indices]
+
+print(f"Train: {len(train_names)}, val: {len(val_names)}")
 
 split_info = {
     "train": train_names,
