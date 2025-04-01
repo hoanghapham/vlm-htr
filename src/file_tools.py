@@ -114,6 +114,9 @@ def read_json_file(input_path: Path | str) -> dict:
 def write_ndjson_file(data: list[dict], output_path: Path | str):
     if not isinstance(output_path, Path):
         output_path = Path(output_path)
+    
+    if not output_path.parent.exists():
+        output_path.parent.mkdir(parents=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
         for line in data:
@@ -123,6 +126,9 @@ def write_ndjson_file(data: list[dict], output_path: Path | str):
 def write_json_file(data: dict, output_path: Path | str):
     if not isinstance(output_path, Path):
         output_path = Path(output_path)
+
+    if not output_path.parent.exists():
+        output_path.parent.mkdir(parents=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(json.dumps(data) + "\n")
@@ -140,13 +146,19 @@ def read_text_file(input_file: Path | str) -> str:
     return text
 
 
-def write_text_file(text: str, output_file: Path | str) -> None:
-    with open(output_file, "w", encoding="utf-8") as f:
+def write_text_file(text: str, output_path: Path | str) -> None:
+    if not output_path.parent.exists():
+        output_path.parent.mkdir(parents=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(text)
 
 
-def write_list_to_text_file(lst: list[str], output_file: Path | str, linebreak=True) -> None:
-    with open(output_file, "w", encoding="utf-8") as f:
+def write_list_to_text_file(lst: list[str], output_path: Path | str, linebreak=True) -> None:
+    if not output_path.parent.exists():
+        output_path.parent.mkdir(parents=True)
+        
+    with open(output_path, "w", encoding="utf-8") as f:
         for line in lst:
             f.write(line)
             if linebreak:

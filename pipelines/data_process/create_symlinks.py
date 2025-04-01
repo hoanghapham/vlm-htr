@@ -63,3 +63,5 @@ for split, page_names in split_info.items():
             counts[split] += 1
 
 print("Created symlinks:", counts)
+missed = len(master_pages) - sum(counts.values())
+print("Missed:", missed)
