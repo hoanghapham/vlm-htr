@@ -20,8 +20,8 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--batch-size", default=10)
 parser.add_argument("--checkpoint", default="best")
+parser.add_argument("--batch-size", default=10)
 parser.add_argument("--object-class", required=True, default="region")
 args = parser.parse_args()
 

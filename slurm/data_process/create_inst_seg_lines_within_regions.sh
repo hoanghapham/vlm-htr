@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python pipelines/data_process/create_dataset.py \
+python pipelines/data_process/create_arrow_datasets.py \
     --raw-data-dir $PROJECT_DIR/data/raw/riksarkivet \
     --dataset-type inst_seg_lines_within_regions \
-    --processed-data-dir $PROJECT_DIR/data/processed/riksarkivet
+    --output-data-dir $PROJECT_DIR/data/processed/riksarkivet/inst_seg_lines_within_regions
