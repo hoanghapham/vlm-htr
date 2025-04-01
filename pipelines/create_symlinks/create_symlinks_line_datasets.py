@@ -1,3 +1,4 @@
+# Script to create symlinks for datasets created from the HTRDatasetBuilder
 #%%
 import os
 import sys

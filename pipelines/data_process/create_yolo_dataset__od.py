@@ -7,12 +7,11 @@ sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import yaml
-from src.file_tools import read_json_file, write_list_to_text_file, normalize_name, list_files
+from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
 from src.data_processing.visual_tasks import (
     bboxes_xyxy_to_yolo_format, 
     TextRegionBboxDataset, 
     TextLineBboxDataset, 
-    IMAGE_EXTENSIONS
 )
 from tqdm import tqdm
 
@@ -83,13 +82,10 @@ split_page_names = {
 #%%
 # Load data
 
-img_paths = list_files(SOURCE_DATA_DIR, IMAGE_EXTENSIONS) 
-xml_paths = list_files(SOURCE_DATA_DIR, [".xml"])
-
 if OBJECT_CLASS == "region":
-    dataset = TextRegionBboxDataset(img_paths, xml_paths)
+    dataset = TextRegionBboxDataset(SOURCE_DATA_DIR)
 elif OBJECT_CLASS == "line":
-    dataset = TextLineBboxDataset(img_paths, xml_paths)
+    dataset = TextLineBboxDataset(SOURCE_DATA_DIR)
 
 # %%
 # Write data
