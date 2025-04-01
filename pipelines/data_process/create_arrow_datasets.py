@@ -24,20 +24,19 @@ dataset_types = [
 
 parser = ArgumentParser()
 parser.add_argument("--raw-data-dir", required=True)
-parser.add_argument("--dataset-type", default="text_recognition", choices=dataset_types)
+parser.add_argument("--dataset-type", default="text_recognition__line_seg", choices=dataset_types)
 parser.add_argument("--output-data-dir", required=True)
 args = parser.parse_args()
 
 
 # Setup
 RAW_DATA_DIR        = Path(args.raw_data_dir)
-PROCESSED_DATA_DIR  = Path(args.processed_data_dir)
 DATASET_TYPE        = args.dataset_type
-OUTPUT_DIR          = Path(args.output_data_dir)
+OUTPUT_DATA_DIR     = Path(args.output_data_dir)
 
 
-if not OUTPUT_DIR.exists():
-    OUTPUT_DIR.mkdir(parents=True)
+if not OUTPUT_DATA_DIR.exists():
+    OUTPUT_DATA_DIR.mkdir(parents=True)
 
 
 logger = CustomLogger(f"create_{DATASET_TYPE}")
@@ -79,7 +78,7 @@ process_funcs = {
 
 logger.info(f"Create dataset: {DATASET_TYPE}")
 
-processed_pages = set([file.parent.stem for file in list_files(OUTPUT_DIR, [".arrow"])])
+processed_pages = set([file.parent.stem for file in list_files(OUTPUT_DATA_DIR, [".arrow"])])
 
 for dir_path in sorted(RAW_DATA_DIR.iterdir()):
     
@@ -117,5 +116,5 @@ for dir_path in sorted(RAW_DATA_DIR.iterdir()):
                 continue
 
             data = Dataset.from_list(data_list)
-            data.save_to_disk(OUTPUT_DIR / file_name)
+            data.save_to_disk(OUTPUT_DATA_DIR / file_name)
     
