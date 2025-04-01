@@ -1,8 +1,6 @@
 #%%
 import sys
 from pathlib import Path
-from tqdm import tqdm
-from shutil import copy
 from sklearn.model_selection import train_test_split
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
