@@ -44,7 +44,7 @@ IMAGE_EXTENSIONS = [
             ".TIFF",]
 
 
-def bbox_xyxy_to_polygon(bbox):
+def bbox_xyxy_to_polygon(bbox: list[tuple], output_raw=False) -> list[tuple] | list[Polygon]:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
     # Order polygon points counter-clockwise
@@ -57,7 +57,10 @@ def bbox_xyxy_to_polygon(bbox):
     x4 = x1 + width
     y4 = y1
 
-    return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+    if output_raw:
+        return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+    else:
+        return Polygon([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
 
 
 def bbox_xyxy_to_xywh(bbox):
