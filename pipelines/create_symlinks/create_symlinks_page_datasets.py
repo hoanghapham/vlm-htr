@@ -42,7 +42,7 @@ img_names = [path.stem for path in img_paths]
 xml_names = [path.stem for path in xml_paths]
 matched = set(img_names).intersection(set(xml_names))
 
-assert len(img_paths) == len(xml_paths) == matched > 0, f"Length mismatch: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
+assert len(img_paths) == len(xml_paths) == len(matched) > 0, f"Length mismatch: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
 
 all_imgs_xmls = list(zip(img_paths, xml_paths))
 
