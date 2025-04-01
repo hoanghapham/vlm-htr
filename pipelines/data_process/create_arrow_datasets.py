@@ -14,12 +14,12 @@ from src.file_tools import list_files
 
 
 dataset_types = [
-    "text_recognition",
+    "text_recognition__line_seg",
+    "text_recognition__line_bbox"
     "inst_seg_lines",
     "inst_seg_regions",
     "inst_seg_lines_within_regions",
     "inst_seg_regions_and_lines",
-    "text_recognition_bbox"
 ]
 
 parser = ArgumentParser()
@@ -63,7 +63,7 @@ image_extensions = [
 builder = HTRDatasetBuilder(config_name=DATASET_TYPE)
 
 process_funcs = {
-    "text_recognition__line_seg": builder.text_recognition__line_seg,           # cropped lines (polygon) & transcription
+    "text_recognition__line_seg": builder.text_recognition__line_seg,   # cropped lines (polygon) & transcription
     "text_recognition__line_bbox": builder.text_recognition__line_bbox, # cropped lines (bbox) & transcription
 
     "inst_seg_lines": builder.inst_seg_lines,       # Original images with text line annotations only
