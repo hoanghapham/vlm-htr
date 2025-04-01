@@ -33,7 +33,7 @@ split_info = read_json_file(SPLIT_INFO_PATH)
 #%%
 # Create symplink for florence
 
-src_page_dirs = [path for path in sorted(SOURCE_DATA_DIR.iterdir()) if path.is_dir()]
+src_page_dirs = [path for path in sorted(SOURCE_DATA_DIR.glob("*")) if path.is_dir()]
 
 print(f"Total pages: {len(src_page_dirs)}")
 
