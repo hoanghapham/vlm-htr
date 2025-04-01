@@ -178,8 +178,8 @@ class BaseImgXMLDataset(ABC):
 
     def __init__(self, data_dir: str | Path):
         self.data_dir = Path(data_dir)
-        img_paths = list_files(self.data_dir / "images", IMAGE_EXTENSIONS)
-        xml_paths = list_files(self.data_dir / "page_xmls", [".xml"])
+        img_paths = list_files(self.data_dir, IMAGE_EXTENSIONS)
+        xml_paths = list_files(self.data_dir, [".xml"])
         
         # Validate that the img and xml files match
         matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
