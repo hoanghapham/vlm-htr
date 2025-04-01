@@ -15,7 +15,7 @@ from src.file_tools import list_files
 
 dataset_types = [
     "text_recognition__line_seg",
-    "text_recognition__line_bbox"
+    "text_recognition__line_bbox",
     "inst_seg_lines",
     "inst_seg_regions",
     "inst_seg_lines_within_regions",
