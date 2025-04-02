@@ -20,6 +20,6 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__sbs__page__line_od \
-    --data-dir $PROJECT_DIR/data/pages/sbs \
+    --data-dir $PROJECT_DIR/data/page/sbs \
     --checkpoint best \
     --object-class line
