@@ -41,3 +41,17 @@ test_dirs = [
     "frihetstidens",
     "krigshovrattens",
 ]
+
+
+- More even color distribution
+subset	total files	split
+gota_hovratt	53	test
+bergskollegium_rel__test	750	test
+krigshovrattens	346	test
+bergskollegium_rel__train_val	750	train-val
+poliskammare	5410	train-val
+jonkopings_radhusratts	41	train-val
+bergskollegium_adv	55	train-val
+frihetstidens	245	train-val
+trolldoms	770	train-val
+svea_hovratt	1247	train-val
