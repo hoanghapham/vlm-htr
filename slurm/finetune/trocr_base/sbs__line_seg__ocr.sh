@@ -22,6 +22,6 @@ python pipelines/train/finetune_trocr_ocr.py \
     --data-dir $PROJECT_DIR/data/line_seg/sbs/ \
     --model-name trocr_base__sbs__line_seg__ocr \
     --num-train-epochs 4 \
-    --max-train-steps 150000 \
-    --batch-size 6 \
+    --max-train-steps 200000 \
+    --batch-size 4 \
     --logging-interval 10000
