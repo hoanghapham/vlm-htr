@@ -23,6 +23,7 @@ parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--object-class", default="region")
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
@@ -87,7 +88,7 @@ model.eval()
 
 #%%
 # Load test data
-test_dataset = FlorenceTextODDataset(DATA_DIR / "test", task=FlorenceTask.OD, object_class="region")
+test_dataset = FlorenceTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class="region")
 logger.info(f"Total test samples: {len(test_dataset)}")
 
 
