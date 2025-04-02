@@ -41,8 +41,8 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
 #%%
-img_paths = list_files(DATA_DIR / "images", IMAGE_EXTENSIONS)
-xml_paths = list_files(DATA_DIR / "page_xmls", [".xml"])
+img_paths = list_files(DATA_DIR, IMAGE_EXTENSIONS)
+xml_paths = list_files(DATA_DIR, [".xml"])
 matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
 
 assert len(img_paths) == len(xml_paths) == len(matched) > 0, \

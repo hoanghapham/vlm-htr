@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence_base__mixed__page__region_od__lora",
-#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
+#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/mixed",
 #     "--checkpoint", "best",
 #     "--mode", "debug"
 # ])

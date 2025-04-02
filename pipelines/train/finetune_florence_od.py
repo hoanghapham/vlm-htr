@@ -30,7 +30,7 @@ parser.add_argument("--detect-class", default="region")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--data-dir", str(PROJECT_DIR / "data/pages/sbs"),
+#     "--data-dir", str(PROJECT_DIR / "data/page/sbs"),
 #     "--model-name", "demo",
 #     "--num-train-epochs", "5",
 #     "--max-train-steps", "2",
