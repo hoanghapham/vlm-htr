@@ -15,8 +15,9 @@ from tqdm import tqdm
 
 from src.file_tools import read_json_file, write_json_file
 
-STEP_IDX_SPACES = 10
 
+STEP_IDX_SPACES = 10
+MAX_OOM_RETRIES = 5
 
 class Checkpoint():
     def __init__(
@@ -117,31 +118,52 @@ class Trainer():
 
             # Train
             iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}")
+            total_oom_count = 0
+            oom_count = 0
+
             for batch_data in iterator:
-                is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps - 1)
-                
-                step_loss = self._train_one_step(batch_data)
-                total_train_loss += step_loss
-                avg_train_loss  = total_train_loss / step_counter
-                iterator.set_postfix({"loss": avg_train_loss})
 
-                if is_logging_point:
-                    avg_val_loss = self._evaluate(step_counter)
-                    self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
-                    self.logger.info(f"Saved checkpoint {step_counter}")
+                try:
+                    is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps - 1)
+                    
+                    step_loss = self._train_one_step(batch_data)
+                    total_train_loss += step_loss
+                    avg_train_loss  = total_train_loss / step_counter
+                    iterator.set_postfix({"loss": avg_train_loss})
+                    
+                    # Reset oom count if success
+                    oom_count = 0
 
-                    self.train_losses.append(avg_train_loss)
-                    self.val_losses.append(avg_val_loss)
+                    if is_logging_point:
+                        avg_val_loss = self._evaluate(step_counter)
+                        self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
+                        self.logger.info(f"Saved checkpoint {step_counter}")
 
-                    if self.tsb_logger is not None:
-                        self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, step_counter)
-                        self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, step_counter)
-                
-                # Advance counter
-                step_counter += 1
+                        self.train_losses.append(avg_train_loss)
+                        self.val_losses.append(avg_val_loss)
 
-                if step_counter > self.max_train_steps:
-                    break
+                        if self.tsb_logger is not None:
+                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, step_counter)
+                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, step_counter)
+                    
+                    # Advance counter
+                    step_counter += 1
+
+                    if step_counter > self.max_train_steps:
+                        break
+
+                except torch.OutOfMemoryError as e:
+                    oom_count += 1
+                    total_oom_count += 1
+                    self.logger.exception(e)
+                    continue
+            
+            # If encountering OOM error more than MAX_OOM_RETRIES times, end training
+            if oom_count > MAX_OOM_RETRIES:
+                self.logger.error(f"CUDA OutOfMemoryError {MAX_OOM_RETRIES} times, end training early")
+                self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
+                self.logger.info(f"Saved checkpoint {step_counter}")
+                break
 
             if step_counter > self.max_train_steps:
                 break
