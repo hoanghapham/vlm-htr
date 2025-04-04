@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 import yaml
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.visual_tasks import polygon_to_yolo_seg
+from src.data_processing.visual_tasks import coords_to_yolo_format
 from datasets import load_from_disk
 from tqdm import tqdm
 
@@ -117,7 +117,7 @@ for idx, path in enumerate(dir_paths):
 
         for ann in annotations:
             polygons.append(ann["polygon"])
-            yolo_annotations.append(polygon_to_yolo_seg(ann["polygon"], image.width, image.height))
+            yolo_annotations.append(coords_to_yolo_format(ann["polygon"], image.width, image.height))
 
         if img_filename in split_page_names["train"]:
             image.save(train_dest / "images/" / f"{img_filename}.png")

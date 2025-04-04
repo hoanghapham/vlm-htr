@@ -194,8 +194,9 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         return len(self.lines_data)
     
     def __getitem__(self, idx):
-        image = Image.open(self.line_to_img_path[idx]).convert("RGB")
-        data = self.lines_data[idx]
+        image       = Image.open(self.line_to_img_path[idx]).convert("RGB")
+        data        = self.lines_data[idx]
+        unique_key  = data["unique_key"]
 
         # Crop image to a line using bbox
         bbox_coords = bbox_xyxy_to_coords(data["bbox"])
@@ -222,6 +223,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         question = self.task + florence_bbox
 
         return dict(
+            unique_key = unique_key,
             image = cropped_line_img,
             question = question,
             answer = florence_polygon,

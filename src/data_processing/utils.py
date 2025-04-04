@@ -48,14 +48,12 @@ class XMLParser():
         transcription = line.find("ns:TextEquiv/ns:Unicode", self.namespaces).text or ""
         return {"region_id": region_id, "line_id": line_id, "bbox": bbox, "polygon": polygon, "transcription": transcription}
 
-
     def get_regions(self, xml_path: str | Path):
         """Parses the PAGE XML and extracts region data."""
         root = self._parse_xml(xml_path)
         if not root:
             return []
 
-        
         regions_data = []
         for region in root.findall(".//ns:TextRegion", self.namespaces):
             if region is not None:
@@ -66,13 +64,14 @@ class XMLParser():
                     if self.verbose:
                         print(f"Error parsing region: {e}")
         return regions_data
-        
+    
     def get_lines(self, xml_path):
         """Parses the PAGE XML and extracts line data."""
         root = self._parse_xml(xml_path)
         if not root:
             return []
-
+        
+        img_filename = Path(xml_path).stem
         
         lines_data = []
         for region in root.findall(".//ns:TextRegion", self.namespaces):
@@ -84,6 +83,11 @@ class XMLParser():
                     except Exception as e:
                         if self.verbose:
                             print(f"Error parsing line: {e}")
+        
+        for idx, data in enumerate(lines_data):
+            idx_str = str(idx).zfill(4)
+            data["unique_key"] = f"{img_filename}_{idx_str}"
+        
         return lines_data
     
     def get_regions_with_lines(self, xml_path):

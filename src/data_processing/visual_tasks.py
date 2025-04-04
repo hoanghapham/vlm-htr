@@ -43,6 +43,7 @@ IMAGE_EXTENSIONS = [
             ".TIF",
             ".TIFF",]
 
+# General conversion functions
 def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
@@ -98,6 +99,34 @@ def polygon_to_bbox_xyxy(coords: list[tuple]):
     return x1, y1, x2, y2
 
 
+# Conversion between normal format and YOLO
+
+def bbox_xyxy_to_yolo_format(bbox: tuple | list, img_width: int, img_height: int, class_id=0) -> str:
+    """Convert xyxy bbox to yolo string
+
+    Parameters
+    ----------
+    bbox : tuple | list
+    img_width : int
+    img_height : int
+    class_id : int, optional
+        Class of the instance, by default 0
+
+    Returns
+    -------
+    str
+        Format: {class_id} {x_center} {y_center} {width} {height}
+    """
+    assert len(bbox) == 4, f"bbox has {len(bbox)} elements"
+    (xmin, ymin, xmax, ymax) = bbox
+    x_center = (xmin + xmax) / 2 / img_width
+    y_center = (ymin + ymax) / 2 / img_height
+    width = (xmax - xmin) / img_width
+    height = (ymax - ymin) / img_height
+    return f"{class_id} {x_center} {y_center} {width} {height}"
+
+
+
 def bboxes_xyxy_to_yolo_format(bboxes: list[tuple], img_width: int, img_height: int, class_id=0) -> list[str]:
     """Accept a list of bboxes in xyxy format and convert to YOLO format:
         {class_id} {x_center} {y_center} {width} {height}
@@ -116,16 +145,63 @@ def bboxes_xyxy_to_yolo_format(bboxes: list[tuple], img_width: int, img_height: 
         List of YOLO formatted annotations
     """
     yolo_annotations = []
-    
-    for (xmin, ymin, xmax, ymax) in bboxes:
-        x_center = (xmin + xmax) / 2 / img_width
-        y_center = (ymin + ymax) / 2 / img_height
-        width = (xmax - xmin) / img_width
-        height = (ymax - ymin) / img_height
-
-        yolo_annotations.append(f"{class_id} {x_center} {y_center} {width} {height}")
-    
+    for bbox in bboxes:
+        yolo_str = bbox_xyxy_to_yolo_format(bbox, img_width, img_height)
+        yolo_annotations.append(yolo_str)
     return yolo_annotations
+
+
+def coords_to_yolo_format(coords: list[list | tuple], image_width: int, image_height: int, class_id=0) -> str:
+    """Convert polygon coordinates to YOLO instance segmentation format.
+        
+
+    Parameters
+    ----------
+    coords : list[list  |  tuple]
+    image_width : int
+    image_height : int
+    class_id : int, optional
+        Class of the instance, by default 0
+
+    Returns
+    -------
+    str
+        str: YOLO segmentation formatted annotation string.
+    """
+    normalized_points = []
+    for x, y in coords:
+        normalized_x = x / image_width
+        normalized_y = y / image_height
+        normalized_points.extend([normalized_x, normalized_y])
+    
+    annotation = f"{class_id} " + " ".join(f"{p:.6f}" for p in normalized_points)
+    return annotation
+
+
+def yolo_seg_to_coords(yolo_annotation: str, image_width: int, image_height: int):
+    """
+    Convert YOLO instance segmentation format back to polygon coordinates.
+    
+    Args:
+        yolo_annotation (str): YOLO formatted annotation string.
+        image_width (int): Width of the image.
+        image_height (int): Height of the image.
+    
+    Returns:
+        list: List of (x, y) coordinates in original scale.
+    """
+    parts = yolo_annotation.split()
+    class_id = int(parts[0])
+    normalized_points = list(map(float, parts[1:]))
+    
+    polygon = []
+    for i in range(0, len(normalized_points), 2):
+        x = normalized_points[i] * image_width
+        y = normalized_points[i + 1] * image_height
+        polygon.append([x, y])
+    
+    return class_id, polygon
+
 
 
 def crop_image(img_pil, coords):
@@ -824,52 +900,3 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
         cv2_image_rgb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
         return PILImage.fromarray(cv2_image_rgb)
     
-
-# From chatGPT
-
-def polygon_to_yolo_seg(polygon, image_width, image_height, class_id=0):
-    """
-    Convert polygon coordinates to YOLO instance segmentation format.
-    
-    Args:
-        polygon (list of lists): List of (x, y) coordinates defining the polygon.
-        image_width (int): Width of the image.
-        image_height (int): Height of the image.
-        class_id (int): Class ID for YOLO annotation (default: 0).
-    
-    Returns:
-        str: YOLO segmentation formatted annotation string.
-    """
-    normalized_points = []
-    for x, y in polygon:
-        normalized_x = x / image_width
-        normalized_y = y / image_height
-        normalized_points.extend([normalized_x, normalized_y])
-    
-    annotation = f"{class_id} " + " ".join(f"{p:.6f}" for p in normalized_points)
-    return annotation
-
-
-def yolo_seg_to_polygon(yolo_annotation, image_width, image_height):
-    """
-    Convert YOLO instance segmentation format back to polygon coordinates.
-    
-    Args:
-        yolo_annotation (str): YOLO formatted annotation string.
-        image_width (int): Width of the image.
-        image_height (int): Height of the image.
-    
-    Returns:
-        list: List of (x, y) coordinates in original scale.
-    """
-    parts = yolo_annotation.split()
-    class_id = int(parts[0])
-    normalized_points = list(map(float, parts[1:]))
-    
-    polygon = []
-    for i in range(0, len(normalized_points), 2):
-        x = normalized_points[i] * image_width
-        y = normalized_points[i + 1] * image_height
-        polygon.append([x, y])
-    
-    return class_id, polygon
