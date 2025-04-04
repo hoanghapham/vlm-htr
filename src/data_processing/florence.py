@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy
+from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
 
 
 class FlorenceTask():
@@ -36,8 +36,14 @@ def extract_florence_seg_polygon(task, parsed_result):
     return polygon
 
 
-def bbox_xyxy_to_florence(boxes, box_quantizer, image):
-    quantized_bboxes = box_quantizer.quantize(torch.Tensor(boxes), size=image.size)
+def bbox_xyxy_to_florence(bbox, box_quantizer, image):
+    quantized_bbox = box_quantizer.quantize(torch.Tensor(bbox), size=image.size)
+    text = "".join([f"<loc_{val}>" for val in quantized_bbox])
+    return text
+
+
+def bboxes_xyxy_to_florence(bboxes, box_quantizer, image):
+    quantized_bboxes = box_quantizer.quantize(torch.Tensor([bbox]), size=image.size)
     bbox_texts = []
     for bbox in quantized_bboxes:
         text = "".join([f"<loc_{val}>" for val in bbox])
@@ -46,25 +52,32 @@ def bbox_xyxy_to_florence(boxes, box_quantizer, image):
     return bbox_texts
 
 
-def polygons_to_florence(polygons, coords_quantizer, image):
+def coords_to_florence(coords: list[tuple], coords_quantizer, image):
+    """Receive a list of coord tuples [(x1, y1), (x2, y2), ...] and convert to Florence string format"""
+    quant_poly = coords_quantizer.quantize(torch.Tensor(coords), size=image.size)
+    points_str = ""
+    for point in quant_poly:
+        points_str += f"<loc_{point[0]}><loc_{point[1]}>"
+    return points_str
+
+
+def polygons_to_florence(polygons: list[list[tuple]], coords_quantizer, image):
     polygon_texts = []
-
     for polygon in polygons:
-        quant_poly = coords_quantizer.quantize(torch.Tensor(polygon), size=image.size)
-        points_str = ""
-        for point in quant_poly:
-            points_str += f"<loc_{point[0]}><loc_{point[1]}>"
-
+        points_str = coords_to_florence(polygon, coords_quantizer, image)
         polygon_texts.append(points_str)
     return polygon_texts
 
 
-class FlorenceSegDataset(Dataset):
-    def __init__(self, data, task: FlorenceTask = FlorenceTask.REGION_TO_SEGMENTATION):
+class FlorenceRegionLineSegDataset(Dataset):
+    """Receive a cached arrow dataset created from the HTRDatasetBuilder.inst_seg_lines_within_regions() method.
+    Input data are regions, but each output sample correspond to one line.
+    """
+    def __init__(self, data: Dataset, task: FlorenceTask = FlorenceTask.REGION_TO_SEGMENTATION):
         self.data = data
         self.task = task
-        self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
-        self.coords_quantizer = CoordinatesQuantizer(mode="floor", bins=(1000, 1000))
+        self.box_quantizer      = BoxQuantizer(mode="floor", bins=(1000, 1000))
+        self.coords_quantizer   = CoordinatesQuantizer(mode="floor", bins=(1000, 1000))
 
         total_lines = 0
         reg_to_lines = {}
@@ -96,19 +109,20 @@ class FlorenceSegDataset(Dataset):
         return self.total_lines
 
     def __getitem__(self, idx):
+        """Return one line by translating the global dataset's line idx to region's local line idx"""
         
-        reg_idx = self.line_to_reg[idx]
-        local_line_idx = self.line_to_local_line[idx]
+        reg_idx = self.line_to_reg[idx]                 # Find the region idx from the global line idx
+        local_line_idx = self.line_to_local_line[idx]   # Convert global line idx to a local line idx
 
-        example = self.data[reg_idx]
-        image = example["image"].convert("RGB")
+        example = self.data[reg_idx]                # Get one region
+        image = example["image"].convert("RGB")     
 
-        line = example["annotations"][local_line_idx]
+        line    = example["annotations"][local_line_idx]   # Get one line within the region
         polygon = line["polygon"]
-        bboxes = polygon_to_bbox_xyxy(polygon)
+        bboxes  = polygon_to_bbox_xyxy(polygon)
 
-        florence_bbox = bbox_xyxy_to_florence([bboxes], self.box_quantizer, image)[0]
-        florence_polygon = polygons_to_florence([polygon], self.coords_quantizer, image)[0]
+        florence_bbox       = bboxes_xyxy_to_florence([bboxes], self.box_quantizer, image)[0]
+        florence_polygon    = polygons_to_florence([polygon], self.coords_quantizer, image)[0]
         
         question = self.task + florence_bbox
 
@@ -153,6 +167,67 @@ class FlorenceOCRDataset(Dataset):
     def select(self, indices: typing.Iterable):
         subset = [self.data[int(idx)] for idx in indices]
         return FlorenceOCRDataset(subset)
+
+
+class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
+    """Dataset that returns one rectangular crop of a line, with polygon seg mask"""
+
+    def __init__(self, data_dir: str | Path):
+        super().__init__(data_dir),
+        self.task               = FlorenceTask.REGION_TO_SEGMENTATION
+        self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
+        self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
+        self.xmlparser          = XMLParser()
+
+        # List to convert a global line idx to path of an image
+        self.line_to_img_path = []
+
+        # Pre-load lines data from all XMLs
+        # Fields: region_id, line_id, bbox, polygon, transcription
+        self.lines_data = []
+        for idx, xml in enumerate(self.xml_paths):
+            lines = self.xmlparser.get_lines(xml)
+            self.lines_data += lines
+            self.line_to_img_path += [self.img_paths[idx]] * len(lines)
+
+    def __len__(self):
+        return len(self.lines_data)
+    
+    def __getitem__(self, idx):
+        image = Image.open(self.line_to_img_path[idx]).convert("RGB")
+        data = self.lines_data[idx]
+
+        # Crop image to a line using bbox
+        bbox_coords = bbox_xyxy_to_coords(data["bbox"])
+        cropped_line_img = crop_image(image, bbox_coords)
+        
+        # Shift bbox and polygon to follow the newly cropped images
+        shift_x = data["bbox"][0]
+        shift_y = data["bbox"][1]
+
+        new_bbox = (
+            0, 
+            0,
+            data["bbox"][2] - shift_x, 
+            data["bbox"][3] - shift_y
+        )
+
+        new_polygon = [(x - shift_x, y - shift_y) for (x, y) in data["polygon"]]
+
+        # Convert bbox and polygon to florence text format
+        florence_bbox   = bbox_xyxy_to_florence(new_bbox, self.box_quantizer, cropped_line_img)
+        florence_polygon = coords_to_florence(new_polygon, self.coords_quantizer, cropped_line_img)
+
+        # Form input question
+        question = self.task + florence_bbox
+
+        return dict(
+            image = cropped_line_img,
+            question = question,
+            answer = florence_polygon,
+            bbox = new_bbox,
+            polygon = new_polygon
+        )
 
 
 class FlorenceTextODDataset(BaseImgXMLDataset):
@@ -206,8 +281,6 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
             image_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
-
-
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
 class BoxQuantizer(object):

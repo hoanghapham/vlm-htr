@@ -8,6 +8,7 @@ import pandas as pd
 
 
 def list_files(input_path: Path | str, extensions) -> list[Path]:
+    """Return a sorted list of PosixPaths"""
     if not isinstance(input_path, Path):
         input_path = Path(input_path)
 
@@ -16,45 +17,7 @@ def list_files(input_path: Path | str, extensions) -> list[Path]:
         if file.suffix in extensions
     ]
         
-    # data = list(zip(
-    #     [file.parent for file in files],
-    #     [file.name for file in files]
-    # ))
-
     return files
-
-def check_file_stats(input_path: Path | str):
-    
-
-    if not isinstance(input_path, Path):
-        input_path = Path(input_path)
-
-    ignored_chars = punctuation + " "
-
-    files = sorted([file for file in sorted(list(input_path.glob("**/*"))) if file.suffix == ".txt"])
-
-    file_chars = []
-    file_words = []
-
-    for file in files:
-        chars = 0
-        words = 0
-        
-        with open(file, "r", encoding="utf-8") as f:
-            for line in f.readlines():
-                chars += len([c for c in line.strip() if c not in ignored_chars])
-                words += len([w for w in line.strip().split(" ") if w not in ignored_chars])
-        
-        file_chars.append(chars)
-        file_words.append(words)
-
-    data = pd.DataFrame({
-        "parent_path": [file.parent for file in files],
-        "file_name": [file.stem for file in files],
-        "file_chars": file_chars,
-        "file_words": file_words
-    })
-    return data
 
 
 class suppress_stdout_stderr(object):

@@ -128,6 +128,49 @@ def bboxes_xyxy_to_yolo_format(bboxes: list[tuple], img_width: int, img_height: 
     return yolo_annotations
 
 
+def crop_image(img_pil, coords):
+    coords = np.array(coords)
+    img = np.array(img_pil)
+    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
+
+    try:
+        # Ensure the coordinates are within the bounds of the image
+        coords[:, 0] = np.clip(coords[:, 0], 0, img.shape[1] - 1)
+        coords[:, 1] = np.clip(coords[:, 1], 0, img.shape[0] - 1)
+
+        # Draw the mask
+        cv2.drawContours(mask, [coords], -1, (255, 255, 255), -1, cv2.LINE_AA)
+
+        # Apply mask to image
+        res = cv2.bitwise_and(img, img, mask=mask)
+        rect = cv2.boundingRect(coords)
+
+        # Ensure the bounding box is within the image dimensions
+        rect = (
+            max(0, rect[0]),
+            max(0, rect[1]),
+            min(rect[2], img.shape[1] - rect[0]),
+            min(rect[3], img.shape[0] - rect[1]),
+        )
+
+        wbg = np.ones_like(img, np.uint8) * 255
+        cv2.bitwise_not(wbg, wbg, mask=mask)
+
+        # Overlap the resulted cropped image on the white background
+        dst = wbg + res
+
+        # Use validated rect for cropping
+        cropped = dst[rect[1] : rect[1] + rect[3], rect[0] : rect[0] + rect[2]]
+
+        # Convert the NumPy array back to a PIL image
+        cropped_pil = PILImage.fromarray(cropped)
+
+        return cropped_pil
+
+    except Exception as e:
+        print(f"Error in cropping: {e}")
+        return img_pil  # Return the original image if there's an error
+
 
 class Bbox():
     def __init__(self, xyxy: tuple):
@@ -194,6 +237,7 @@ class BaseImgXMLDataset(ABC):
 
         objects = []
         for img, xml in zip(img_paths, xml_paths):
+            assert img.stem == xml.stem, "File names mismatch"
             objects = self.xmlparser.get_regions(xml)
 
             if len(objects) > 0:

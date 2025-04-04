@@ -1,3 +1,4 @@
+# Feed florence a single line image and try to segment the text from the background. 
 #%%
 import sys
 from pathlib import Path
@@ -12,8 +13,7 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.data_processing.florence import create_collate_fn, FlorenceSegDataset, FlorenceTask
-from src.data_processing.utils import load_arrow_datasets
+from src.data_processing.florence import create_collate_fn, FlorenceSingleLineSegDataset, FlorenceTask
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -28,8 +28,6 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--use-lora", default="false")
-parser.add_argument("--detect-class", default="region")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -50,8 +48,6 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
-USE_LORA            = args.use_lora == "true"
-DETECT_CLASS        = args.detect_class
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
@@ -85,11 +81,8 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-train_raw   = load_arrow_datasets(DATA_DIR / "train")
-val_raw     = load_arrow_datasets(DATA_DIR / "val")
-
-train_dataset   = FlorenceSegDataset(train_raw, task=FlorenceTask.REGION_TO_SEGMENTATION)
-val_dataset     = FlorenceSegDataset(val_raw, task=FlorenceTask.REGION_TO_SEGMENTATION)
+train_dataset   = FlorenceSingleLineSegDataset(DATA_DIR / "train")
+val_dataset     = FlorenceSingleLineSegDataset(DATA_DIR / "val")
 
 
 # Create data loader
@@ -102,7 +95,7 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE,
                           collate_fn=collate_fn, num_workers=0)
 
-logger.info(f"Total samples: {len(train_dataset):,}. Batch size: {BATCH_SIZE}. Total batches: {len(train_loader):,}. Max train steps: {MAX_TRAIN_STEPS:,}")
+logger.info(f"Task: {FlorenceTask.REGION_TO_SEGMENTATION}. Total samples: {len(train_dataset):,}. Batch size: {BATCH_SIZE}. Total batches: {len(train_loader):,}. Max train steps: {MAX_TRAIN_STEPS:,}")
 #%%
 # Setup training
 TOTAL_TRAIN_STEPS = NUM_TRAIN_EPOCHS * len(train_loader)

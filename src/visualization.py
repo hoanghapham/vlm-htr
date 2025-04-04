@@ -120,3 +120,44 @@ def draw_segment_masks(image: Image, masks: list[list[tuple | list]], fig_size=1
             edgecolor=line_colors[idx], 
             linewidth=2, label="Segmentation"
         )
+
+
+def draw_object_bbox_segment(image: Image, bbox: tuple, mask: list[tuple], fig_size=15):
+    """Draw bbox and segmentation mask of one object
+
+    Parameters
+    ----------
+    image : Image
+    bbox : tuple
+        bbox in xyxy format: (x1, y1, x2, y2)
+    mask : list[tuple]
+        list of (x, y) tuples representing the polygon coords
+    figsize : int, optional
+        Size of the figure, by default 15
+    """
+
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+    ax.imshow(image)
+
+    # Draw bbox
+    x, y, width, height = bbox_xyxy_to_xywh(bbox)
+    rect = patches.Rectangle(
+        (x, y), width, height,
+        linewidth=2, edgecolor="red", facecolor='none'
+    )
+    ax.add_patch(rect)
+    
+    # Draw mask
+    mask_color = random_color()
+    seg_x = [x for (x, y) in mask]
+    seg_y = [y for (x, y) in mask]
+    ax.fill(
+        seg_x, seg_y, 
+        facecolor=mask_color, 
+        alpha=0.5, 
+        edgecolor=mask_color, 
+        linewidth=2, label="Segmentation"
+    )
+
+    ax.axis('off')
+    plt.show()
