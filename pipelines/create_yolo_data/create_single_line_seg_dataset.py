@@ -88,10 +88,15 @@ for split, source_dir in source_dirs.items():
     # Iterate through datapoints
     print(f"Write data to {YOLO_DATA_DIR / split}")
     for data in tqdm(dataset):
+        unique_key  = data["unique_key"]
+        dest_image_path = dest_images_dir / (unique_key + ".png")
+
+        if dest_image_path.exists():
+            continue
+
         image       = data["image"]
         bbox        = data["bbox"]
         polygon     = data["polygon"]
-        unique_key  = data["unique_key"]
         yolo_bbox   = bbox_xyxy_to_yolo_format(bbox, image.width, image.height, class_id=0)
         yolo_seg    = coords_to_yolo_format(polygon, image.width, image.height, class_id=0)
 
