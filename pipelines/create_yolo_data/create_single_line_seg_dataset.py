@@ -20,12 +20,12 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 parser = ArgumentParser()
 parser.add_argument("--source-data-dir", required=True)
 parser.add_argument("--split-type", default="sbs")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--source-data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
-    "--split-type", "mixed"
-])
+# args = parser.parse_args([
+#     "--source-data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
+#     "--split-type", "mixed"
+# ])
 
 SPLIT_TYPE = args.split_type
 supported_split_types = ["sbs", "mixed"]
