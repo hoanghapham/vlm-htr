@@ -324,7 +324,8 @@ class BaseImgXMLDataset(ABC):
         return len(self.img_paths)
     
     def select(self, indices: Iterable):
-        return [self.__getitem__(idx) for idx in indices]
+        for idx in indices:
+            yield self.__getitem__(idx)
     
     @abstractmethod
     def __getitem__(self, idx):

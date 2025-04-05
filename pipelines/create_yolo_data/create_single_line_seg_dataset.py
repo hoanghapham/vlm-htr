@@ -93,12 +93,8 @@ for split, source_dir in source_dirs.items():
     print(f"Existing files: {len(existing_files)}")
     # print(existing_files[0])
 
-    for data in tqdm(dataset):
+    for data in tqdm(dataset.select(range(len(existing_files), len(dataset)))):
         unique_key  = data["unique_key"]
-
-        if normalize_name(unique_key) in existing_files:
-            # print(f"Skip {unique_key}")
-            continue
 
         image       = data["image"]
         bbox        = data["bbox"]
