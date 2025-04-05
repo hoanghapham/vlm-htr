@@ -92,6 +92,7 @@ for split, source_dir in source_dirs.items():
         dest_image_path = dest_images_dir / (unique_key + ".png")
 
         if dest_image_path.exists():
+            print(f"Skip {unique_key}")
             continue
 
         image       = data["image"]
