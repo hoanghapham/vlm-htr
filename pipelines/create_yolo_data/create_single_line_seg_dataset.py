@@ -92,8 +92,9 @@ for split, source_dir in source_dirs.items():
     existing_files = [normalize_name(path.stem) for path in list_files(dest_images_dir, IMAGE_EXTENSIONS)]
     print(f"Existing files: {len(existing_files)}")
     # print(existing_files[0])
+    total = len(dataset) - len(existing_files)
 
-    for data in tqdm(dataset.select(range(len(existing_files), len(dataset)))):
+    for data in tqdm(dataset.select(range(len(existing_files), len(dataset))), total=total):
         unique_key  = data["unique_key"]
 
         image       = data["image"]
