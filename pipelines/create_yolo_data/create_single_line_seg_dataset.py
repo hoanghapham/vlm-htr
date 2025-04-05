@@ -20,12 +20,12 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 parser = ArgumentParser()
 parser.add_argument("--source-data-dir", required=True)
 parser.add_argument("--split-type", default="sbs")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--source-data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
-#     "--split-type", "mixed"
-# ])
+args = parser.parse_args([
+    "--source-data-dir", "/Users/hoanghapham/Projects/vlm/data/pages/mixed",
+    "--split-type", "mixed"
+])
 
 SPLIT_TYPE = args.split_type
 supported_split_types = ["sbs", "mixed"]
@@ -90,12 +90,14 @@ for split, source_dir in source_dirs.items():
     print(f"Write data to {YOLO_DATA_DIR / split}")
 
     existing_files = [normalize_name(path.stem) for path in list_files(dest_images_dir, IMAGE_EXTENSIONS)]
+    print(f"Existing files: {len(existing_files)}")
+    # print(existing_files[0])
 
     for data in tqdm(dataset):
         unique_key  = data["unique_key"]
 
         if normalize_name(unique_key) in existing_files:
-            print(f"Skip {unique_key}")
+            # print(f"Skip {unique_key}")
             continue
 
         image       = data["image"]
