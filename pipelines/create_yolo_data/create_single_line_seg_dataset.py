@@ -14,7 +14,8 @@ from src.data_processing.visual_tasks import (
 )
 
 from src.data_processing.florence import FlorenceSingleLineSegDataset
-
+from src.file_tools import list_files, normalize_name
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 
 parser = ArgumentParser()
 parser.add_argument("--source-data-dir", required=True)
@@ -87,11 +88,13 @@ for split, source_dir in source_dirs.items():
 
     # Iterate through datapoints
     print(f"Write data to {YOLO_DATA_DIR / split}")
+
+    existing_files = [normalize_name(path.stem) for path in list_files(dest_images_dir, IMAGE_EXTENSIONS)]
+
     for data in tqdm(dataset):
         unique_key  = data["unique_key"]
-        dest_image_path = dest_images_dir / (unique_key + ".png")
 
-        if dest_image_path.exists():
+        if normalize_name(unique_key) in existing_files:
             print(f"Skip {unique_key}")
             continue
 
