@@ -14,7 +14,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.logger import CustomLogger
 from src.data_processing.florence import FlorenceTask, FlorenceTextODDataset, predict
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
-from src.train import load_best_checkpoint, load_last_checkpoint
+from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
 from src.evaluation.visual_metrics import precision_recall_fscore, region_coverage
 #%%
@@ -78,7 +78,7 @@ else:
     elif CHECKPOINT == "best":
         model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE, compare_metric="avg_val_loss")
     elif CHECKPOINT == "specific":
-        model, _, cp_train_metrics = CHECKPOINT(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
+        model, _, cp_train_metrics = load_checkpoint(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
 
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 

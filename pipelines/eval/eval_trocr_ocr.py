@@ -16,6 +16,7 @@ from htrflow.evaluate import CER, WER, BagOfWords
 from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
 from src.data_processing.trocr import create_collate_fn
 from src.data_processing.utils import load_arrow_datasets
+from src.evaluation.utils import Ratio
 from src.file_tools import write_json_file, write_list_to_text_file
 from src.logger import CustomLogger
 #%%
@@ -118,10 +119,23 @@ for inputs in tqdm(test_loader, desc="Evaluate"):
     preds = processor.batch_decode(generated_ids, skip_special_tokens=True)
 
     for pred, gt in zip(preds, groundtruths):
-        cer_value           = cer.compute(pred, gt)["cer"]
-        wer_value           = wer.compute(pred, gt)["wer"]
-        bow_hits_value      = bow.compute(pred, gt)["bow_hits"]
-        bow_extras_value    = bow.compute(pred, gt)["bow_extras"]
+
+        if pred == gt == "":
+            cer_value           = Ratio(0, 0)
+            wer_value           = Ratio(0, 0)
+            bow_hits_value      = Ratio(0, 0)
+            bow_extras_value    = Ratio(0, 0)
+        elif pred != gt and (pred == "" or gt == ""):
+            value = max(len(pred), len(gt))
+            cer_value           = Ratio(value, value)
+            wer_value           = Ratio(value, value)
+            bow_hits_value      = Ratio(value, value)
+            bow_extras_value    = Ratio(value, value)
+        else:
+            cer_value           = cer.compute(pred, gt)["cer"]
+            wer_value           = wer.compute(pred, gt)["wer"]
+            bow_hits_value      = bow.compute(pred, gt)["bow_hits"]
+            bow_extras_value    = bow.compute(pred, gt)["bow_extras"]
 
         # Append results
         cer_list.append(cer_value)
