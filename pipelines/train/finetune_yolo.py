@@ -26,6 +26,7 @@ BASE_MODEL_PATH     = args.base_model_path
 MODEL_NAME          = args.model_name
 DATASET_CONFIG      = DATA_DIR / "config.yaml"
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+TRAINED_MODEL_DIR   = PROJECT_DIR / "models" / MODEL_NAME
 
 # Train configs
 DATA_FRACTION   = float(args.data_fraction)
@@ -33,6 +34,9 @@ EPOCHS          = int(args.epochs)
 BATCH_SIZE      = int(args.batch_size)
 IMG_SIZE        = int(args.img_size)
 RESUME          = args.resume == "true"
+
+if RESUME:
+    BASE_MODEL_PATH = TRAINED_MODEL_DIR / "weights/last.pt"
 
 # Init model
 model = YOLO(BASE_MODEL_PATH)
