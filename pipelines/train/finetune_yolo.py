@@ -17,7 +17,7 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--epochs", default=100)
 parser.add_argument("--batch-size", default=10)
 parser.add_argument("--img-size", default=1280)
-parser.add_argument("--resume", default="false")
+parser.add_argument("--resume", default="true")
 args = parser.parse_args()
 
 # Basics
