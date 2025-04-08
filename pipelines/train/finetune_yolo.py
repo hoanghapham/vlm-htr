@@ -35,11 +35,17 @@ BATCH_SIZE      = int(args.batch_size)
 IMG_SIZE        = int(args.img_size)
 RESUME          = args.resume == "true"
 
+MODEL_PATH = BASE_MODEL_PATH
+
 if RESUME:
-    BASE_MODEL_PATH = TRAINED_MODEL_DIR / "weights/last.pt"
+    TRAINED_MODEL_PATH = TRAINED_MODEL_DIR / "weights/last.pt"
+    if TRAINED_MODEL_PATH.exists():
+        MODEL_PATH = TRAINED_MODEL_PATH
+    else:
+        print("Trained model not found, start from scratch")
 
 # Init model
-model = YOLO(BASE_MODEL_PATH)
+model = YOLO(MODEL_PATH)
 
 # Train
 training_results = model.train(
