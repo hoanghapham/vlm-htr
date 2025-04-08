@@ -27,3 +27,4 @@ python pipelines/train/finetune_yolo.py \
     --epochs 20 \
     --batch-size 2 \
     --img-size 1280 \
+    --resume false
