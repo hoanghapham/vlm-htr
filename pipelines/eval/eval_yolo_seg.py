@@ -85,15 +85,21 @@ write_list_to_text_file(invalid_files, OUTPUT_DIR / "invalids.txt")
 logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
 
+processed = []
 results = []
 iterator = list(range(0, len(valids), BATCH_SIZE))
 
 for i in tqdm(iterator, total=len(iterator), unit="batch"):
-    batch = [img_paths[idx] for idx in valids[i:i+BATCH_SIZE]]
-    batch_results = model.predict(batch, verbose=False, device=DEVICE)
-    results += batch_results
+    selected = valids[i:i+BATCH_SIZE]
+    batch = [img_paths[idx] for idx in selected]
+    try:
+        batch_results = model.predict(batch, verbose=False, device=DEVICE)
+        processed += selected
+        results += batch_results
+    except torch.OutOfMemoryError:
+        print("OutOfMemoryError")
 
-
+logger.info(f"Processed {len(processed)}/{len(valids)}")    
 
 #%%
 predictions = []
@@ -102,6 +108,8 @@ for result in results:
     pred_polygons = result.masks.xy
     pred_polygons = sort_polygons(pred_polygons)
     predictions.append(pred_polygons)
+
+annotations = [annotations[idx] for idx in processed]
 
 assert len(annotations) == len(predictions), f"predictions & annotations length mismatched"
 
