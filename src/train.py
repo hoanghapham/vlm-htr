@@ -6,7 +6,7 @@ from logging import Logger
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from transformers import PreTrainedModel
@@ -95,6 +95,7 @@ class Trainer():
                 self.model, self.optimizer, last_metrics = load_last_checkpoint(
                     model=self.model,
                     optimizer=self.optimizer,
+                    lr_scheduler=self.lr_scheduler,
                     model_path=self.model_out_dir,
                     device=self.device
                 )
@@ -206,12 +207,19 @@ class Trainer():
             avg_val_loss    = avg_val_loss,
         )
 
-        save_checkpoint(model=self.model, optimizer=self.optimizer, metrics=checkpoint_metrics, out_dir=cp_out_dir)
+        save_checkpoint(
+            model=self.model, 
+            optimizer=self.optimizer, 
+            lr_scheduler=self.lr_scheduler,
+            metrics=checkpoint_metrics, 
+            out_dir=cp_out_dir
+        )
 
 
 # Helper functions
 
-def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str | Path, metrics: dict = None):
+def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, lr_scheduler: LRScheduler, 
+                    out_dir: str | Path, metrics: dict = None):
     """Save checkpoint to disk."""
     # Save model
     model.save_pretrained(out_dir)
@@ -228,14 +236,19 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, out_dir: str |
     optimizer_state_dict = optimizer.state_dict()
     torch.save(optimizer_state_dict, out_dir / "optimizer_state_dict.pt")
     
-    # Save metrics
+    # Save lr_schedule state
+    lr_scheduler_state_dict = lr_scheduler.state_dict()
+    torch.save(lr_scheduler_state_dict, out_dir / "lr_scheduler_state_dict.pt")
+
+    # Save train metrics
     if metrics is None:
         metrics = {}
 
     write_json_file(metrics, out_dir / "metrics.json")
 
 
-def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, cp_path: str | Path, device: str = "cpu"):
+def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, lr_scheduler: LRScheduler, 
+                    cp_path: str | Path, device: str = "cpu"):
     """Load checkpoint from disk."""
     if isinstance(model, PeftModel):
         model = model.from_pretrained(model.base_model.model, model_id=cp_path, device_map=device)
@@ -248,12 +261,17 @@ def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, cp
         optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
         optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
 
-    return model, optimizer, metrics
+    if lr_scheduler is not None:
+        lr_scheduler_state_dict = torch.load(cp_path / "lr_scheduler_state_dict.pt")
+        lr_scheduler.load_state_dict(lr_scheduler_state_dict)
+
+    return model, optimizer, lr_scheduler, metrics
 
 
 def load_best_checkpoint(
     model: PreTrainedModel, 
     optimizer: Optimizer, 
+    lr_scheduler: LRScheduler,
     model_path: str | Path, 
     device: str = "cpu", 
     compare_metric: str = "avg_val_loss"
@@ -276,13 +294,20 @@ def load_best_checkpoint(
             best_value = metrics[compare_metric]
             best_cp_path = cp_path
     
-    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_path=best_cp_path, device=device)
+    model, optimizer, lr_scheduler, metrics = load_checkpoint(
+        model=model, 
+        optimizer=optimizer, 
+        lr_scheduler=lr_scheduler,
+        cp_path=best_cp_path, 
+        device=device
+    )
     return model, optimizer, metrics
 
 
 def load_last_checkpoint(
     model: PreTrainedModel, 
     optimizer: Optimizer,
+    lr_scheduler: LRScheduler,
     model_path: str | Path, 
     device: str = "cpu"
 ):
@@ -293,7 +318,13 @@ def load_last_checkpoint(
     
     # Load
     last_cp_path = cp_paths[-1] 
-    model, optimizer, metrics = load_checkpoint(model=model, optimizer=optimizer, cp_path=last_cp_path, device=device)
+    model, optimizer, lr_scheduler, metrics = load_checkpoint(
+        model=model, 
+        optimizer=optimizer, 
+        lr_scheduler=lr_scheduler,
+        cp_path=last_cp_path, 
+        device=device
+    )
     return model, optimizer, metrics
     
 
@@ -305,3 +336,7 @@ def compare_models(model1, model2):
     print(f"Model 1 params sum: {model1_params_sum:,}")
     print(f"Model 2 params sum: {model2_params_sum:,}")
     print(f"Difference: {model1_params_sum - model2_params_sum}")
+
+
+def calculate_linear_lr_step(base_lr, step, total_steps):
+    return base_lr * (1 - step / total_steps)

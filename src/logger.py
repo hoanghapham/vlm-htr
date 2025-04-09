@@ -68,7 +68,7 @@ class CustomLogger(logging.Logger):
     def _add_file_handler(self):
         """Add file handler to write log to local file """
         if not self.log_path.exists():
-            self.log_path.mkdir()
+            self.log_path.mkdir(parents=True)
 
         now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         log_filename = f"{self.name}_{now}.log"
