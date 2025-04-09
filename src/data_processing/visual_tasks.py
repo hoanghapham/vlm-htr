@@ -203,6 +203,46 @@ def yolo_seg_to_coords(yolo_annotation: str, image_width: int, image_height: int
     return class_id, polygon
 
 
+def sort_polygons(polygons, y_threshold=10):
+    """
+    Sort polygons top-to-bottom, left-to-right within horizontal bands.
+    
+    Args:
+        polygons: list of list of (x, y) tuples
+        y_threshold: vertical tolerance to consider two masks on the same line
+        
+    Returns:
+        Sorted list of polygons
+    """
+    # Extract min y and min x for each polygon
+    def polygon_key(poly):
+        ys = [pt[1] for pt in poly]
+        xs = [pt[0] for pt in poly]
+        return (min(ys), min(xs))
+
+    # Sort polygons initially by min y and then min x
+    polygons_sorted = sorted(polygons, key=polygon_key)
+
+    # Now group by horizontal line (based on y threshold)
+    grouped = []
+    current_group = [polygons_sorted[0]]
+    current_y = min(pt[1] for pt in polygons_sorted[0])
+
+    for poly in polygons_sorted[1:]:
+        min_y = min(pt[1] for pt in poly)
+        if abs(min_y - current_y) <= y_threshold:
+            current_group.append(poly)
+        else:
+            grouped.append(sorted(current_group, key=lambda p: min(pt[0] for pt in p)))
+            current_group = [poly]
+            current_y = min_y
+
+    grouped.append(sorted(current_group, key=lambda p: min(pt[0] for pt in p)))
+
+    # Flatten the grouped list
+    return [poly for group in grouped for poly in group]
+
+
 
 def crop_image(img_pil, coords):
     coords = np.array(coords)
