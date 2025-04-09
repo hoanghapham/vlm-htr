@@ -21,4 +21,4 @@ python pipelines/eval/eval_yolo_seg.py \
     --data-dir $PROJECT_DIR/data/yolo/sbs/inst_seg_lines_within_regions/test \
     --model-name yolo11m_seg__sbs__region__line_seg \
     --checkpoint best \
-    --batch-size 2
+    --batch-size 1
