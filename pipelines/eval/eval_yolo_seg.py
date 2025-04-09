@@ -78,7 +78,7 @@ for idx, (img_path, label_path) in enumerate(zip(img_paths, label_paths)):
 logger.info(f"Total images: {len(img_paths)}, valid annotations: {len(valids)}")
 
 invalid_files = [str(label_paths[idx]) for idx in invalids]
-write_list_to_text_file(invalids, OUTPUT_DIR / "invalids.txt")
+write_list_to_text_file(invalid_files, OUTPUT_DIR / "invalids.txt")
 
 
 # %%
