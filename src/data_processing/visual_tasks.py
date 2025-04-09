@@ -215,6 +215,10 @@ def sort_polygons(polygons, y_threshold=10):
         Sorted list of polygons
     """
     # Extract min y and min x for each polygon
+
+    if len(polygons) == 0:
+        return []
+
     def polygon_key(poly):
         ys = [pt[1] for pt in poly]
         xs = [pt[0] for pt in poly]

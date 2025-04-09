@@ -13,7 +13,7 @@ from ultralytics import YOLO
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, read_lines
+from src.file_tools import list_files, write_json_file, read_lines, write_list_to_text_file
 from src.data_processing.visual_tasks import yolo_seg_to_coords, sort_polygons, IMAGE_EXTENSIONS
 from src.evaluation.visual_metrics import match_and_evaluate
 from src.logger import CustomLogger
@@ -59,14 +59,26 @@ assert len(img_paths) == len(label_paths) == len(matched) > 0, \
 
 # Get annotations
 annotations = []
+valids = []
+invalids = []
 
 logger.info("Get annotations")
-for img_path, label_path in zip(img_paths, label_paths):
+for idx, (img_path, label_path) in enumerate(zip(img_paths, label_paths)):
     image = Image.open(img_path)
     label_lines = read_lines(label_path)
     gt_polygons = [np.array(yolo_seg_to_coords(line, image.width, image.height)[1]) for line in label_lines]
     gt_polygons = sort_polygons(gt_polygons)
-    annotations.append(gt_polygons)
+    
+    if len(gt_polygons) > 0:
+        annotations.append(gt_polygons)
+        valids.append(idx)
+    else:
+        invalids.append(idx)
+
+logger.info(f"Total images: {len(img_path)}, valid annotations: {len(valids)}")
+
+invalid_files = [str(label_paths[idx]) for idx in invalids]
+write_list_to_text_file(invalids, OUTPUT_DIR / "invalids.json")
 
 
 # %%
@@ -74,10 +86,10 @@ logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
 
 results = []
-iterator = list(range(0, len(img_paths), BATCH_SIZE))
+iterator = list(range(0, len(valids), BATCH_SIZE))
 
 for i in tqdm(iterator, total=len(iterator), unit="batch"):
-    batch = img_paths[i:i+BATCH_SIZE]
+    batch = [img_paths[idx] for idx in valids[i:i+BATCH_SIZE]]
     batch_results = model.predict(batch, verbose=False, device=DEVICE)
     results += batch_results
 
