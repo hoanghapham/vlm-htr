@@ -24,6 +24,7 @@ parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--batch-size", default=10)
+parser.add_argument("--device", default="cuda")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -34,7 +35,7 @@ args = parser.parse_args()
 # ])
 
 
-DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE              = torch.device(args.device)
 DATA_DIR            = Path(args.data_dir)
 MODEL_NAME          = args.model_name
 BATCH_SIZE          = int(args.batch_size)
