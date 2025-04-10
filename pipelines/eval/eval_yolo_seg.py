@@ -68,12 +68,13 @@ for idx, (img_path, label_path) in enumerate(zip(img_paths, label_paths)):
     image = Image.open(img_path)
     label_lines = read_lines(label_path)
     gt_polygons = [np.array(yolo_seg_to_coords(line, image.width, image.height)[1]) for line in label_lines]
-    gt_polygons = sort_polygons(gt_polygons)
     
-    if len(gt_polygons) > 0:
+    try:
+        gt_polygons = sort_polygons(gt_polygons)
         annotations.append(gt_polygons)
         valids.append(idx)
-    else:
+    except Exception as e:
+        print(e)
         invalids.append(idx)
 
 logger.info(f"Total images: {len(img_paths)}, valid annotations: {len(valids)}")
