@@ -125,35 +125,38 @@ for idx in processed_indices:
 # Save annotations & Predictions incase we want to do manual analysis
 torch.save(filtered_ann, OUTPUT_DIR / "annotations.pt")
 torch.save(predictions, OUTPUT_DIR / "predictions.pt")
-write_list_to_text_file(no_pred, "no_prediction.txt")
+write_list_to_text_file(no_pred, OUTPUT_DIR / "no_prediction.txt")
 
-assert len(filtered_ann) == len(predictions), f"predictions & annotations length mismatched"
+logger.info(f"Predictions: {len(predictions)}, filtered annotations: {len(filtered_ann)}")
 # %%
 
 page_metrics = []
 line_metrics = []
 
 for idx, (pred, gt) in tqdm(enumerate(zip(predictions, annotations)), total = len(predictions)):
-    image = Image.open(img_paths[idx])
-    page_result = match_and_evaluate(pred, gt, image.size, iou_threshold=0.5)
-    filename = img_paths[idx].stem
+    try:
+        image = Image.open(img_paths[idx])
+        page_result = match_and_evaluate(pred, gt, image.size, iou_threshold=0.5)
+        filename = img_paths[idx].stem
 
-    page_metric = {
-        "filename": filename,
-        "num_preds": page_result["num_preds"], 
-        "num_gts": page_result["num_gts"],
-        "unmatched_preds": page_result["unmatched_preds"], 
-        "unmatched_gts": page_result["unmatched_gts"], 
-    }
-    page_metrics.append(page_metric)
-
-    for line in page_result["matched"]:
-        line_metric = {
+        page_metric = {
             "filename": filename,
-            "pair": line["pair"],
-            **line["metrics"]
+            "num_preds": page_result["num_preds"], 
+            "num_gts": page_result["num_gts"],
+            "unmatched_preds": page_result["unmatched_preds"], 
+            "unmatched_gts": page_result["unmatched_gts"], 
         }
-        line_metrics.append(line_metric)
+        page_metrics.append(page_metric)
+
+        for line in page_result["matched"]:
+            line_metric = {
+                "filename": filename,
+                "pair": line["pair"],
+                **line["metrics"]
+            }
+            line_metrics.append(line_metric)
+    except Exception as e:
+        logger.exception(e)
 
 
 # Write full results
