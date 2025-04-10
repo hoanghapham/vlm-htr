@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
-python pipelines/train/finetune_florence__line_cropped__line_seg.py \
+python pipelines/train/finetune_florence_single_line_seg.py \
     --data-dir $PROJECT_DIR/data/page/sbs/ \
     --model-name florence_base__sbs__line_cropped__line_seg \
     --model-dirs /proj/uppmax2024-2-13/hapham/vlm/training \
