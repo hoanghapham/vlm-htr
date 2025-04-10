@@ -258,12 +258,14 @@ def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, lr
     
     metrics = read_json_file(cp_path / "metrics.json")
     
-    if optimizer is not None:
+    optimizer_state_path = cp_path / "optimizer_state_dict.pt"
+    if optimizer is not None and optimizer_state_path.exists():
         optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
         optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
 
-    if lr_scheduler is not None:
-        lr_scheduler_state_dict = torch.load(cp_path / "lr_scheduler_state_dict.pt")
+    lr_scheduler_state_path = cp_path / "lr_scheduler_state_dict.pt"
+    if lr_scheduler is not None and lr_scheduler_state_path.exists():
+        lr_scheduler_state_dict = torch.load(lr_scheduler_state_path)
         lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
     return model, optimizer, lr_scheduler, metrics
