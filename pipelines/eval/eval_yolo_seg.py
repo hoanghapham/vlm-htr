@@ -79,44 +79,47 @@ for idx, (img_path, label_path) in enumerate(zip(img_paths, label_paths)):
 logger.info(f"Total images: {len(img_paths)}, valid annotations: {len(valids)}")
 
 invalid_files = [str(label_paths[idx]) for idx in invalids]
-write_list_to_text_file(invalid_files, OUTPUT_DIR / "invalids.txt")
+write_list_to_text_file(invalid_files, OUTPUT_DIR / "invalid_annotations.txt")
 
 
 # %%
 logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
 
-processed = []
-results = []
+processed_indices = []
+predictions = []
+no_pred = []
 iterator = list(range(0, len(valids), BATCH_SIZE))
 
 for i in tqdm(iterator, total=len(iterator), unit="batch"):
     selected = valids[i:i+BATCH_SIZE]
     batch = [img_paths[idx] for idx in selected]
+
+    # Get prediction
     try:
         batch_results = model.predict(batch, verbose=False, device=DEVICE)
-        processed += selected
-        results += batch_results
+        processed_indices += selected
     except torch.OutOfMemoryError:
         print("OutOfMemoryError")
 
-logger.info(f"Processed {len(processed)}/{len(valids)}")    
+    # Get seg masks from YOLO's prediction
+    for idx, result in enumerate(batch_results):
+        try:
+            pred_polygons = result.masks.xy
+            pred_polygons = sort_polygons(pred_polygons)
+            predictions.append(pred_polygons)
+        except Exception as e:
+            print(e)
+            no_pred.append(batch[idx])
 
-#%%
-predictions = []
-
-for result in results:
-    pred_polygons = result.masks.xy
-    pred_polygons = sort_polygons(pred_polygons)
-    predictions.append(pred_polygons)
-
-annotations = [annotations[idx] for idx in processed]
-
+logger.info(f"Processed {len(processed_indices)}/{len(valids)}")    
+annotations = [annotations[idx] for idx in processed_indices]
 assert len(annotations) == len(predictions), f"predictions & annotations length mismatched"
 
 # Save annotations & Predictions incase we want to do manual analysis
 torch.save(annotations, OUTPUT_DIR / "annotations.pt")
 torch.save(predictions, OUTPUT_DIR / "predictions.pt")
+write_list_to_text_file(no_pred, "no_prediction.txt")
 
 # %%
 
