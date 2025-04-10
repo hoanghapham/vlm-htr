@@ -20,7 +20,7 @@ cd $PROJECT_DIR
 
 # Should train for 20 epochs
 python pipelines/train/finetune_yolo.py \
-    --data-dir $PROJECT_DIR/data/yolo/sbs/single_line_seg \
+    --data-dir /proj/uppmax2024-2-13/hapham/vlm-archived/data/yolo/sbs/line_cropped__line_seg \
     --data-fraction 1 \
     --base-model-path $PROJECT_DIR/models/yolo_base/yolo11m-seg.pt \
     --model-name yolo11m_seg__sbs__line_cropped__line_seg \
