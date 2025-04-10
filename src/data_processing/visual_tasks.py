@@ -43,6 +43,7 @@ IMAGE_EXTENSIONS = [
             ".TIF",
             ".TIFF",]
 
+
 # General conversion functions
 def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
@@ -58,6 +59,7 @@ def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
     y4 = y1
 
     return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+
 
 def bbox_xyxy_to_polygon(bbox: list[tuple]) -> list[Polygon]:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
@@ -216,16 +218,16 @@ def sort_polygons(polygons, y_threshold=10):
     """
     # Extract min y and min x for each polygon
 
-    if len(polygons) == 0:
-        return []
-
     def polygon_key(poly):
         ys = [pt[1] for pt in poly]
         xs = [pt[0] for pt in poly]
         return (min(ys), min(xs))
 
     # Sort polygons initially by min y and then min x
-    polygons_sorted = sorted(polygons, key=polygon_key)
+    try:
+        polygons_sorted = sorted(polygons, key=polygon_key)
+    except Exception:
+        return []
 
     # Now group by horizontal line (based on y threshold)
     grouped = []
@@ -245,7 +247,6 @@ def sort_polygons(polygons, y_threshold=10):
 
     # Flatten the grouped list
     return [poly for group in grouped for poly in group]
-
 
 
 def crop_image(img_pil, coords):
@@ -336,7 +337,6 @@ class BaseImgXMLDataset(ABC):
             page_xmls/
                 image1.xml
                 image2.xml
-    
     """
 
     def __init__(self, data_dir: str | Path):
@@ -418,7 +418,6 @@ class TextLineBboxDataset(BaseImgXMLDataset):
             img_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
-
 
 
 # Reuse code from Riksarkivet, with some modifications
