@@ -111,7 +111,7 @@ for i in tqdm(iterator, total=len(iterator), unit="batch"):
             predictions.append(pred_polygons)
         except Exception as e:
             print(e)
-            no_pred.append(batch[idx])
+            no_pred.append(str(batch[idx]))
 
 logger.info(f"Processed {len(processed_indices)}/{len(valids)}")    
 filtered_ann = []
