@@ -21,7 +21,7 @@ cd $PROJECT_DIR
 python pipelines/train/finetune_florence_single_line_seg.py \
     --data-dir $PROJECT_DIR/data/page/sbs/ \
     --model-name florence_base__sbs__line_cropped__line_seg \
-    --model-dirs /proj/uppmax2024-2-13/hapham/vlm/training \
+    --models-dir /proj/uppmax2024-2-13/hapham/vlm/training \
     --num-train-epochs 2 \
     --max-train-steps 220000 \
     --batch-size 2 \
