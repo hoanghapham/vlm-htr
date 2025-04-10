@@ -87,8 +87,6 @@ class Trainer():
         if not self.model_out_dir.exists():
             self.model_out_dir.mkdir(parents=True)
 
-        total_train_loss = 0
-
         # Init model from the last checkpoint state
         if self.resume:
             try:
@@ -111,7 +109,9 @@ class Trainer():
         
         
         # Train loop
-        step_counter = self.start_step
+        total_train_loss = 0
+        counter = self.start_step
+        steps = 1  # Keep track of how many steps was done
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
@@ -125,32 +125,33 @@ class Trainer():
             for batch_data in iterator:
 
                 try:
-                    is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps - 1)
+                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps - 1)
                     
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
-                    avg_train_loss  = total_train_loss / step_counter
+                    avg_train_loss  = total_train_loss / steps
                     iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset oom count if success
                     oom_count = 0
 
                     if is_logging_point:
-                        avg_val_loss = self._evaluate(step_counter)
-                        self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {step_counter}")
+                        avg_val_loss = self._evaluate(counter)
+                        self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
+                        self.logger.info(f"Saved checkpoint {counter}")
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
 
                         if self.tsb_logger is not None:
-                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, step_counter)
-                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, step_counter)
+                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, counter)
+                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, counter)
                     
                     # Advance counter
-                    step_counter += 1
+                    counter += 1
+                    steps += 1
 
-                    if step_counter > self.max_train_steps:
+                    if counter > self.max_train_steps:
                         break
 
                 except torch.OutOfMemoryError as e:
@@ -162,11 +163,11 @@ class Trainer():
             # If encountering OOM error more than MAX_OOM_RETRIES times, end training
             if oom_count > MAX_OOM_RETRIES:
                 self.logger.error(f"CUDA OutOfMemoryError {MAX_OOM_RETRIES} times, end training early")
-                self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
-                self.logger.info(f"Saved checkpoint {step_counter}")
+                self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
+                self.logger.info(f"Saved checkpoint {counter}")
                 break
 
-            if step_counter > self.max_train_steps:
+            if counter > self.max_train_steps:
                 break
 
     def _train_one_step(self, batch_data) -> float:
