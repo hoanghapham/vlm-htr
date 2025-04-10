@@ -114,11 +114,17 @@ for i in tqdm(iterator, total=len(iterator), unit="batch"):
             no_pred.append(batch[idx])
 
 logger.info(f"Processed {len(processed_indices)}/{len(valids)}")    
-annotations = [annotations[idx] for idx in processed_indices]
-assert len(annotations) == len(predictions), f"predictions & annotations length mismatched"
+filtered_ann = []
+for idx in processed_indices:
+    try:
+        filtered_ann.append(annotations[idx])
+    except Exception as e:
+        print(e)
+        
+assert len(filtered_ann) == len(predictions), f"predictions & annotations length mismatched"
 
 # Save annotations & Predictions incase we want to do manual analysis
-torch.save(annotations, OUTPUT_DIR / "annotations.pt")
+torch.save(filtered_ann, OUTPUT_DIR / "annotations.pt")
 torch.save(predictions, OUTPUT_DIR / "predictions.pt")
 write_list_to_text_file(no_pred, "no_prediction.txt")
 
