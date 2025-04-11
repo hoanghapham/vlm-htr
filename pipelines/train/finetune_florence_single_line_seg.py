@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 # Setup constant values
 MODEL_NAME          = args.model_name
-MODELS_DIR          = Path(args.models_dir)
+MODELS_DIR          = Path(args.models_dir) if args.models_dir is not None else None
 BATCH_SIZE          = int(args.batch_size)
 NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
