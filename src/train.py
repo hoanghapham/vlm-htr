@@ -248,8 +248,13 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, lr_scheduler: 
     write_json_file(metrics, out_dir / "metrics.json")
 
 
-def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, lr_scheduler: LRScheduler, 
-                    cp_path: str | Path, device: str = "cpu"):
+def load_checkpoint(
+    model: PreTrainedModel | PeftModel, 
+    cp_path: str | Path, 
+    optimizer: Optimizer = None, 
+    lr_scheduler: LRScheduler = None, 
+    device: str = "cpu"
+):
     """Load checkpoint from disk."""
     if isinstance(model, PeftModel):
         model = model.from_pretrained(model.base_model.model, model_id=cp_path, device_map=device)
@@ -273,9 +278,9 @@ def load_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, lr
 
 def load_best_checkpoint(
     model: PreTrainedModel, 
-    optimizer: Optimizer, 
-    lr_scheduler: LRScheduler,
     model_path: str | Path, 
+    optimizer: Optimizer = None, 
+    lr_scheduler: LRScheduler = None,
     device: str = "cpu", 
     compare_metric: str = "avg_val_loss"
 ):
@@ -304,14 +309,14 @@ def load_best_checkpoint(
         cp_path=best_cp_path, 
         device=device
     )
-    return model, optimizer, metrics
+    return model, optimizer, lr_scheduler, metrics
 
 
 def load_last_checkpoint(
     model: PreTrainedModel, 
-    optimizer: Optimizer,
-    lr_scheduler: LRScheduler,
     model_path: str | Path, 
+    optimizer: Optimizer=None,
+    lr_scheduler: LRScheduler=None,
     device: str = "cpu"
 ):
     """Load last checkpoint from disk."""
@@ -328,7 +333,7 @@ def load_last_checkpoint(
         cp_path=last_cp_path, 
         device=device
     )
-    return model, optimizer, metrics
+    return model, optimizer, lr_scheduler, metrics
     
 
 def compare_models(model1, model2):
