@@ -18,7 +18,7 @@ PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_yolo_seg.py \
-    --data-dir $PROJECT_DIR/data/yolo/mixed/single_line_seg/test \
+    --data-dir /proj/uppmax2024-2-13/hapham/vlm/data/yolo/mixed/line_cropped__line_seg/test \
     --model-name yolo11m_seg__mixed__line_cropped__line_seg \
     --checkpoint best \
     --batch-size 6 \
