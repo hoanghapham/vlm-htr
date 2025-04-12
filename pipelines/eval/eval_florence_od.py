@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 
 import torch
 from tqdm import tqdm
-from peft import get_peft_model, LoraConfig
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -16,7 +15,7 @@ from src.data_processing.florence import FlorenceTask, FlorenceTextODDataset, pr
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
 from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
-from src.evaluation.visual_metrics import precision_recall_fscore, region_coverage
+from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 #%%
 
 parser = ArgumentParser()
@@ -61,10 +60,6 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 logger.info("Load model")
 processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
-
-if "lora" in MODEL_NAME:
-    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-    model = get_peft_model(model, config)
 
 # Load checkpoint to evaluate
 
@@ -118,7 +113,7 @@ for data in tqdm(test_dataset, desc="Evaluate"):
     pred     = parsed_output[task]["bboxes"]
     pred_polygons   = [bbox_xyxy_to_polygon(box) for box in pred]
     ann_polygons    = [bbox_xyxy_to_polygon(box) for box in ann]
-    coverage        = region_coverage(pred_polygons, ann_polygons)
+    coverage        = compute_polygons_region_coverage(pred_polygons, ann_polygons)
 
     predictions.append(pred)
     annotations.append(ann)
@@ -139,7 +134,7 @@ for data in tqdm(test_dataset, desc="Evaluate"):
         if counter >= MAX_ITERS:
             break
 
-precision, recall, fscore = precision_recall_fscore(predictions, annotations, iou_threshold=0.5)
+precision, recall, fscore = compute_bbox_precision_recall_fscore(predictions, annotations, iou_threshold=0.5)
 avg_region_coverage = float(sum(coverage_ratios))
 
 logger.info(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Fscore: {fscore:.4f}, Avg. region coverage: {avg_region_coverage:.4f}")

@@ -27,7 +27,6 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--use-lora", default="false")
 parser.add_argument("--user-prompt", required=False)
 args = parser.parse_args()
 
@@ -48,7 +47,6 @@ BATCH_SIZE          = int(args.batch_size)
 NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
-USE_LORA            = args.use_lora == "true"
 DATA_DIR            = Path(args.data_dir)
 USER_PROMPT         = args.user_prompt  # Can be used as the custom question
 
