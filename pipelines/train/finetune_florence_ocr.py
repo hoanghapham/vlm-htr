@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
-from peft import LoraConfig, get_peft_model
 
 from src.data_processing.florence import FlorenceOCRDataset, create_collate_fn
 from src.train import Trainer
@@ -118,24 +117,9 @@ lr_scheduler = get_scheduler(
 # Load state
 #%%
 # Train
-if USE_LORA:
-    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-    peft_model = get_peft_model(model, config)
-    trainable_params, all_param = peft_model.get_nb_trainable_parameters()
-
-    logger.info(
-        f"trainable params: {trainable_params:,d} || "
-        f"all params: {all_param:,d} || "
-        f"trainable%: {100 * trainable_params / all_param:.4f}"
-    )
-
-    selected_model = peft_model
-else:
-    selected_model = model
-
 
 trainer = Trainer(
-    model                = selected_model,
+    model                = model,
     optimizer            = optimizer,
     lr_scheduler         = lr_scheduler,
     train_loader         = train_loader,
