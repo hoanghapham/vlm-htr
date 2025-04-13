@@ -14,13 +14,13 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-13/hapham/vlm"
+PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__sbs__region_od__line_od \
-    --models-dir /proj/uppmax2024-2-13/hapham/vlm/trained/ \
+    --models-dir /proj/uppmax2024-2-24/hapham/vlm/trained/ \
     --data-dir $PROJECT_DIR/data/page/sbs/test \
     --checkpoint best \
     --object-class line

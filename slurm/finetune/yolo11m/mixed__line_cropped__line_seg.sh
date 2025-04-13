@@ -14,13 +14,13 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-13/hapham/vlm"
+PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 
 cd $PROJECT_DIR
 
 # Should train for 20 epochs
 python pipelines/train/finetune_yolo.py \
-    --data-dir /proj/uppmax2024-2-13/hapham/vlm/data/yolo/mixed/line_cropped__line_seg \
+    --data-dir /proj/uppmax2024-2-24/hapham/vlm/data/yolo/mixed/line_cropped__line_seg \
     --data-fraction 1 \
     --base-model-path $PROJECT_DIR/models/yolo_base/yolo11m-seg.pt \
     --model-name yolo11m_seg__mixed__line_cropped__line_seg \
