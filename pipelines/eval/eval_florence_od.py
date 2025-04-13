@@ -20,6 +20,7 @@ from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, 
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
+parser.add_argument("--models-dir", required=False)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--checkpoint-path", required=False)
@@ -36,6 +37,7 @@ args = parser.parse_args()
 
 # Setup paths
 MODEL_NAME          = args.model_name
+MODELS_DIR          = Path(args.models_dir) if args.models_dir is not None else None
 DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.checkpoint
 CHECKPOINT_PATH     = args.checkpoint_path
@@ -48,6 +50,11 @@ OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 REVISION            = 'refs/pr/6'
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if MODELS_DIR is not None:
+    LOCAL_MODEL_PATH = MODELS_DIR / MODEL_NAME
+else:
+    LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
