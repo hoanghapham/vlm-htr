@@ -31,9 +31,13 @@ MODEL_NAME          = args.model_name
 OBJECT_CLASS        = args.object_class
 BATCH_SIZE          = int(args.batch_size)
 CHECKPOINT          = args.checkpoint
-MODEL_PATH          = PROJECT_DIR / "models/yolo_base/yolo11m.pt" if CHECKPOINT == "vanilla" else \
-                        PROJECT_DIR / f"models/{MODEL_NAME}/weights/{CHECKPOINT}.pt"
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
+
+if CHECKPOINT == "vanilla":
+    MODEL_PATH = PROJECT_DIR / "models/yolo_base/yolo11m.pt"
+else:
+    MODEL_PATH = PROJECT_DIR / f"models/trained/{MODEL_NAME}/weights/{CHECKPOINT}.pt"
+
 
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
