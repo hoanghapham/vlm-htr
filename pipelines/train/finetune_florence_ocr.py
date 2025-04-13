@@ -47,7 +47,7 @@ LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 USER_PROMPT         = args.user_prompt  # Can be used as the custom question
 
-MODEL_OUT_DIR       = PROJECT_DIR / "models/trained" / MODEL_NAME
+MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
