@@ -22,7 +22,6 @@ from src.logger import CustomLogger
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--models-dir", required=False)
 parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
@@ -42,7 +41,6 @@ args = parser.parse_args()
 
 # Setup constant values
 MODEL_NAME          = args.model_name
-MODELS_DIR          = Path(args.models_dir) if args.models_dir is not None else None
 BATCH_SIZE          = int(args.batch_size)
 NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
@@ -50,11 +48,7 @@ LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 DETECT_CLASS        = args.detect_class
 
-
-if MODELS_DIR is not None:
-    MODEL_OUT_DIR = MODELS_DIR / MODEL_NAME
-else:
-    MODEL_OUT_DIR = PROJECT_DIR / "models" / MODEL_NAME
+MODEL_OUT_DIR       = PROJECT_DIR / "models/trained" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)

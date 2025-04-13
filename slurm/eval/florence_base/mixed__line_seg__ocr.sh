@@ -20,6 +20,5 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_ocr.py \
     --model-name florence_base__mixed__line_seg__ocr \
-    --models-dir /proj/uppmax2024-2-24/hapham/vlm/trained \
     --data-dir $PROJECT_DIR/data/line_seg/mixed/test/ \
     --checkpoint best

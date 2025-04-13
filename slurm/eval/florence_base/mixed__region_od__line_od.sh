@@ -20,7 +20,6 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__mixed__region_od__line_od \
-    --models-dir /proj/uppmax2024-2-24/hapham/vlm/trained/ \
     --data-dir $PROJECT_DIR/data/page/mixed/test \
     --checkpoint best \
     --object-class line

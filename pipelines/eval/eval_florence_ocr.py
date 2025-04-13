@@ -21,7 +21,6 @@ from src.file_tools import write_json_file, write_list_to_text_file
 
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
-parser.add_argument("--models-dir", required=False)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
 parser.add_argument("--checkpoint-path", required=False)
@@ -38,18 +37,13 @@ args = parser.parse_args()
 # Setup paths
 MODEL_NAME          = args.model_name
 DATA_DIR            = Path(args.data_dir)
-MODELS_DIR          = Path(args.models_dir) if args.models_dir is not None else None
 CHECKPOINT          = args.checkpoint
 CHECKPOINT_PATH     = args.checkpoint_path
 USER_PROMPT         = args.user_prompt
 DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
 
-if MODELS_DIR is not None:
-    LOCAL_MODEL_PATH = MODELS_DIR / MODEL_NAME
-else:
-    LOCAL_MODEL_PATH = PROJECT_DIR / "models" / MODEL_NAME
-
+LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 REVISION            = 'refs/pr/6'

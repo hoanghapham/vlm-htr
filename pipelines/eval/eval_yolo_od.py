@@ -13,7 +13,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files, write_ndjson_file, write_json_file
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, IMAGE_EXTENSIONS
 from src.data_processing.utils import XMLParser
-from src.evaluation.visual_metrics import precision_recall_fscore, region_coverage
+from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 from src.logger import CustomLogger
 #%%
 
