@@ -90,7 +90,7 @@ class Trainer():
         # Init model from the last checkpoint state
         if self.resume:
             try:
-                self.model, self.optimizer, last_metrics = load_last_checkpoint(
+                self.model, self.optimizer, self.lr_scheduler, last_metrics = load_last_checkpoint(
                     model=self.model,
                     optimizer=self.optimizer,
                     lr_scheduler=self.lr_scheduler,
@@ -315,8 +315,8 @@ def load_best_checkpoint(
 def load_last_checkpoint(
     model: PreTrainedModel, 
     model_path: str | Path, 
-    optimizer: Optimizer=None,
-    lr_scheduler: LRScheduler=None,
+    optimizer: Optimizer = None,
+    lr_scheduler: LRScheduler = None,
     device: str = "cpu"
 ):
     """Load last checkpoint from disk."""
