@@ -330,8 +330,8 @@ def compare_models(model1, model2):
     model1.eval()
     model2.eval()
 
-    model1_params = len(model1.parameters())
-    model2_params = len(model2.parameters())
+    model1_params = len(sum(p.numel() for p in model1.parameters()))
+    model2_params = len(sum(p.numel() for p in model2.parameters()))
 
     model1_params_sum = sum([param.sum() for param in model1.parameters()])
     model2_params_sum = sum([param.sum() for param in model2.parameters()])
