@@ -329,17 +329,19 @@ def load_last_checkpoint(
 def compare_models(model1, model2):
     model1.eval()
     model2.eval()
+
+    model1_params = len(model1.parameters())
+    model2_params = len(model2.parameters())
+
     model1_params_sum = sum([param.sum() for param in model1.parameters()])
     model2_params_sum = sum([param.sum() for param in model2.parameters()])
 
     model1_trainable = sum([param.requires_grad for param in model1.parameters()])
     model2_trainable = sum([param.requires_grad for param in model2.parameters()])
 
-    print(f"Model 1 params sum: {model1_params_sum:,}")
-    print(f"Model 2 params sum: {model2_params_sum:,}")
-    print(f"Model 1 trainable: {model1_trainable:,}")
-    print(f"Model 2 trainable: {model2_trainable:,}")
-    print(f"Difference: {model1_params_sum - model2_params_sum}")
+    print(f"Model 1: {model1_params:,} params, trainable: {model1_trainable:,}, params sum: {model1_params_sum:,}")
+    print(f"Model 2: {model2_params:,} params, trainable: {model2_trainable:,}, params sum: {model2_params_sum:,}")
+    print(f"Sum Difference: {model1_params_sum - model2_params_sum}")
 
 
 def calculate_linear_lr_step(base_lr, step, total_steps):
