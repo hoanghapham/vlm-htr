@@ -238,13 +238,16 @@ def load_checkpoint(
     device: str = "cpu"
 ):
     """Load checkpoint from disk."""
+    
     if isinstance(model, PeftModel):
         model = model.from_pretrained(model.base_model.model, model_id=cp_path, device_map=device)
     else:
         model = model.from_pretrained(cp_path, device_map=device)
     
+    cp_path = Path(cp_path)
     metrics = read_json_file(cp_path / "metrics.json")
     
+    # Reinitiate the optimizer with the new model's parameters to make sure everything is in the same computation graph
     optimizer_state_path = cp_path / "optimizer_state_dict.pt"
     if optimizer is not None and optimizer_state_path.exists():
         optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
