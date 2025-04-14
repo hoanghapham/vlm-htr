@@ -24,6 +24,6 @@ python pipelines/train/finetune_yolo.py \
     --data-fraction 1 \
     --base-model-path $PROJECT_DIR/models/yolo_base/yolo11m.pt \
     --model-name yolo11m__sbs__page__line_od \
-    --epochs 20 \
+    --epochs 10 \
     --batch-size 6 \
     --img-size 1280 \
