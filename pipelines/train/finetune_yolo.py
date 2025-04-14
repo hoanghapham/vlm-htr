@@ -43,6 +43,7 @@ if RESUME:
         MODEL_PATH = TRAINED_MODEL_PATH
     else:
         print("Trained model not found, start from scratch")
+        RESUME = False
 
 # Init model
 model = YOLO(MODEL_PATH)
