@@ -93,14 +93,14 @@ for result in results:
 assert len(annotations) == len(predictions), f"predictions & annotations length mismatched"
 # %%
 
-precision, recall, fscore = precision_recall_fscore(predictions, annotations)
+precision, recall, fscore = compute_bbox_precision_recall_fscore(predictions, annotations)
 logger.info(f"Precision: {precision}, Recall: {recall}, Fscore: {fscore}")
 
 coverage_ratios = []
 for pred, ann in zip(predictions, annotations):
     pred_polygons = [bbox_xyxy_to_polygon(box) for box in pred]
     ann_polygons = [bbox_xyxy_to_polygon(box) for box in ann]
-    coverage = region_coverage(pred_polygons, ann_polygons)
+    coverage = compute_polygons_region_coverage(pred_polygons, ann_polygons)
     coverage_ratios.append(coverage)
 
 avg_region_coverage = float(sum(coverage_ratios))
