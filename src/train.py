@@ -19,24 +19,6 @@ from src.file_tools import read_json_file, write_json_file
 STEP_IDX_SPACES = 10
 MAX_OOM_RETRIES = 5
 
-class Checkpoint():
-    def __init__(
-        self,
-        step_idx: int               = None,
-        avg_train_loss: float           = None,
-        avg_val_loss: float             = None,
-        model_state_dict: dict      = None,
-        optimizer_state_dict: dict  = None,
-    ):
-        self.step_idx               = step_idx
-        self.avg_train_loss         = avg_train_loss
-        self.avg_val_loss           = avg_val_loss
-        self.model_state_dict       = model_state_dict
-        self.optimizer_state_dict   = optimizer_state_dict
-
-    def __str__(self):
-        return f"Checkpoint: {self.step_idx}, avg. train loss: {self.avg_train_loss}, avg. validation loss: {self.avg_val_loss}"
-
 
 class Trainer():
 
@@ -138,7 +120,7 @@ class Trainer():
                     if is_logging_point:
                         avg_val_loss = self._evaluate(counter)
                         self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {counter}")
+                        self.logger.info(f"Saved checkpoint {counter}, avg. train loss: {avg_train_loss:.4}, avg. val loss: {avg_val_loss:.4f}")
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
@@ -266,14 +248,16 @@ def load_checkpoint(
     optimizer_state_path = cp_path / "optimizer_state_dict.pt"
     if optimizer is not None and optimizer_state_path.exists():
         optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
-        optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
+        new_optimizer = type(optimizer)(model.parameters(), lr=optimizer.state_dict()["param_groups"][0]["lr"])
+        new_optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
 
     lr_scheduler_state_path = cp_path / "lr_scheduler_state_dict.pt"
     if lr_scheduler is not None and lr_scheduler_state_path.exists():
+        lr_scheduler.optimizer = new_optimizer
         lr_scheduler_state_dict = torch.load(lr_scheduler_state_path)
         lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
-    return model, optimizer, lr_scheduler, metrics
+    return model, new_optimizer, lr_scheduler, metrics
 
 
 def load_best_checkpoint(
