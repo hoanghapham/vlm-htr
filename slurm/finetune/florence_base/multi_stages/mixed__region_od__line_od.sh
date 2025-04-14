@@ -24,5 +24,5 @@ python pipelines/train/finetune_florence_od.py \
     --num-train-epochs 10 \
     --max-train-steps 40000 \
     --batch-size 2 \
-    --logging-interval 4000 \
+    --logging-interval 1000 \
     --detect-class line
