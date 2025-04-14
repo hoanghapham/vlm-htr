@@ -123,7 +123,7 @@ class Trainer():
                     if is_logging_point:
                         avg_val_loss = self._evaluate(counter)
                         self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {counter}, avg. train loss: {avg_train_loss:.4}, avg. val loss: {avg_val_loss:.4f}")
+                        self.logger.info(f"Saved checkpoint {counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
@@ -332,8 +332,8 @@ def compare_models(model1, model2):
     model1_params_sum = sum([param.sum() for param in model1.parameters()])
     model2_params_sum = sum([param.sum() for param in model2.parameters()])
 
-    model1_trainable = sum([param.rerquires_grad for param in model1.parameters()])
-    model2_trainable = sum([param.rerquires_grad for param in model2.parameters()])
+    model1_trainable = sum([param.requires_grad for param in model1.parameters()])
+    model2_trainable = sum([param.requires_grad for param in model2.parameters()])
 
     print(f"Model 1 params sum: {model1_params_sum:,}")
     print(f"Model 2 params sum: {model2_params_sum:,}")
