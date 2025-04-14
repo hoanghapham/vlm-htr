@@ -251,16 +251,16 @@ def load_checkpoint(
     optimizer_state_path = cp_path / "optimizer_state_dict.pt"
     if optimizer is not None and optimizer_state_path.exists():
         optimizer_state_dict = torch.load(cp_path / "optimizer_state_dict.pt", map_location=device)
-        new_optimizer = type(optimizer)(model.parameters(), lr=optimizer.state_dict()["param_groups"][0]["lr"])
-        new_optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
+        optimizer = type(optimizer)(model.parameters(), lr=optimizer.state_dict()["param_groups"][0]["lr"])
+        optimizer.load_state_dict(optimizer_state_dict)  # optimizer is updated?
 
     lr_scheduler_state_path = cp_path / "lr_scheduler_state_dict.pt"
     if lr_scheduler is not None and lr_scheduler_state_path.exists():
-        lr_scheduler.optimizer = new_optimizer
+        lr_scheduler.optimizer = optimizer
         lr_scheduler_state_dict = torch.load(lr_scheduler_state_path)
         lr_scheduler.load_state_dict(lr_scheduler_state_dict)
 
-    return model, new_optimizer, lr_scheduler, metrics
+    return model, optimizer, lr_scheduler, metrics
 
 
 def load_best_checkpoint(
