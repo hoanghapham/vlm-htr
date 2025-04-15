@@ -71,12 +71,12 @@ if CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
     if CHECKPOINT == "last":
-        model, _, cp_train_metrics = load_last_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, device=DEVICE)
+        model, _, _, cp_train_metrics = load_last_checkpoint(model=model, model_path=LOCAL_MODEL_PATH, device=DEVICE)
     elif CHECKPOINT == "best":
-        model, _, cp_train_metrics = load_best_checkpoint(model=model, optimizer=None, model_path=LOCAL_MODEL_PATH, compare_metric="avg_val_loss", device=DEVICE)
+        model, _, _, cp_train_metrics = load_best_checkpoint(model=model, model_path=LOCAL_MODEL_PATH, compare_metric="avg_val_loss", device=DEVICE)
 
     if CHECKPOINT == "specific":
-        model, _, cp_train_metrics = load_checkpoint(model=model, optimizer=None, cp_path=CHECKPOINT_PATH, device=DEVICE)
+        model, _, _, cp_train_metrics = load_checkpoint(model=model, cp_path=CHECKPOINT_PATH, device=DEVICE)
     
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
