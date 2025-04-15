@@ -212,7 +212,7 @@ def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, lr_scheduler: 
 
     # Doublecheck config of florence2 modsel and correct missing vision model type
     # Only Florence2 needs this
-    if not isinstance(model, PeftModel) and ("florence" in model.name_or_path):
+    if not isinstance(model, PeftModel) and ("florence" in model.name_or_path.lower()):
         config = read_json_file(out_dir / "config.json")
         if config["vision_config"]["model_type"] == "":
             config["vision_config"]["model_type"] = "davit"
