@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH -A uppmax2020-2-2
+#SBATCH -A uppmax2024-2-24
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
