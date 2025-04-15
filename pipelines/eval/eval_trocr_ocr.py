@@ -48,7 +48,7 @@ DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
 
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH    = PROJECT_DIR / "models" / MODEL_NAME
+LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
 EVAL_DIR            = PROJECT_DIR / "evaluations" / MODEL_NAME
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
