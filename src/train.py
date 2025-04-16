@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from logging import Logger
+import shutil
 
 import torch
 from torch.optim import Optimizer
@@ -154,6 +155,18 @@ class Trainer():
 
             if counter > self.max_train_steps:
                 break
+        
+        # Save best adn last checkpoints
+        self.copy_best_checkpoint()
+        self.copy_last_checkpoint()
+
+    def copy_best_checkpoint(self):
+        cp_path = find_best_checkpoint(self.model_out_dir, compare_metric = "avg_val_loss")
+        shutil.copy(cp_path, cp_path.parent / "best")
+
+    def copy_last_checkpoint(self):
+        cp_path = find_last_checkpoint(self.model_out_dir)
+        shutil.copy(cp_path, cp_path.parent / "last")
 
     def _train_one_step(self, batch_data) -> float:
         # Predict output
@@ -346,3 +359,33 @@ def compare_models(model1, model2):
 
 def calculate_linear_lr_step(base_lr, step, total_steps):
     return base_lr * (1 - step / total_steps)
+
+
+def find_best_checkpoint(model_path: str | Path, compare_metric: str = "avg_val_loss"):
+    supported_metrics = ["avg_train_loss", "avg_val_loss"]
+    assert compare_metric in supported_metrics, f"Metric {compare_metric} is not in list: {supported_metrics}"
+    
+    model_path = Path(model_path)
+    cp_paths =  [path for path in sorted(model_path.iterdir()) if path.is_dir() and "checkpoint" in str(path)]
+    assert cp_paths != [], f"No checkpoints found in {model_path}"
+
+    # Load
+    best_value = float("inf")
+    best_cp_path = cp_paths[-1]
+
+    for cp_path in cp_paths:
+        metrics = read_json_file(cp_path / "metrics.json")
+        if metrics[compare_metric] < best_value:
+            best_value = metrics[compare_metric]
+            best_cp_path = cp_path
+    
+    return best_cp_path
+    
+
+def find_last_checkpoint(model_path: str | Path):
+    model_path = Path(model_path)
+    cp_paths =  [path for path in sorted(model_path.iterdir()) if path.is_dir() and "checkpoint" in str(path)]
+    assert cp_paths != [], f"No checkpoints found in {model_path}"
+
+    return cp_paths[-1]
+
