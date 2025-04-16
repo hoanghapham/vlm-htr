@@ -21,8 +21,16 @@ for model_path in model_paths:
     try:
         best_cp_path = find_best_checkpoint(model_path, "avg_val_loss")
         last_cp_path = find_last_checkpoint(model_path)
-    
+
+        best_cp_files = [path.name for path in best_cp_path.iterdir()]
+        last_cp_files = [path.name for path in last_cp_path.iterdir()]
+
+        assert "optimizer_state_dict.pt" in best_cp_files, f"optimizer_sate_dict.pt not in {best_cp_path.stem}"
+        assert "model.safetensors" in best_cp_files, f"model.safetensors not in {best_cp_path.stem}"
         shutil.copytree(best_cp_path, best_cp_path.parent / "best", dirs_exist_ok=True)
+
+        assert "optimizer_state_dict.pt" in last_cp_files, f"optimizer_sate_dict.pt not in {last_cp_path.stem}"
+        assert "model.safetensors" in last_cp_files, f"model.safetensors not in {last_cp_path.stem}"
         shutil.copytree(last_cp_path, last_cp_path.parent / "last", dirs_exist_ok=True)
 
         # Delete optimizer states
