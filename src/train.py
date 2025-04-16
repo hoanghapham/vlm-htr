@@ -162,11 +162,11 @@ class Trainer():
 
     def copy_best_checkpoint(self):
         cp_path = find_best_checkpoint(self.model_out_dir, compare_metric = "avg_val_loss")
-        shutil.copy(cp_path, cp_path.parent / "best")
+        shutil.copytree(cp_path, cp_path.parent / "best", dirs_exist_ok=True)
 
     def copy_last_checkpoint(self):
         cp_path = find_last_checkpoint(self.model_out_dir)
-        shutil.copy(cp_path, cp_path.parent / "last")
+        shutil.copytree(cp_path, cp_path.parent / "last", dirs_exist_ok=True)
 
     def _train_one_step(self, batch_data) -> float:
         # Predict output

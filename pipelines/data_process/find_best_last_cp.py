@@ -1,0 +1,51 @@
+import sys
+import shutil
+import os
+from pathlib import Path
+PROJECT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_DIR))
+
+from argparse import ArgumentParser
+from src.train import find_best_checkpoint, find_last_checkpoint
+
+parser = ArgumentParser()
+parser.add_argument("--models-dir", "-md", required=True)
+args = parser.parse_args()
+
+models_dir = Path(args.models_dir)
+
+model_paths = sorted([path for path in models_dir.iterdir() if path.is_dir()])
+
+for model_path in model_paths:
+    print(f"Copy best & last of {model_path.stem}")
+    try:
+        best_cp_path = find_best_checkpoint(model_path, "avg_val_loss")
+        last_cp_path = find_last_checkpoint(model_path)
+    
+        shutil.copytree(best_cp_path, best_cp_path.parent / "best", dirs_exist_ok=True)
+        shutil.copytree(last_cp_path, last_cp_path.parent / "last", dirs_exist_ok=True)
+
+        # Delete optimizer states
+        opt_state_paths = [path for path in model_path.glob("checkpoint_*/optimizer_state_dict.pt")]
+
+        counter = 0
+        for path in opt_state_paths:
+            os.remove(path)
+            counter += 1
+        
+        print(f"Delete {counter} optimizer states.")
+
+        # Delete model states
+        counter = 0
+        model_state_paths = [path for path in model_path.glob("checkpoint_*/model.safetensors")]
+        for path in model_state_paths:
+            os.remove(path)
+            counter += 1
+
+        print(f"Delete {counter} model states.")
+
+    except Exception as e:
+        print(e)
+        continue
+
+
