@@ -111,7 +111,7 @@ class Trainer():
             for batch_data in iterator:
 
                 try:
-                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps - 1)
+                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps)
                     
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
