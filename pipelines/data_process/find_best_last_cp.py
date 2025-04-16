@@ -10,11 +10,13 @@ from src.train import find_best_checkpoint, find_last_checkpoint
 
 parser = ArgumentParser()
 parser.add_argument("--models-dir", "-md", required=True)
+parser.add_argument("--overwrite", "-ow", default="false")
 args = parser.parse_args()
 
-models_dir = Path(args.models_dir)
+MODELS_DIR = Path(args.models_dir)
+OVERWRITE = args.overwrite == "true"
 
-model_paths = sorted([path for path in models_dir.iterdir() if path.is_dir()])
+model_paths = sorted([path for path in MODELS_DIR.iterdir() if path.is_dir()])
 
 for model_path in model_paths:
     print(f"Copy best & last of {model_path.stem}")
@@ -25,10 +27,19 @@ for model_path in model_paths:
         best_cp_files = [path.name for path in best_cp_path.iterdir()]
         last_cp_files = [path.name for path in last_cp_path.iterdir()]
 
+        # Best checkpoint
         assert "optimizer_state_dict.pt" in best_cp_files, f"optimizer_sate_dict.pt not in {best_cp_path.stem}"
         assert "model.safetensors" in best_cp_files, f"model.safetensors not in {best_cp_path.stem}"
-        shutil.copytree(best_cp_path, best_cp_path.parent / "best", dirs_exist_ok=True)
 
+        if (best_cp_path.parent / "best").exists():
+            if OVERWRITE:
+                shutil.copytree(best_cp_path, best_cp_path.parent / "best", dirs_exist_ok=True)
+            else:
+                print("best checkpoint exists, skip")
+        else:
+            shutil.copytree(best_cp_path, best_cp_path.parent / "best")
+
+        # Last checkpoint
         assert "optimizer_state_dict.pt" in last_cp_files, f"optimizer_sate_dict.pt not in {last_cp_path.stem}"
         assert "model.safetensors" in last_cp_files, f"model.safetensors not in {last_cp_path.stem}"
         shutil.copytree(last_cp_path, last_cp_path.parent / "last", dirs_exist_ok=True)
