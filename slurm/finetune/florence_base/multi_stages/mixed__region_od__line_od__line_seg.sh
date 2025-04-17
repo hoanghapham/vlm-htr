@@ -21,7 +21,7 @@ cd $PROJECT_DIR
 python pipelines/train/finetune_florence_single_line_seg.py \
     --data-dir $PROJECT_DIR/data/page/mixed \
     --model-name florence_base__mixed__region_od__line_od__line_seg \
-    --num-train-epochs 10 \
+    --num-train-epochs 2 \
     --max-train-steps 220000 \
     --batch-size 2 \
     --logging-interval 20000
