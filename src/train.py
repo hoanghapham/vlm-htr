@@ -103,21 +103,20 @@ class Trainer():
             self.model.train()
 
             # Train
-            idx_iterator = tqdm(iter(self.train_loader), desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
-            loader_iterator = iter(self.train_loader)
+            iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
             total_error_count = 0
             error_count = 0
 
-            for idx in idx_iterator:
+            for batch_data in iterator:
                 
                 try:
                     # There can be errors in a data point in a batch, so need to try to get the next batch
                     # If fails, skip the batch
-                    batch_data = next(loader_iterator)
+                    # batch_data = next(loader_iterator)
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
                     avg_train_loss  = total_train_loss / step_counter
-                    idx_iterator.set_postfix({"loss": avg_train_loss})
+                    iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset error count if success
                     error_count = 0
@@ -161,6 +160,7 @@ class Trainer():
         # Save best and last checkpoints
         self.copy_best_checkpoint()
         self.copy_last_checkpoint()
+        self.logger.info(f"Finished training. Total error batches: {total_error_count}")
 
     def copy_best_checkpoint(self):
         cp_path = find_best_checkpoint(self.model_out_dir, compare_metric = "avg_val_loss")

@@ -350,19 +350,12 @@ class BaseImgXMLDataset(ABC):
         assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
             f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
 
-        # Validate that the xml files have regions
+        # Validate that the xml files have regions or lines
         self.img_paths = []
         self.xml_paths = []
         self.xmlparser = XMLParser()
 
-        objects = []
-        for img, xml in zip(img_paths, xml_paths):
-            assert img.stem == xml.stem, "File names mismatch"
-            objects = self.xmlparser.get_regions(xml)
-
-            if len(objects) > 0:
-                self.img_paths.append(img)
-                self.xml_paths.append(xml)
+        self.validate_data(img_paths, xml_paths)
 
     def __len__(self):
         return len(self.img_paths)
@@ -373,6 +366,10 @@ class BaseImgXMLDataset(ABC):
     
     @abstractmethod
     def __getitem__(self, idx):
+        pass
+
+    @abstractmethod
+    def validate_data(self, img_paths, xml_paths):
         pass
 
     
