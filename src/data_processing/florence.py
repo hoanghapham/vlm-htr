@@ -177,7 +177,6 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         self.task               = FlorenceTask.REGION_TO_SEGMENTATION
         self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
         self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
-        self.xmlparser          = XMLParser()
 
         # List to convert a global line idx to path of an image
         self.line_to_img_path = []
@@ -190,17 +189,16 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
             self.lines_data += lines
             self.line_to_img_path += [self.img_paths[idx]] * len(lines)
 
-    def validate_data(self, img_paths, xml_paths):
-        objects = []
-        for img, xml in zip(img_paths, xml_paths):
-            assert img.stem == xml.stem, "File names mismatch"
-            objects = self.xmlparser.get_lines(xml)
+    # def validate_data(self, img_paths, xml_paths):
+    #     objects = []
+    #     for img, xml in zip(img_paths, xml_paths):
+    #         assert img.stem == xml.stem, "File names mismatch"
+    #         objects = self.xmlparser.get_lines(xml)
 
-            if len(objects) > 0:
-                self.img_paths.append(img)
-                self.xml_paths.append(xml)
+    #         if len(objects) > 0:
+    #             self.img_paths.append(img)
+    #             self.xml_paths.append(xml)
     
-
     def __len__(self):
         return len(self.lines_data)
     
@@ -252,12 +250,6 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
         object_class: str = "region", 
     ):
         assert object_class in ["region", "line"]
-
-        if object_class == "region":
-            self.get_objects = self.xmlparser.get_regions
-        elif object_class == "line":
-            self.get_objects = self.xmlparser.get_lines
-
         super().__init__(data_dir=data_dir)
         
         self.object_class = object_class
@@ -265,20 +257,14 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
-    def validate_data(self, img_paths, xml_paths):
-        objects = []
-        for img, xml in zip(img_paths, xml_paths):
-            assert img.stem == xml.stem, "File names mismatch"
-            objects = self.get_objects(xml)
-
-            if len(objects) > 0:
-                self.img_paths.append(img)
-                self.xml_paths.append(xml)
-    
     def __getitem__(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
-        objects = self.get_objects(xml)
+        
+        if self.object_class == "region":
+            objects = self.xmlparser.get_regions(xml)
+        elif self.object_class == "line":
+            objects = self.xmlparser.get_lines(xml)  
 
         # Original bbox in xyxy format
         bboxes = [data["bbox"] for data in objects]

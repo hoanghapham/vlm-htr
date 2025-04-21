@@ -368,9 +368,16 @@ class BaseImgXMLDataset(ABC):
     def __getitem__(self, idx):
         pass
 
-    @abstractmethod
     def validate_data(self, img_paths, xml_paths):
-        pass
+        for img, xml in zip(img_paths, xml_paths):
+            assert img.stem == xml.stem, "File names mismatch"
+            lines = self.xmlparser.get_lines(xml)
+            regions = self.xmlparser.get_regions(xml)
+
+            if len(lines) > 0 and len(regions) > 0:
+                self.img_paths.append(img)
+                self.xml_paths.append(xml)
+    
 
     
 class TextRegionBboxDataset(BaseImgXMLDataset):
