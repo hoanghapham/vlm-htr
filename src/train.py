@@ -156,7 +156,7 @@ class Trainer():
             if counter > self.max_train_steps:
                 break
         
-        # Save best adn last checkpoints
+        # Save best and last checkpoints
         self.copy_best_checkpoint()
         self.copy_last_checkpoint()
 
