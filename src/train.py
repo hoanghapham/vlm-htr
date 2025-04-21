@@ -96,31 +96,34 @@ class Trainer():
         
         # Train loop
         total_train_loss = 0
-        counter = self.start_step
-        steps = 1  # Keep track of how many steps was done
+        counter = self.start_step  # Keep track of how many steps was done across epochs
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
             self.model.train()
 
             # Train
-            iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}")
+            idx_iterator = tqdm(iter(self.train_loader), desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
+            loader_iterator = iter(self.train_loader)
             total_error_count = 0
             error_count = 0
 
-            for batch_data in iterator:
-
+            for idx in idx_iterator:
+                
                 try:
-                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps)
-                    
+                    # There can be errors in a data point in a batch, so need to try to get the next batch
+                    # If fails, skip the batch
+                    batch_data = next(loader_iterator)
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
                     avg_train_loss  = total_train_loss / steps
-                    iterator.set_postfix({"loss": avg_train_loss})
+                    idx_iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset error count if success
                     error_count = 0
 
+                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps)
+                    
                     if is_logging_point:
                         avg_val_loss = self._evaluate(counter)
                         self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
@@ -135,7 +138,6 @@ class Trainer():
                     
                     # Advance counter
                     counter += 1
-                    steps += 1
 
                     if counter > self.max_train_steps:
                         break
