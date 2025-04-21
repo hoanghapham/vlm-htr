@@ -105,8 +105,8 @@ class Trainer():
 
             # Train
             iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}")
-            total_oom_count = 0
-            oom_count = 0
+            total_error_count = 0
+            error_count = 0
 
             for batch_data in iterator:
 
@@ -118,8 +118,8 @@ class Trainer():
                     avg_train_loss  = total_train_loss / steps
                     iterator.set_postfix({"loss": avg_train_loss})
                     
-                    # Reset oom count if success
-                    oom_count = 0
+                    # Reset error count if success
+                    error_count = 0
 
                     if is_logging_point:
                         avg_val_loss = self._evaluate(counter)
@@ -140,14 +140,14 @@ class Trainer():
                     if counter > self.max_train_steps:
                         break
 
-                except torch.OutOfMemoryError as e:
-                    oom_count += 1
-                    total_oom_count += 1
+                except Exception as e:
+                    error_count += 1
+                    total_error_count += 1
                     self.logger.exception(e)
                     continue
             
             # If encountering OOM error more than MAX_OOM_RETRIES times, end training
-            if oom_count > MAX_OOM_RETRIES:
+            if error_count > MAX_OOM_RETRIES:
                 self.logger.error(f"CUDA OutOfMemoryError {MAX_OOM_RETRIES} times, end training early")
                 self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
                 self.logger.info(f"Saved checkpoint {counter}")
