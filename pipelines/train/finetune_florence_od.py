@@ -86,8 +86,8 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-train_dataset   = FlorenceTextODDataset(DATA_DIR / "train", object_class="region")
-val_dataset     = FlorenceTextODDataset(DATA_DIR / "val", object_class="region")
+train_dataset   = FlorenceTextODDataset(DATA_DIR / "train", object_class=DETECT_CLASS)
+val_dataset     = FlorenceTextODDataset(DATA_DIR / "val", object_class=DETECT_CLASS)
 
 # Create data loader
 
