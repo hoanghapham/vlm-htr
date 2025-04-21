@@ -18,7 +18,7 @@ from src.file_tools import read_json_file, write_json_file
 
 
 STEP_IDX_SPACES = 10
-MAX_OOM_RETRIES = 5
+MAX_ERROR_RETRIES = 5
 
 
 class Trainer():
@@ -146,9 +146,9 @@ class Trainer():
                     self.logger.exception(e)
                     continue
             
-            # If encountering OOM error more than MAX_OOM_RETRIES times, end training
-            if error_count > MAX_OOM_RETRIES:
-                self.logger.error(f"CUDA OutOfMemoryError {MAX_OOM_RETRIES} times, end training early")
+            # If encountering errors more than MAX_ERROR_RETRIES times, end training
+            if error_count > MAX_ERROR_RETRIES:
+                self.logger.error(f"ERROR {MAX_ERROR_RETRIES} times, end training early")
                 self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
                 self.logger.info(f"Saved checkpoint {counter}")
                 break
