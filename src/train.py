@@ -96,7 +96,7 @@ class Trainer():
         
         # Train loop
         total_train_loss = 0
-        counter = self.start_step  # Keep track of how many steps was done across epochs
+        step_counter = self.start_step  # Keep track of how many steps was done across epochs
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
@@ -116,30 +116,30 @@ class Trainer():
                     batch_data = next(loader_iterator)
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
-                    avg_train_loss  = total_train_loss / steps
+                    avg_train_loss  = total_train_loss / step_counter
                     idx_iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset error count if success
                     error_count = 0
 
-                    is_logging_point = (counter % self.logging_interval == 0) or counter == (self.max_train_steps)
+                    is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps)
                     
                     if is_logging_point:
-                        avg_val_loss = self._evaluate(counter)
-                        self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
+                        avg_val_loss = self._evaluate(step_counter)
+                        self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
+                        self.logger.info(f"Saved checkpoint {step_counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
 
                         if self.tsb_logger is not None:
-                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, counter)
-                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, counter)
+                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, step_counter)
+                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, step_counter)
                     
-                    # Advance counter
-                    counter += 1
+                    # Advance step_counter
+                    step_counter += 1
 
-                    if counter > self.max_train_steps:
+                    if step_counter > self.max_train_steps:
                         break
 
                 except Exception as e:
@@ -148,14 +148,14 @@ class Trainer():
                     self.logger.exception(e)
                     continue
             
-            # If encountering errors more than MAX_ERROR_RETRIES times, end training
+            # If enstep_countering errors more than MAX_ERROR_RETRIES times, end training
             if error_count > MAX_ERROR_RETRIES:
                 self.logger.error(f"ERROR {MAX_ERROR_RETRIES} times, end training early")
-                self._save_checkpoint(counter, avg_train_loss, avg_val_loss)
-                self.logger.info(f"Saved checkpoint {counter}")
+                self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
+                self.logger.info(f"Saved checkpoint {step_counter}")
                 break
 
-            if counter > self.max_train_steps:
+            if step_counter > self.max_train_steps:
                 break
         
         # Save best and last checkpoints
