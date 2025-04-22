@@ -127,6 +127,7 @@ class Trainer():
                         avg_val_loss = self._evaluate(step_counter)
                         self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
                         self.logger.info(f"Saved checkpoint {step_counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
+                        self.copy_last_checkpoint()
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
@@ -159,7 +160,6 @@ class Trainer():
         
         # Save best and last checkpoints
         self.copy_best_checkpoint()
-        self.copy_last_checkpoint()
         self.logger.info(f"Finished training. Total error batches: {total_error_count}")
 
     def copy_best_checkpoint(self):
@@ -326,11 +326,12 @@ def load_last_checkpoint(
 ):
     """Load last checkpoint from disk."""
     # Check
-    cp_paths = [path for path in sorted(model_path.glob("checkpoint_step_*")) if path.is_dir()]
-    assert cp_paths != [], f"No checkpoints found in {model_path}"
+    # cp_paths = [path for path in sorted(model_path.glob("checkpoint_step_*")) if path.is_dir()]
+    # assert cp_paths != [], f"No checkpoints found in {model_path}"
+    last_cp_path = model_path / "last"
+    assert last_cp_path.exists(), f"No last checkpoint found in {model_path}"
     
     # Load
-    last_cp_path = cp_paths[-1] 
     model, optimizer, lr_scheduler, metrics = load_checkpoint(
         model=model, 
         optimizer=optimizer, 
