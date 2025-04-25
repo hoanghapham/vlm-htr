@@ -30,15 +30,15 @@ All datasets come from Riksarkivet's HuggingFace page:
 
 | **Index** | **Dataset name**                                           | **Background** | **Images** |
 |-----------|------------------------------------------------------------|----------------|------------|
-| 1         | bergskollegium_advokatfiskalskontoret_seg                 | white          | 53         |
-| 2         | bergskollegium_relationer_och_skrivelser_seg              | beige          | 1,497      |
-| 3         | frihetstidens_utskottshandlingar                          | white          | 243        |
-| 4         | gota_hovratt_seg                                          | beige          | 51         |
-| 5         | jonkopings_radhusratts_och_magistrat_seg                 | white          | 39         |
-| 6         | krigshovrattens_dombocker_seg                             | white          | 344        |
-| 7         | goteborgs_poliskammare_fore_1900                          | beige          | 5,408      |
-| 8         | svea_hovratt_seg                                          | white          | 1,243      |
-| 9         | trolldomskommissionen_seg                                 | white          | 766        |
+| 1         | [bergskollegium_advokatfiskalskontoret_seg](https://huggingface.co/datasets/Riksarkivet/bergskollegium_advokatfiskalskontoret_seg)                 | white          | 53         |
+| 2         | [bergskollegium_relationer_och_skrivelser_seg](https://huggingface.co/datasets/Riksarkivet/bergskollegium_relationer_och_skrivelser_seg)              | beige          | 1,497      |
+| 3         | [frihetstidens_utskottshandlingar](https://huggingface.co/datasets/Riksarkivet/frihetstidens_utskottshandlingar)                          | white          | 243        |
+| 4         | [gota_hovratt_seg](https://huggingface.co/datasets/Riksarkivet/gota_hovratt_seg)                                          | beige          | 51         |
+| 5         | [jonkopings_radhusratts_och_magistrat_seg](https://huggingface.co/datasets/Riksarkivet/jonkopings_radhusratts_och_magistrat_seg)                 | white          | 39         |
+| 6         | [krigshovrattens_dombocker_seg](https://huggingface.co/datasets/Riksarkivet/krigshovrattens_dombocker_seg)                             | white          | 344        |
+| 7         | [goteborgs_poliskammare_fore_1900](https://huggingface.co/datasets/Riksarkivet/goteborgs_poliskammare_fore_1900)                          | beige          | 5,408      |
+| 8         | [svea_hovratt_seg](https://huggingface.co/datasets/Riksarkivet/svea_hovratt_seg)                                          | white          | 1,243      |
+| 9         | [trolldomskommissionen_seg](https://huggingface.co/datasets/Riksarkivet/trolldomskommissionen_seg)                                 | white          | 766        |
 |           | **Total**                                                 |                | **9,644**  |
 
 
