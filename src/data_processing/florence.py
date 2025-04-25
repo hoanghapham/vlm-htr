@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import BaseImgXMLDataset, coords_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
 
 
 class FlorenceTask():
@@ -119,7 +119,7 @@ class FlorenceRegionLineSegDataset(Dataset):
 
         line    = example["annotations"][local_line_idx]   # Get one line within the region
         polygon = line["polygon"]
-        bboxes  = polygon_to_bbox_xyxy(polygon)
+        bboxes  = coords_to_bbox_xyxy(polygon)
 
         florence_bbox       = bboxes_xyxy_to_florence([bboxes], self.box_quantizer, image)[0]
         florence_polygon    = polygons_to_florence([polygon], self.coords_quantizer, image)[0]

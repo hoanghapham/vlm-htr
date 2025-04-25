@@ -91,7 +91,7 @@ def bbox_xywh_to_xyxy(bbox):
     return x1, y1, x2, y2
 
 
-def polygon_to_bbox_xyxy(coords: list[tuple]):
+def coords_to_bbox_xyxy(coords: list[tuple]):
     x_coords = [tup[0] for tup in coords]
     y_coords = [tup[1] for tup in coords]
     x1 = min(x_coords)
@@ -292,6 +292,28 @@ def crop_image(img_pil, coords):
         print(f"Error in cropping: {e}")
         return img_pil  # Return the original image if there's an error
 
+
+def crop_line_image(img, coords):
+    """Crops a line image based on the provided coordinates."""
+    image_array = np.array(img)
+    mask = np.zeros(image_array.shape[:2], dtype=np.uint8)
+    cv2.drawContours(mask, [np.array(coords)], -1, (255, 255, 255), -1, cv2.LINE_AA)
+
+    coords = np.array(coords)
+
+    # Apply mask to image
+    res = cv2.bitwise_and(image_array, image_array, mask=mask)
+    rect = cv2.boundingRect(coords)
+
+    # Create a white background and overlay the cropped image
+    wbg = np.ones_like(image_array, np.uint8) * 255
+    cv2.bitwise_not(wbg, wbg, mask=mask)
+    dst = wbg + res
+
+    cropped = dst[rect[1] : rect[1] + rect[3], rect[0] : rect[0] + rect[2]]
+
+    # cv2_image_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
+    return PILImage.fromarray(cropped)
 
 class Bbox():
     def __init__(self, xyxy: tuple):
@@ -617,7 +639,7 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
 
             for i, line in enumerate(lines_data):
                 line_id = str(i).zfill(4)
-                bbox = polygon_to_bbox_xyxy(line["coords"])
+                bbox = coords_to_bbox_xyxy(line["coords"])
                 bbox_coords = bbox_xyxy_to_coords(bbox)
                 try:
                     cropped_image = self.crop_line_image(image_array, bbox_coords)
