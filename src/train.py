@@ -158,7 +158,7 @@ class Trainer():
             if step_counter > self.max_train_steps:
                 break
         
-        # Save best and last checkpoints
+        # Copy best checkpoints
         self.copy_best_checkpoint()
         self.logger.info(f"Finished training. Total error batches: {total_error_count}")
 

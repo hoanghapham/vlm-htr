@@ -189,16 +189,6 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
             self.lines_data += lines
             self.line_to_img_path += [self.img_paths[idx]] * len(lines)
 
-    # def validate_data(self, img_paths, xml_paths):
-    #     objects = []
-    #     for img, xml in zip(img_paths, xml_paths):
-    #         assert img.stem == xml.stem, "File names mismatch"
-    #         objects = self.xmlparser.get_lines(xml)
-
-    #         if len(objects) > 0:
-    #             self.img_paths.append(img)
-    #             self.xml_paths.append(xml)
-    
     def __len__(self):
         return len(self.lines_data)
     
@@ -291,6 +281,7 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
             image_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
+
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
 class BoxQuantizer(object):
@@ -412,30 +403,6 @@ class CoordinatesQuantizer(object):
         )
 
         return dequantized_coordinates
-
-
-
-
-
-# def draw_ocr_bboxes(image, prediction):
-#     """
-#     Draw OCR BBox
-#     """
-#     scale = 1
-#     draw = ImageDraw.Draw(image)
-#     bboxes, labels = prediction['quad_boxes'], prediction['labels']
-
-#     for box, label in zip(bboxes, labels):
-#         color = 'lime'
-#         new_box = (np.array(box) * scale).tolist()
-#         draw.polygon(new_box, width=4, outline=color)
-#         draw.text((new_box[0] + 8, new_box[1] + 2),
-#                   "{}".format(label),
-#                   align="right",
-#                   fill=color)
-    
-#     display(image)
-
 
 
 
