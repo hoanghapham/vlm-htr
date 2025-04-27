@@ -1,13 +1,8 @@
-from htrflow.utils.layout import estimate_printspace
-# from htrflow.postprocess.reading_order import order_regions
-from htrflow.utils.layout import get_region_location
-
+from typing import Sequence
 from htrflow.utils.geometry import Bbox
 
-from typing import Sequence
 
-
-# https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py
+# Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with slight modifications
 
 def order_regions(regions: Sequence, printspace: Bbox, is_twopage: bool = False):
     """Order regions according to their reading order
@@ -62,7 +57,7 @@ def order_bboxes(bboxes: Sequence[Bbox], printspace: Bbox, is_twopage: bool):
     def key(i: int):
         return (
             is_twopage and (bboxes[i].center.x > printspace.center.x),
-            # get_region_location(printspace, bboxes[i]).value,  # This causes a weird issue: the first two lines of a region is ordered last
+            # get_region_location(printspace, bboxes[i]).value,  # This causes a weird issue: the first two lines of a region are ordered last
             bboxes[i].ymin,
         )
 
