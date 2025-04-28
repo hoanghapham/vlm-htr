@@ -16,7 +16,7 @@ from htrflow.evaluate import CER, WER, BagOfWords
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file
+from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
 from src.data_processing.visual_tasks import (
     IMAGE_EXTENSIONS, 
     crop_image, 
@@ -27,6 +27,7 @@ from src.data_processing.visual_tasks import (
 from src.data_processing.utils import XMLParser
 from src.post_process import order_bboxes
 from src.logger import CustomLogger
+from src.evaluation.utils import Ratio
 
 
 # Setup
@@ -75,9 +76,21 @@ bow_extras_list = []
 
 #%%
 
-for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
-    # logger.info(f"Processing image {image_idx+1}/{len(img_paths)}")
-    logger.info(img_path.name)
+for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
+    # logger.info(f"Processing image {img_idx+1}/{len(img_paths)}")
+
+    # Skip if the file is already processed
+    img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
+    if img_metric_path.exists():
+        logger.info(f"Skip: {img_path.name}")
+        img_metric = read_json_file(img_metric_path)
+        cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
+        wer_list.append(Ratio(*img_metric["wer"]["str"].split("/")))
+        bow_hits_list.append(Ratio(*img_metric["bow_hits"]["str"].split("/")))
+        bow_extras_list.append(Ratio(*img_metric["bow_extras"]["str"].split("/")))
+        continue
+
+    logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
 
     image = Image.open(img_path).convert("RGB")
     gt_lines = xml_parser.get_lines(xml_path)
