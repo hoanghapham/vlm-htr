@@ -179,10 +179,14 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
     
     # Evaluation
-    cer_value = cer.compute(gt_text, pred_text)["cer"]
-    wer_value = wer.compute(gt_text, pred_text)["wer"]
-    bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
-    bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
+    try:
+        cer_value = cer.compute(gt_text, pred_text)["cer"]
+        wer_value = wer.compute(gt_text, pred_text)["wer"]
+        bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
+        bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
+    except Exception as e:
+        logger.exception(e)
+        continue
 
     cer_list.append(cer_value)
     wer_list.append(wer_value)
