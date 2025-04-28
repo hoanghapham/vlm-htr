@@ -76,7 +76,8 @@ bow_extras_list = []
 #%%
 
 for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
-    logger.info(f"Processing image {image_idx+1}/{len(img_paths)}")
+    # logger.info(f"Processing image {image_idx+1}/{len(img_paths)}")
+    logger.info(img_path.name)
 
     image = Image.open(img_path).convert("RGB")
     gt_lines = xml_parser.get_lines(xml_path)
@@ -101,11 +102,14 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     for bbox in sorted_region_bboxes:
         # Crop image to region
         crop_coords = bbox_xyxy_to_coords(bbox)
-        cropped_region = crop_image(image, crop_coords)
-        cropped_regions.append(cropped_region)
+        region_img = crop_image(image, crop_coords)
+        cropped_regions.append(region_img)
 
         # Segment lines
-        results_line_seg = model_line_seg(cropped_region, verbose=False, device=DEVICE)
+        results_line_seg = model_line_seg(region_img, verbose=False, device=DEVICE)
+        if results_line_seg[0].masks is None:
+            continue
+
         masks = results_line_seg[0].masks.xy
 
         # Sort masks
@@ -119,19 +123,20 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info("Text recognition")
     page_trans = []
 
-    for region_idx, (cropped_region, masks) in enumerate(zip(cropped_regions, region_line_masks)):
+    for region_idx, (region_img, masks) in enumerate(zip(cropped_regions, region_line_masks)):
         region_trans = []
 
         iterator = list(range(0, len(masks), TROCR_BATCH_SIZE))
         
-        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+        for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"Region {region_idx}/{len(cropped_regions)}"):
 
             # Create a batch of cropped line images
             batch = masks[i:i+TROCR_BATCH_SIZE]
             cropped_line_imgs = []
 
+            # Cut line segs from region images
             for mask in batch:
-                cropped_line_seg = crop_line_image(cropped_region, mask.astype(int))
+                cropped_line_seg = crop_line_image(region_img, mask.astype(int))
                 cropped_line_imgs.append(cropped_line_seg)
 
             # Batch inference
