@@ -13,12 +13,17 @@ from htrflow.utils.layout import estimate_printspace
 from htrflow.utils.geometry import Bbox
 from htrflow.evaluate import CER, WER, BagOfWords
 
-
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords, crop_line_image, coords_to_bbox_xyxy
+from src.data_processing.visual_tasks import (
+    IMAGE_EXTENSIONS, 
+    crop_image, 
+    crop_line_image, 
+    bbox_xyxy_to_coords, 
+    coords_to_bbox_xyxy,
+)
 from src.data_processing.utils import XMLParser
 from src.post_process import order_bboxes
 from src.logger import CustomLogger
@@ -33,7 +38,7 @@ args = parser.parse_args()
 SPLIT_TYPE          = args.split_type
 TROCR_BATCH_SIZE    = int(args.trocr_batch_size)
 TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / "output/pipeline_traditional" / SPLIT_TYPE
+OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_traditional_{SPLIT_TYPE}"
 
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
@@ -50,9 +55,9 @@ logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
 model_region_od = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")
 model_line_seg  = YOLO(PROJECT_DIR / f"models/trained/yolo11m_seg__{SPLIT_TYPE}__region__line_seg/weights/best.pt")
 
+DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
-DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
 model_ocr           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
 
@@ -68,9 +73,7 @@ bow_hits_list = []
 bow_extras_list = []
 
 
-
 #%%
-counter = 0
 
 for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info(f"Processing image {image_idx+1}/{len(img_paths)}")
@@ -96,10 +99,12 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     region_line_masks = []
 
     for bbox in sorted_region_bboxes:
+        # Crop image to region
         crop_coords = bbox_xyxy_to_coords(bbox)
-
         cropped_region = crop_image(image, crop_coords)
         cropped_regions.append(cropped_region)
+
+        # Segment lines
         results_line_seg = model_line_seg(cropped_region, verbose=False, device=DEVICE)
         masks = results_line_seg[0].masks.xy
 
@@ -109,7 +114,6 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         sorted_masks = [masks[i] for i in sorted_line_indices]
 
         region_line_masks.append(sorted_masks)
-
 
     # OCR
     logger.info("Text recognition")
@@ -121,27 +125,29 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         iterator = list(range(0, len(masks), TROCR_BATCH_SIZE))
         
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
-            batch = masks[i:i+TROCR_BATCH_SIZE]
 
+            # Create a batch of cropped line images
+            batch = masks[i:i+TROCR_BATCH_SIZE]
             cropped_line_imgs = []
+
             for mask in batch:
                 cropped_line_seg = crop_line_image(cropped_region, mask.astype(int))
                 cropped_line_imgs.append(cropped_line_seg)
 
-            pixel_values = processor(images=cropped_line_imgs, return_tensors="pt").pixel_values.to(DEVICE)
-            generated_ids = model_ocr.generate(inputs=pixel_values)
-            line_trans = processor.batch_decode(generated_ids, skip_special_tokens=True)
+            # Batch inference
+            pixel_values    = processor(images=cropped_line_imgs, return_tensors="pt").pixel_values.to(DEVICE)
+            generated_ids   = model_ocr.generate(inputs=pixel_values)
+            line_trans      = processor.batch_decode(generated_ids, skip_special_tokens=True)
             region_trans += line_trans
 
         page_trans.append(region_trans)
 
-    # Stitch transcriptions in the right order
+    # Stitching. Transcriptions are already in the right order
     pred_text = ""
 
     for region_lines in page_trans:
         for line in region_lines:
             pred_text += line + " "
-    
 
     # Output in .hyp extension to be used with E2EHTREval
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
@@ -176,10 +182,6 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     write_json_file(page_metrics, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
-    counter += 1
-
-    if counter == 10:
-        break
 #%%
 avg_cer = sum(cer_list)
 avg_wer = sum(wer_list)
