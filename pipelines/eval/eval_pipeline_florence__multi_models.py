@@ -11,12 +11,6 @@ from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
 from htrflow.utils.layout import estimate_printspace
 from htrflow.utils.geometry import Bbox
-from src.data_processing import florence
-
-from importlib import reload
-from src import post_process
-reload(post_process)
-reload(florence)
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -34,6 +28,7 @@ from src.data_processing.florence import predict, FlorenceTask
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--ocr-batch-size", default=6)
+parser.add_argument("--device", default="cuda", choices="cpu")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -57,7 +52,10 @@ xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
 
 # Load models
-DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if args.device == "cuda":
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+else:
+    DEVICE = args.device
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
 model_line_od   = AutoModelForCausalLM.from_pretrained(
@@ -82,8 +80,6 @@ bow_extras_list = []
 
 
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
-    logger.info(f"Processing image {img_idx+1}/{len(img_paths)}")
-
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
@@ -142,7 +138,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             cropped_line_imgs.append(cropped_line_seg)
 
         # Batch inference
-        _, model_ocr_output = florence.predict(
+        _, model_ocr_output = predict(
             model_ocr, 
             processor, 
             task_prompt=FlorenceTask.OCR,
