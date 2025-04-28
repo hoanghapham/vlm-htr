@@ -118,7 +118,7 @@ for image_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     for region_idx, (cropped_region, masks) in enumerate(zip(cropped_regions, region_line_masks)):
         region_trans = []
 
-        iterator = list(range((0, len(masks), TROCR_BATCH_SIZE)))
+        iterator = list(range(0, len(masks), TROCR_BATCH_SIZE))
         
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
             batch = masks[i:i+TROCR_BATCH_SIZE]
