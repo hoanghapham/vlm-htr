@@ -3,7 +3,7 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-import typing
+from typing import Iterable, Sequence
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
@@ -133,7 +133,7 @@ class FlorenceRegionLineSegDataset(Dataset):
             image=image 
         )
     
-    def select(self, indices: typing.Iterable):
+    def select(self, indices: Iterable):
         return [self.__getitem__(idx) for idx in indices]
 
 
@@ -164,7 +164,7 @@ class FlorenceOCRDataset(Dataset):
             image=image
         )
     
-    def select(self, indices: typing.Iterable):
+    def select(self, indices: Iterable):
         subset = [self.data[int(idx)] for idx in indices]
         return FlorenceOCRDataset(subset)
 
@@ -432,7 +432,7 @@ def create_collate_fn(processor, device):
 def predict(
     model, 
     processor, 
-    image: Image, 
+    images: Sequence[Image], 
     task_prompt: FlorenceTask = None, 
     user_prompt: str = None, 
     device: str = "cpu", 
@@ -447,7 +447,7 @@ def predict(
     else:
         input_text = user_prompt
 
-    inputs = processor(text=input_text, images=image, return_tensors="pt").to(device)
+    inputs = processor(text=[input_text] * len(images), images=images, return_tensors="pt").to(device)
 
     generated_ids = model.generate(
         input_ids=inputs["input_ids"],
@@ -457,10 +457,12 @@ def predict(
         num_beams=3,
     )
 
-    raw_output = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
-    parsed_output = None
+    raw_output = processor.batch_decode(generated_ids, skip_special_tokens=False)
+    parsed_output = []
 
     if task_prompt is not None:
-        parsed_output = processor.post_process_generation(raw_output, task=task_prompt, image_size=image.size)
+        for idx, raw in enumerate(raw_output):
+            parsed = processor.post_process_generation(raw, task=task_prompt, image_size=images[idx].size)
+            parsed_output.append(parsed)
     
     return raw_output, parsed_output

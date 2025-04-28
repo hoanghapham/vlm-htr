@@ -5,30 +5,30 @@ from argparse import ArgumentParser
 
 import torch
 import numpy as np
-from ultralytics import YOLO
 from tqdm import tqdm
 from PIL import Image
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+from transformers import AutoModelForCausalLM, AutoProcessor
+from htrflow.evaluate import CER, WER, BagOfWords
 from htrflow.utils.layout import estimate_printspace
 from htrflow.utils.geometry import Bbox
-from htrflow.evaluate import CER, WER, BagOfWords
+from src.data_processing import florence
+
+from importlib import reload
+from src import post_process
+reload(post_process)
+reload(florence)
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import (
-    IMAGE_EXTENSIONS, 
-    crop_image, 
-    crop_line_image, 
-    bbox_xyxy_to_coords, 
-    coords_to_bbox_xyxy,
-)
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_line_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.post_process import order_bboxes
+from src.post_process import topdown_left_right
 from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
-
+from src.data_processing.florence import predict, FlorenceTask
+# from src.visualization import draw_bboxes_xyxy
 
 # Setup
 parser = ArgumentParser()
@@ -36,16 +36,20 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--ocr-batch-size", default=6)
 args = parser.parse_args()
 
-SPLIT_TYPE          = args.split_type
-OCR_BATCH_SIZE    = int(args.ocr_batch_size)
-TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_traditional_{SPLIT_TYPE}"
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--ocr-batch-size", "2",
+# ])
 
+SPLIT_TYPE          = args.split_type
+OCR_BATCH_SIZE      = int(args.ocr_batch_size)
+TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
+OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__region_od__line_od__ocr"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
-# img_paths = [PROJECT_DIR / "data/page/mixed/test/images/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.jpg"]
+# img_paths   = [PROJECT_DIR / "data/page/mixed/test/images/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.jpg"]
 # xml_paths   = [PROJECT_DIR / "data/page/mixed/test/page_xmls/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.xml"]
 
 #%%
@@ -53,14 +57,17 @@ xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
 
 # Load models
-model_region_od = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")
-model_line_seg  = YOLO(PROJECT_DIR / f"models/trained/yolo11m_seg__{SPLIT_TYPE}__region__line_seg/weights/best.pt")
-
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
-processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model_ocr           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
+REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
+
+model_line_od   = AutoModelForCausalLM.from_pretrained(
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
+                    trust_remote_code=True).to(DEVICE)
+model_ocr       = AutoModelForCausalLM.from_pretrained(
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+                    trust_remote_code=True).to(DEVICE)
+
+processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 #%%
 xml_parser = XMLParser()
@@ -74,10 +81,9 @@ bow_hits_list = []
 bow_extras_list = []
 
 
-#%%
-
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
-    # logger.info(f"Processing image {img_idx+1}/{len(img_paths)}")
+    logger.info(f"Processing image {img_idx+1}/{len(img_paths)}")
+
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
@@ -92,80 +98,68 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
 
-    image = Image.open(img_path).convert("RGB")
-    gt_lines = xml_parser.get_lines(xml_path)
-    printspace = estimate_printspace(np.array(image))
-
-    ## Region OD
-    logger.info("Region detection")
-    results_region_od = model_region_od.predict(image, verbose=False, device=DEVICE)
-    region_bboxes_raw = results_region_od[0].boxes.xyxy
-    region_bboxes = [Bbox(*bbox) for bbox in region_bboxes_raw]
-
-    # Sort regions
-    sorted_region_indices = order_bboxes([bbox for bbox in region_bboxes], printspace, True)
-    sorted_region_bboxes = [region_bboxes[i] for i in sorted_region_indices]
+    image       = Image.open(img_path).convert("RGB")
+    gt_lines    = xml_parser.get_lines(xml_path)
+    printspace  = estimate_printspace(np.array(image))
 
 
-    ## Line seg
-    logger.info("Line segmentation")
-    cropped_regions = []
-    region_line_masks = []
+    ## Line OD
+    logger.info("Line detection")
 
-    for bbox in sorted_region_bboxes:
-        # Crop image to region
-        crop_coords = bbox_xyxy_to_coords(bbox)
-        region_img = crop_image(image, crop_coords)
-        cropped_regions.append(region_img)
+    _, model_line_od_output = predict(
+        model_line_od, 
+        processor, 
+        task_prompt=FlorenceTask.OD,
+        user_prompt=None, 
+        images=[image], 
+        device=DEVICE
+    )
 
-        # Segment lines
-        results_line_seg = model_line_seg(region_img, verbose=False, device=DEVICE)
-        if results_line_seg[0].masks is None:
-            continue
+    line_bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
-        masks = results_line_seg[0].masks.xy
+    # Sort lines
+    sorted_line_indices = topdown_left_right([bbox for bbox in line_bboxes])
+    sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
+    sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
 
-        # Sort masks
-        line_bboxes = [Bbox(*coords_to_bbox_xyxy(line.astype(int))) for line in masks if len(line) > 0]
-        sorted_line_indices = order_bboxes(line_bboxes, printspace, False)
-        sorted_line_masks = [masks[i] for i in sorted_line_indices]
 
-        region_line_masks.append(sorted_line_masks)
-
-    # OCR
+    ## OCR
     logger.info("Text recognition")
     page_trans = []
 
-    for region_idx, (region_img, masks) in enumerate(zip(cropped_regions, region_line_masks)):
-        region_trans = []
+    iterator = list(range(0, len(sorted_line_masks), OCR_BATCH_SIZE))
 
-        iterator = list(range(0, len(masks), OCR_BATCH_SIZE))
-        
-        for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"Region {region_idx}/{len(cropped_regions)}"):
+    for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
-            # Create a batch of cropped line images
-            batch = masks[i:i+OCR_BATCH_SIZE]
-            cropped_line_imgs = []
+        # Create a batch of cropped line images
+        batch = sorted_line_masks[i:i+OCR_BATCH_SIZE]
+        cropped_line_imgs = []
 
-            # Cut line segs from region images
-            for mask in batch:
-                cropped_line_seg = crop_line_image(region_img, mask.astype(int))
-                cropped_line_imgs.append(cropped_line_seg)
+        # Cut line segs from region images
+        for mask in batch:
+            cropped_line_seg = crop_line_image(image, mask)
+            cropped_line_imgs.append(cropped_line_seg)
 
-            # Batch inference
-            pixel_values    = processor(images=cropped_line_imgs, return_tensors="pt").pixel_values.to(DEVICE)
-            generated_ids   = model_ocr.generate(inputs=pixel_values)
-            line_trans      = processor.batch_decode(generated_ids, skip_special_tokens=True)
-            region_trans += line_trans
+        # Batch inference
+        _, model_ocr_output = florence.predict(
+            model_ocr, 
+            processor, 
+            task_prompt=FlorenceTask.OCR,
+            user_prompt=None, 
+            images=cropped_line_imgs, 
+            device=DEVICE
+        )
+        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
+        page_trans += line_trans
 
-        page_trans.append(region_trans)
 
+#%%
     # Stitching. Transcriptions are already in the right order
     pred_text = ""
 
-    for region_lines in page_trans:
-        for line in region_lines:
-            pred_text += line + " "
+    for line in page_trans:
+        pred_text += line + " "
 
     # Output in .hyp extension to be used with E2EHTREval
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
@@ -177,7 +171,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         gt_text += line["transcription"] + " "
 
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
-    
+
     # Evaluation
     try:
         cer_value = cer.compute(gt_text, pred_text)["cer"]
@@ -204,7 +198,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     write_json_file(page_metrics, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
-#%%
+
+# Averaging metrics across all pages
 avg_cer = sum(cer_list)
 avg_wer = sum(wer_list)
 avg_bow_hits = sum(bow_hits_list)

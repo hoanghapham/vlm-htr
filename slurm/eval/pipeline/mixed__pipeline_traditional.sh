@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_traditional.py \
     --split-type mixed \
-    --trocr-batch-size 6
+    --ocr-batch-size 6

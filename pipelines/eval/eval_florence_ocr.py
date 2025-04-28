@@ -15,7 +15,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.logger import CustomLogger
 from src.data_processing.florence import FlorenceTask, FlorenceOCRDataset, predict
 from src.evaluation.utils import Ratio
-from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
+from src.train import load_checkpoint
 from src.file_tools import write_json_file, write_list_to_text_file
 #%%
 

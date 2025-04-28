@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval/pipeline/sbs__pipeline_traditional
-#SBATCH -o logs_uppmax/eval/pipeline/sbs__pipeline_traditional.out
-#SBATCH -e logs_uppmax/eval/pipeline/sbs__pipeline_traditional.out
+#SBATCH -J eval/pipeline/mixed__pipeline_florence__multi_models
+#SBATCH -o logs_uppmax/eval/pipeline/mixed__pipeline_florence__multi_models.out
+#SBATCH -e logs_uppmax/eval/pipeline/mixed__pipeline_florence__multi_models.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -17,6 +17,6 @@ source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
 PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
 cd $PROJECT_DIR
 
-python pipelines/eval/eval_pipeline_traditional.py \
-    --split-type sbs \
-    --ocr-batch-size 6
+python pipelines/eval/eval_pipeline_florence__multi_models.py \
+    --split-type mixed \
+    --ocr-batch-size 4
