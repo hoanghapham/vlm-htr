@@ -39,7 +39,7 @@ args = parser.parse_args()
 SPLIT_TYPE          = args.split_type
 OCR_BATCH_SIZE      = int(args.ocr_batch_size)
 TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__region_od__line_od__ocr"
+OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__single_model"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
