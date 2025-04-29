@@ -39,7 +39,7 @@ args = parser.parse_args()
 SPLIT_TYPE          = args.split_type
 OCR_BATCH_SIZE    = int(args.ocr_batch_size)
 TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_traditional_{SPLIT_TYPE}"
+OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}"
 
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)

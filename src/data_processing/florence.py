@@ -170,6 +170,7 @@ class FlorenceOCRDataset(Dataset):
         else:
             return [self._get_one(idx) for idx in range(index.start, index.stop, index.step or 1)]
 
+
 class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
     """Dataset that returns one rectangular crop of a line, with polygon seg mask"""
 
@@ -238,6 +239,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         else:
             return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
 
+
 class FlorenceTextODDataset(BaseImgXMLDataset):
 
     def __init__(
@@ -254,7 +256,7 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
-    def __getitem__(self, idx):
+    def _get_one(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
         
@@ -288,6 +290,12 @@ class FlorenceTextODDataset(BaseImgXMLDataset):
             image_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
+    
+    def __getitem__(self, idx: int | slice):
+        if isinstance(idx, int):
+            return self._get_one(idx)
+        else:
+            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
 
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
