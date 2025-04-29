@@ -13,7 +13,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.logger import CustomLogger
 from src.data_processing.florence import FlorenceTask, FlorenceTextODDataset, predict
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
-from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
+from src.train import load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
 from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 #%%
@@ -24,6 +24,7 @@ parser.add_argument("--data-dir", required=True)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--object-class", default="region")
+parser.add_argument("--batch-size", default=2)
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
@@ -40,6 +41,7 @@ DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.checkpoint
 CHECKPOINT_PATH     = args.checkpoint_path
 OBJECT_CLASS        = args.object_class
+BATCH_SIZE          = int(args.batch_size)
 DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
 
@@ -84,7 +86,7 @@ model.eval()
 
 #%%
 # Load test data
-test_dataset = FlorenceTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class="region")
+test_dataset = FlorenceTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class=OBJECT_CLASS)
 logger.info(f"Total test samples: {len(test_dataset)}")
 
 
@@ -93,50 +95,60 @@ task = FlorenceTask.OD
 
 full_results    = []
 predictions     = []
-annotations     = []
-coverage_ratios = []
+groundtruths     = []
+coverages = []
 
 counter = 0
 
-for data in tqdm(test_dataset, desc="Evaluate"):
+iterator = list(range(0, len(test_dataset), BATCH_SIZE))
 
-    ann = data["original_bboxes"]
+logger.info(f"Number of batches: {len(iterator)}")
 
-    raw_output, parsed_output = predict(
+for start_idx in tqdm(iterator, desc="Evaluate"):
+
+    batch = test_dataset[start_idx:start_idx+BATCH_SIZE]
+    images = [data["image"] for data in batch]
+
+    _, parsed_output = predict(
         model, 
         processor, 
         task_prompt=task,
         user_prompt=None, 
-        images=[data["image"]], 
+        images=images, 
         device=DEVICE
     )
 
-    pred     = parsed_output[task]["bboxes"]
-    pred_polygons   = [bbox_xyxy_to_polygon(box) for box in pred]
-    ann_polygons    = [bbox_xyxy_to_polygon(box) for box in ann]
-    coverage        = compute_polygons_region_coverage(pred_polygons, ann_polygons)
+    for i in range(BATCH_SIZE):
 
-    predictions.append(pred)
-    annotations.append(ann)
-    coverage_ratios.append(coverage)
+        pred_bboxes     = parsed_output[i][task]["bboxes"]
+        pred_polygons   = [bbox_xyxy_to_polygon(box) for box in pred_bboxes]
 
-    full_results.append(
-        dict(
-            img_name        = Path(data["image_path"]).name,
-            ann_bboxes      = ann,
-            pred_bboxes     = pred,
-            coverage_str    = str(coverage),
-            coverage_float  = float(coverage)
+        gt_bboxes       = batch[i]["original_bboxes"]
+        gt_polygons     = [bbox_xyxy_to_polygon(box) for box in gt_bboxes]
+        coverage        = compute_polygons_region_coverage(pred_polygons, gt_polygons)
+
+        predictions += pred_bboxes
+        groundtruths += gt_bboxes
+        coverages.append(coverage)
+
+        full_results.append(
+            dict(
+                img_name        = Path(batch[i]["image_path"]).name,
+                gt_bboxes       = gt_bboxes,
+                pred_bboxes     = pred_bboxes,
+                coverage_str    = str(coverage),
+                coverage_float  = float(coverage)
+            )
         )
-    )
 
     if DEBUG:
         counter += 1
         if counter >= MAX_ITERS:
             break
 
-precision, recall, fscore = compute_bbox_precision_recall_fscore(predictions, annotations, iou_threshold=0.5)
-avg_region_coverage = float(sum(coverage_ratios))
+
+precision, recall, fscore = compute_bbox_precision_recall_fscore(predictions, groundtruths, iou_threshold=0.5)
+avg_region_coverage = float(sum(coverages))
 
 logger.info(f"Precision: {precision:.4f}, Recall: {recall:.4f}, Fscore: {fscore:.4f}, Avg. region coverage: {avg_region_coverage:.4f}")
 
