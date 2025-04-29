@@ -500,6 +500,12 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
             features=segmentation_features,
         ),
         HTRDatasetConfig(
+            name="line_od_within_regions",
+            description="Cropped text region images with line bbox annotations",
+            process_func="inst_seg_lines_within_regions",
+            features=segmentation_features,
+        ),
+        HTRDatasetConfig(
             name="inst_seg_regions_and_lines",
             description="Original images with both region and line annotations",
             process_func="inst_seg_regions_and_lines",
@@ -692,6 +698,38 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
                 except Exception as e:
                     print("still error", e)
                     continue
+    
+
+    def line_od_within_regions(self, imgs_xmls):
+        """Process for cropped region images with line bbox annotations."""
+        for img_path, xml_path in imgs_xmls:
+            img_filename, volume = self._extract_filename_and_volume(img_path, xml_path)
+            image = PILImage.open(img_path)
+            root = self._parse_xml(xml_path)
+            namespaces = {"ns": "http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15"}
+
+            # Iterate through each TextRegion
+            for reg_ind, region in enumerate(root.findall(".//ns:TextRegion", namespaces=namespaces)):
+                reg_id = str(reg_ind).zfill(4)
+                region_polygon = self._get_polygon(region, namespaces)
+                min_x, min_y, max_x, max_y = self._get_bbox(region_polygon)
+                cropped_region_image = self.crop_image(image, region_polygon)
+
+                annotations = self._get_line_bbox_within_region(
+                    region, namespaces, min_x, min_y, region_polygon
+                )
+
+                unique_key = f"{volume}_{img_filename}_{reg_id}"
+                try:
+                    yield {
+                            "unique_key": unique_key,
+                            "img_filename": img_filename,
+                            "image": cropped_region_image,
+                            "annotations": annotations,
+                        }
+                except Exception as e:
+                    print("still error", e)
+                    continue
 
     def inst_seg_regions_and_lines(self, imgs_xmls):
         """Process for original images with both region and line annotations."""
@@ -778,6 +816,31 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
                     "polygon": translated_polygon,
                     "transcription": transcription,
                     "class": "textline",
+                }
+            )
+        return annotations
+
+    def _get_line_bbox_within_region(self, region, namespaces, min_x, min_y, region_polygon):
+        """Generates annotations for text lines within a region."""
+        annotations = []
+        for line in region.findall(".//ns:TextLine", namespaces=namespaces):
+            line_polygon = self._get_polygon(line, namespaces)
+            clipped_line_polygon = self.clip_polygon_to_region(line_polygon, region_polygon)
+
+            if len(clipped_line_polygon) < 3:
+                print(f"Invalid polygon detected for line: {line_polygon}, clipped: {clipped_line_polygon}")
+                continue
+
+            translated_polygon = [(x - min_x, y - min_y) for x, y in clipped_line_polygon]
+            bbox = coords_to_bbox_xyxy(translated_polygon)
+            # transcription = "".join(line.itertext()).strip()
+
+            annotations.append(
+                {
+                    # "polygon": translated_polygon,
+                    "bbox": bbox,
+                    # "transcription": transcription,
+                    "class": "line_bbox",
                 }
             )
         return annotations
