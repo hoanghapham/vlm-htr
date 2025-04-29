@@ -112,6 +112,11 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     )
 
     line_bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+
+    if len(line_bboxes_raw) == 0:
+        logger.warning("No object found")
+        continue
+
     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
     # Sort lines
