@@ -14,11 +14,11 @@
 
 
 source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
+PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 
 cd $PROJECT_DIR
 
-python pipelines/train/finetune_florence_od.py \
+python pipelines/train/finetune_florence__region__line_od.py \
     --data-dir $PROJECT_DIR/data/page/sbs \
     --model-name florence_base__sbs__region__line_od \
     --num-train-epochs 10 \
