@@ -1,0 +1,219 @@
+#%%
+import sys
+from pathlib import Path
+from argparse import ArgumentParser
+
+import torch
+import numpy as np
+from tqdm import tqdm
+from PIL import Image
+from transformers import AutoModelForCausalLM, AutoProcessor
+from htrflow.evaluate import CER, WER, BagOfWords
+from htrflow.utils.layout import estimate_printspace
+from htrflow.utils.geometry import Bbox
+
+PROJECT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_DIR))
+
+from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_line_image, bbox_xyxy_to_coords
+from src.data_processing.utils import XMLParser
+from src.post_process import topdown_left_right
+from src.logger import CustomLogger
+from src.evaluation.utils import Ratio
+from src.data_processing.florence import predict, FlorenceTask
+# from src.visualization import draw_bboxes_xyxy
+
+# Setup
+parser = ArgumentParser()
+parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
+parser.add_argument("--ocr-batch-size", default=6)
+parser.add_argument("--device", default="cuda", choices="cpu")
+args = parser.parse_args()
+
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--ocr-batch-size", "2",
+# ])
+
+SPLIT_TYPE          = args.split_type
+OCR_BATCH_SIZE      = int(args.ocr_batch_size)
+TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
+OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__line_od__ocr"
+
+img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
+xml_paths = list_files(TEST_DATA_DIR, [".xml"])
+
+# img_paths   = [PROJECT_DIR / "data/page/mixed/test/images/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.jpg"]
+# xml_paths   = [PROJECT_DIR / "data/page/mixed/test/page_xmls/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.xml"]
+
+#%%
+
+logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
+
+# Load models
+if args.device == "cuda":
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+else:
+    DEVICE = args.device
+REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
+
+model_line_od   = AutoModelForCausalLM.from_pretrained(
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
+                    trust_remote_code=True).to(DEVICE)
+model_ocr       = AutoModelForCausalLM.from_pretrained(
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+                    trust_remote_code=True).to(DEVICE)
+
+processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+
+#%%
+xml_parser = XMLParser()
+cer = CER()
+wer = WER()
+bow = BagOfWords()
+
+cer_list = []
+wer_list = []
+bow_hits_list = []
+bow_extras_list = []
+
+
+for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
+
+    # Skip if the file is already processed
+    img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
+    if img_metric_path.exists():
+        logger.info(f"Skip: {img_path.name}")
+        img_metric = read_json_file(img_metric_path)
+        cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
+        wer_list.append(Ratio(*img_metric["wer"]["str"].split("/")))
+        bow_hits_list.append(Ratio(*img_metric["bow_hits"]["str"].split("/")))
+        bow_extras_list.append(Ratio(*img_metric["bow_extras"]["str"].split("/")))
+        continue
+
+    logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
+
+    image       = Image.open(img_path).convert("RGB")
+    gt_lines    = xml_parser.get_lines(xml_path)
+    printspace  = estimate_printspace(np.array(image))
+
+
+    ## Line OD
+    logger.info("Line detection")
+
+    _, model_line_od_output = predict(
+        model_line_od, 
+        processor, 
+        task_prompt=FlorenceTask.OD,
+        user_prompt=None, 
+        images=[image], 
+        device=DEVICE
+    )
+
+    line_bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+
+    if len(line_bboxes_raw) == 0:
+        logger.warning("No object found")
+        continue
+
+    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
+
+    # Sort lines
+    sorted_line_indices = topdown_left_right([bbox for bbox in line_bboxes])
+    sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
+    sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
+
+
+    ## OCR
+    logger.info("Text recognition")
+    page_trans = []
+
+    iterator = list(range(0, len(sorted_line_masks), OCR_BATCH_SIZE))
+
+    for i in tqdm(iterator, total=len(iterator), unit="batch"):
+
+        # Create a batch of cropped line images
+        batch = sorted_line_masks[i:i+OCR_BATCH_SIZE]
+        cropped_line_imgs = []
+
+        # Cut line segs from region images
+        for mask in batch:
+            cropped_line_seg = crop_line_image(image, mask)
+            cropped_line_imgs.append(cropped_line_seg)
+
+        # Batch inference
+        _, model_ocr_output = predict(
+            model_ocr, 
+            processor, 
+            task_prompt=FlorenceTask.OCR,
+            user_prompt=None, 
+            images=cropped_line_imgs, 
+            device=DEVICE
+        )
+        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
+        page_trans += line_trans
+
+
+#%%
+    # Stitching. Transcriptions are already in the right order
+    pred_text = ""
+
+    for line in page_trans:
+        pred_text += line + " "
+
+    # Output in .hyp extension to be used with E2EHTREval
+    write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
+
+    # Write ground truth in .ref extension to be used with E2EHTREval
+    gt_text = ""
+
+    for line in gt_lines:
+        gt_text += line["transcription"] + " "
+
+    write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
+
+    # Evaluation
+    try:
+        cer_value = cer.compute(gt_text, pred_text)["cer"]
+        wer_value = wer.compute(gt_text, pred_text)["wer"]
+        bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
+        bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
+    except Exception as e:
+        logger.exception(e)
+        continue
+
+    cer_list.append(cer_value)
+    wer_list.append(wer_value)
+    bow_hits_list.append(bow_hits_value)
+    bow_extras_list.append(bow_extras_value)
+
+    page_metrics = {
+        "cer": {"str": str(cer_value), "float": float(cer_value)},
+        "wer": {"str": str(wer_value), "float": float(wer_value)},
+        "bow_hits": {"str": str(bow_hits_value), "float": float(bow_hits_value)},
+        "bow_extras": {"str": str(bow_extras_value), "float": float(bow_extras_value)}
+    }
+
+    logger.info(f"CER: {float(cer_value):.4f}, WER: {float(wer_value):.4f}, BoW hits: {float(bow_hits_value):.4f}, BoW extras: {float(bow_extras_value):.4f}")
+
+    write_json_file(page_metrics, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
+
+
+# Averaging metrics across all pages
+avg_cer = sum(cer_list)
+avg_wer = sum(wer_list)
+avg_bow_hits = sum(bow_hits_list)
+avg_bow_extras = sum(bow_extras_list)
+
+logger.info(f"Avg. CER: {float(avg_cer):.4f}, Avg. WER: {float(avg_wer):.4f}, Avg. BoW hits: {float(avg_bow_hits):.4f}, Avg. BoW extras: {float(avg_bow_extras):.4f}")
+
+avg_metrics = {
+    "cer": {"str": str(avg_cer), "float": float(avg_cer)},
+    "wer": {"str": str(avg_wer), "float": float(avg_wer)},
+    "bow_hits": {"str": str(avg_bow_hits), "float": float(avg_bow_hits)},
+    "bow_extras": {"str": str(avg_bow_extras), "float": float(avg_bow_extras)}
+}
+
+write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
+# %%
