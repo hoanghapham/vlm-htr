@@ -107,7 +107,7 @@ for data in tqdm(test_dataset, desc="Evaluate"):
         processor, 
         task_prompt=task,
         user_prompt=None, 
-        image=data["image"], 
+        images=[data["image"]], 
         device=DEVICE
     )
 
