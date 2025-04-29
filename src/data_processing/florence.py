@@ -192,7 +192,8 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
     def __len__(self):
         return len(self.lines_data)
     
-    def __getitem__(self, idx):
+
+    def _get_one(self, idx):
         image       = Image.open(self.line_to_img_path[idx]).convert("RGB")
         data        = self.lines_data[idx]
         unique_key  = data["unique_key"]
@@ -229,7 +230,12 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
             bbox = new_bbox,
             polygon = new_polygon
         )
-
+    
+    def __getitem__(self, idx: int | slice):
+        if isinstance(idx, int):
+            return self._get_one(idx)
+        else:
+            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
 
 class FlorenceTextODDataset(BaseImgXMLDataset):
 
