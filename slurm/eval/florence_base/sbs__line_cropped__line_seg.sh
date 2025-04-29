@@ -22,4 +22,4 @@ python pipelines/eval/eval_florence_seg.py \
     --model-name sbs__florence_base__line_cropped__line_seg \
     --data-dir $PROJECT_DIR/data/page/sbs/test/ \
     --checkpoint best \
-    --batch-size 4
+    --batch-size 2

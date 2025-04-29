@@ -22,4 +22,4 @@ python pipelines/eval/eval_florence_seg.py \
     --model-name florence_base__mixed__line_cropped__line_seg \
     --data-dir $PROJECT_DIR/data/page/mixed/test/ \
     --checkpoint best \
-    --batch-size 4
+    --batch-size 2
