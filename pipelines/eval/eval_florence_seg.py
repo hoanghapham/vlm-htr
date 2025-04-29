@@ -133,7 +133,6 @@ for start_idx in tqdm(iterator):
 
         except Exception as e:
             logger.exception(e)
-    break
 
 # Write full result
 write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
