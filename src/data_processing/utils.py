@@ -38,7 +38,18 @@ class XMLParser():
         polygon = self._get_polygon(region, self.namespaces)
         bbox = self._get_bbox(polygon)
         transcription = region.find("ns:TextEquiv/ns:Unicode", self.namespaces).text or ""
-        return {"region_id": region_id, "bbox": bbox, "polygon": polygon, "transcription": transcription}
+
+        lines = []
+        for line in region.findall(".//ns:TextLine", self.namespaces):
+            if line is not None:
+                try:
+                    data = self._extract_line_data(region, line)
+                    lines.append(data)
+                except Exception as e:
+                    if self.verbose:
+                        print(f"Error parsing line: {e}")
+
+        return {"region_id": region_id, "bbox": bbox, "polygon": polygon, "transcription": transcription, "lines": lines}
 
     def _extract_line_data(self, region, line):
         region_id = region.get("id")
@@ -53,6 +64,7 @@ class XMLParser():
         root = self._parse_xml(xml_path)
         if not root:
             return []
+        img_filename = Path(xml_path).stem
 
         regions_data = []
         for region in root.findall(".//ns:TextRegion", self.namespaces):
@@ -63,6 +75,11 @@ class XMLParser():
                 except Exception as e:
                     if self.verbose:
                         print(f"Error parsing region: {e}")
+        
+        for idx, data in enumerate(regions_data):
+            idx_str = str(idx).zfill(4)
+            data["unique_key"] = f"{img_filename}_{idx_str}"
+
         return regions_data
     
     def get_lines(self, xml_path):

@@ -12,7 +12,7 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.data_processing.florence import FlorenceTextODDataset, create_collate_fn
+from src.data_processing.florence import FlorencePageTextODDataset, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
 
@@ -86,8 +86,8 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-train_dataset   = FlorenceTextODDataset(DATA_DIR / "train", object_class=DETECT_CLASS)
-val_dataset     = FlorenceTextODDataset(DATA_DIR / "val", object_class=DETECT_CLASS)
+train_dataset   = FlorencePageTextODDataset(DATA_DIR / "train", object_class=DETECT_CLASS)
+val_dataset     = FlorencePageTextODDataset(DATA_DIR / "val", object_class=DETECT_CLASS)
 
 # Create data loader
 

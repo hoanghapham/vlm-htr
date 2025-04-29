@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
-from src.data_processing.florence import FlorenceTask, FlorenceTextODDataset, predict
+from src.data_processing.florence import FlorenceTask, FlorencePageTextODDataset, predict
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
 from src.train import load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
@@ -86,7 +86,7 @@ model.eval()
 
 #%%
 # Load test data
-test_dataset = FlorenceTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class=OBJECT_CLASS)
+test_dataset = FlorencePageTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class=OBJECT_CLASS)
 logger.info(f"Total test samples: {len(test_dataset)}")
 
 
