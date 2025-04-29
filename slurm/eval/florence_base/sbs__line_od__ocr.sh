@@ -21,4 +21,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_florence_ocr.py \
     --model-name florence_base__sbs__line_od__ocr \
     --data-dir $PROJECT_DIR/data/line_bbox/sbs/test/ \
-    --checkpoint best
+    --checkpoint best \\
+    --batch-size 4

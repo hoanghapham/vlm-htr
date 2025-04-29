@@ -97,9 +97,8 @@ logger.info("Evaluate")
 
 iterator = list(range(0, len(test_dataset), BATCH_SIZE))
 
-for i in tqdm(iterator):
-    i = 0
-    batch = test_dataset[i:i+BATCH_SIZE]
+for start_idx in tqdm(iterator):
+    batch = test_dataset[start_idx:start_idx+BATCH_SIZE]
     images = [data["image"] for data in batch]
 
     _, parsed_output = predict(

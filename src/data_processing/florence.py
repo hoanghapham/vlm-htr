@@ -153,7 +153,7 @@ class FlorenceOCRDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def _get_one(self, idx):
         example = self.data[idx]
         question = self.question
         answer = example["transcription"]
@@ -164,10 +164,11 @@ class FlorenceOCRDataset(Dataset):
             image=image
         )
     
-    def select(self, indices: Iterable):
-        subset = [self.data[int(idx)] for idx in indices]
-        return FlorenceOCRDataset(subset)
-
+    def __getitem__(self, index: int | slice):
+        if isinstance(index, int):
+            return self._get_one(index)
+        else:
+            return [self._get_one(idx) for idx in range(index.start, index.stop, index.step or 1)]
 
 class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
     """Dataset that returns one rectangular crop of a line, with polygon seg mask"""

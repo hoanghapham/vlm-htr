@@ -24,6 +24,7 @@ parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
 parser.add_argument("--checkpoint-path", required=False)
+parser.add_argument("--batch-size", default=2)
 parser.add_argument("--user-prompt", required=False)
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
@@ -42,6 +43,7 @@ CHECKPOINT_PATH     = args.checkpoint_path
 USER_PROMPT         = args.user_prompt
 DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
+BATCH_SIZE          = int(args.batch_size)
 
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
@@ -110,46 +112,53 @@ counter = 0
 
 # Can only process one image at a time due to post_process_generation task requiring image size,
 # but image size varies
-for data in tqdm(test_dataset, desc="Evaluate"):
 
-    gt = data["answer"]
-    raw_output, parsed_output = predict(
+iterator = list(range(0, len(test_dataset), BATCH_SIZE))
+
+for start_idx in tqdm(iterator, desc="Evaluate"):
+    batch = test_dataset[start_idx:start_idx+BATCH_SIZE]
+    images = [data["image"] for data in batch]
+    
+    _, parsed_output = predict(
         model, 
         processor, 
         task_prompt=task,
         user_prompt=USER_PROMPT, 
-        images=[data["image"]], 
+        images=images, 
         device=DEVICE
     )
 
-    pred = parsed_output[task]
+    for i in range(BATCH_SIZE):
 
-    # Calcualte metrics
-    if pred == gt == "":
-        cer_value           = Ratio(0, 0)
-        wer_value           = Ratio(0, 0)
-        bow_hits_value      = Ratio(0, 0)
-        bow_extras_value    = Ratio(0, 0)
-    elif pred != gt and (pred == "" or gt == ""):
-        value = max(len(pred), len(gt))
-        cer_value           = Ratio(value, value)
-        wer_value           = Ratio(value, value)
-        bow_hits_value      = Ratio(value, value)
-        bow_extras_value    = Ratio(value, value)
-    else:
-        cer_value           = cer.compute(pred, gt)["cer"]
-        wer_value           = wer.compute(pred, gt)["wer"]
-        bow_hits_value      = bow.compute(pred, gt)["bow_hits"]
-        bow_extras_value    = bow.compute(pred, gt)["bow_extras"]
+        pred = parsed_output[i][task]
+        gt = batch[i]["transcription"]
+
+        # Calcualte metrics
+        if pred == gt == "":
+            cer_value           = Ratio(0, 0)
+            wer_value           = Ratio(0, 0)
+            bow_hits_value      = Ratio(0, 0)
+            bow_extras_value    = Ratio(0, 0)
+        elif pred != gt and (pred == "" or gt == ""):
+            value = max(len(pred), len(gt))
+            cer_value           = Ratio(value, value)
+            wer_value           = Ratio(value, value)
+            bow_hits_value      = Ratio(value, value)
+            bow_extras_value    = Ratio(value, value)
+        else:
+            cer_value           = cer.compute(pred, gt)["cer"]
+            wer_value           = wer.compute(pred, gt)["wer"]
+            bow_hits_value      = bow.compute(pred, gt)["bow_hits"]
+            bow_extras_value    = bow.compute(pred, gt)["bow_extras"]
 
 
-    # Append results
-    cer_list.append(cer_value)
-    wer_list.append(wer_value)
-    bow_hits_list.append(bow_hits_value)
-    bow_extras_list.append(bow_extras_value)
-    gt_list.append(gt)
-    pred_list.append(parsed_output)
+        # Append results
+        cer_list.append(cer_value)
+        wer_list.append(wer_value)
+        bow_hits_list.append(bow_hits_value)
+        bow_extras_list.append(bow_extras_value)
+        gt_list.append(gt)
+        pred_list.append(parsed_output)
 
     if DEBUG:
         counter += 1
