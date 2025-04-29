@@ -131,7 +131,7 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
     for i in range(BATCH_SIZE):
 
         pred = parsed_output[i][task]
-        gt = batch[i]["transcription"]
+        gt = batch[i]["answer"]
 
         # Calcualte metrics
         if pred == gt == "":
