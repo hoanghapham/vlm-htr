@@ -19,6 +19,7 @@ dataset_types = [
     "inst_seg_lines",
     "inst_seg_regions",
     "inst_seg_lines_within_regions",
+    "line_od_within_regions",
     "inst_seg_regions_and_lines",
 ]
 
@@ -47,14 +48,23 @@ logger = CustomLogger(f"create_{DATASET_TYPE}")
 builder = HTRDatasetBuilder(config_name=DATASET_TYPE)
 
 process_funcs = {
-    "text_recognition__line_seg": builder.text_recognition__line_seg,   # cropped lines (polygon) & transcription
-    "text_recognition__line_bbox": builder.text_recognition__line_bbox, # cropped lines (bbox) & transcription
+    # cropped lines (polygon) & transcription
+    "text_recognition__line_seg": builder.text_recognition__line_seg,       
 
-    "inst_seg_lines": builder.inst_seg_lines,       # Original images with text line annotations only
-    "inst_seg_regions": builder.inst_seg_regions,   # Original images with text region annotations only
+    # cropped lines (bbox) & transcription
+    "text_recognition__line_bbox": builder.text_recognition__line_bbox,     
 
-    # Cropped text region images with text line annotations
+    # Original images with text line annotations only
+    "inst_seg_lines": builder.inst_seg_lines,       
+
+    # Original images with text region annotations only
+    "inst_seg_regions": builder.inst_seg_regions,   
+
+    # Cropped text region images with text line segmentation
     "inst_seg_lines_within_regions": builder.inst_seg_lines_within_regions, 
+    
+    # Cropped text region images with text line detection
+    "line_od_within_regions": builder.line_od_within_regions, 
     
     # Original images with both region and line annotations, can be used for full object detection 
     "inst_seg_regions_and_lines": builder.inst_seg_regions_and_lines,       
