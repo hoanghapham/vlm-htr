@@ -168,9 +168,6 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 logger.info(f"Save result to {EVAL_DIR}")
 
 metrics_aggr = {
-    "step_idx": cp_train_metrics["step_idx"],
-    "avg_train_loss": cp_train_metrics["avg_train_loss"],
-    "avg_val_loss": cp_train_metrics["avg_val_loss"],
     "cer": avg_cer,
     "wer": avg_wer,
     "bow_hits": avg_bow_hits,
