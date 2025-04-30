@@ -128,10 +128,10 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
         device=DEVICE
     )
 
-    for i in range(BATCH_SIZE):
+    for in_data, out_data in zip(batch, parsed_output):
 
-        pred = parsed_output[i][task]
-        gt = batch[i]["answer"]
+        pred = out_data[task]
+        gt = in_data["answer"]
 
         # Calcualte metrics
         if pred == gt == "":

@@ -112,7 +112,7 @@ for start_idx in tqdm(iterator):
 
     pred_masks_florence = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in parsed_output]
 
-    for i in range(BATCH_SIZE):
+    for i, _ in enumerate(batch):
         try:
             pred_mask_num       = list(zip(pred_masks_florence[i][::2], pred_masks_florence[i][1::2]))
             pred_mask_binary    = polygon_to_mask(pred_mask_num, images[i].size)
