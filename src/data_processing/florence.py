@@ -168,7 +168,7 @@ class FlorenceOCRDataset(Dataset):
         if isinstance(index, int):
             return self._get_one(index)
         else:
-            return [self._get_one(idx) for idx in range(index.start, index.stop, index.step or 1)]
+            return [self._get_one(idx) for idx in range(index.start, index.stop, index.step or 1) if idx < len(self.data)]
 
 
 class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
@@ -193,7 +193,6 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
 
     def __len__(self):
         return len(self.lines_data)
-    
 
     def _get_one(self, idx):
         image       = Image.open(self.line_to_img_path[idx]).convert("RGB")
@@ -237,7 +236,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         if isinstance(idx, int):
             return self._get_one(idx)
         else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
+            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.lines_data)]
 
 
 class FlorenceRegionLineODDataset(BaseImgXMLDataset):
@@ -307,7 +306,7 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
         if isinstance(idx, int):
             return self._get_one(idx)
         else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
+            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.regions_data)]
 
 
 class FlorencePageTextODDataset(BaseImgXMLDataset):
@@ -365,7 +364,7 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         if isinstance(idx, int):
             return self._get_one(idx)
         else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1)]
+            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.img_paths)]
 
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
