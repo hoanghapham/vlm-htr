@@ -130,8 +130,8 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
         gt_polygons     = [bbox_xyxy_to_polygon(box) for box in gt_bboxes]
         coverage        = compute_polygons_region_coverage(pred_polygons, gt_polygons)
 
-        predictions += pred_bboxes
-        groundtruths += gt_bboxes
+        predictions.append(pred_bboxes)
+        groundtruths.append(gt_bboxes)
         coverages.append(coverage)
 
         full_results.append(
