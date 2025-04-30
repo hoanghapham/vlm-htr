@@ -105,8 +105,8 @@ logger.info(f"Total test samples: {len(test_dataset)}, batches: {len(iterator)}"
 
 for start_idx in tqdm(iterator, desc="Evaluate"):
 
-    batch = test_dataset[start_idx:start_idx+BATCH_SIZE]
-    images = [data["image"] for data in batch]
+    batch_data = test_dataset[start_idx:start_idx+BATCH_SIZE]
+    images = [data["image"] for data in batch_data]
 
     _, parsed_output = predict(
         model, 
@@ -121,12 +121,12 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
         logger.info(f"No results for batch {start_idx/BATCH_SIZE}")
         continue
 
-    for i in range(BATCH_SIZE):
+    for in_data, out_data in zip(batch_data, parsed_output):
 
-        pred_bboxes     = parsed_output[i][task]["bboxes"]
+        pred_bboxes     = out_data[task]["bboxes"]
         pred_polygons   = [bbox_xyxy_to_polygon(box) for box in pred_bboxes]
 
-        gt_bboxes       = batch[i]["original_bboxes"]
+        gt_bboxes       = in_data["original_bboxes"]
         gt_polygons     = [bbox_xyxy_to_polygon(box) for box in gt_bboxes]
         coverage        = compute_polygons_region_coverage(pred_polygons, gt_polygons)
 
@@ -136,7 +136,7 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
 
         full_results.append(
             dict(
-                img_name        = Path(batch[i]["image_path"]).name,
+                img_name        = Path(in_data["image_path"]).name,
                 gt_bboxes       = gt_bboxes,
                 pred_bboxes     = pred_bboxes,
                 coverage_str    = str(coverage),
