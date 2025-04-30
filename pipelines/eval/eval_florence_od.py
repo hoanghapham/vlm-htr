@@ -87,7 +87,6 @@ model.eval()
 #%%
 # Load test data
 test_dataset = FlorencePageTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class=OBJECT_CLASS)
-logger.info(f"Total test samples: {len(test_dataset)}")
 
 
 # Evaluate
@@ -102,7 +101,7 @@ counter = 0
 
 iterator = list(range(0, len(test_dataset), BATCH_SIZE))
 
-logger.info(f"Number of batches: {len(iterator)}")
+logger.info(f"Total test samples: {len(test_dataset)}, batches: {len(iterator)}")
 
 for start_idx in tqdm(iterator, desc="Evaluate"):
 
@@ -117,6 +116,10 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
         images=images, 
         device=DEVICE
     )
+
+    if parsed_output == []:
+        logger.info(f"No results for batch {start_idx/BATCH_SIZE}")
+        continue
 
     for i in range(BATCH_SIZE):
 
