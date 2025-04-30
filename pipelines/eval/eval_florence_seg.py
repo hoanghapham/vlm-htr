@@ -134,14 +134,20 @@ for start_idx in tqdm(iterator):
         except Exception as e:
             logger.exception(e)
 
+
+if CHECKPOINT == "vanilla":
+    suffix = "vanilla"
+else:
+    suffix = "step_" + str(cp_train_metrics["step_idx"]).zfill(10)
+
 # Write full result
-write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
+write_ndjson_file(full_results, OUTPUT_DIR / f"full_results_{suffix}.json")
 
 
 # Calculate average metrics
 avg_metrics = pd.DataFrame(all_metrics).mean().to_dict()
 avg_metrics_str = ", ".join([f"{k}: \t {round(v, 4)}" for k, v in avg_metrics.items()])
 logger.info(f"Avg metrics: {avg_metrics_str}")
-write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
+write_json_file(avg_metrics, OUTPUT_DIR / f"avg_metrics_{suffix}.json")
 
 logger.info(f"Wrote results to {OUTPUT_DIR}")

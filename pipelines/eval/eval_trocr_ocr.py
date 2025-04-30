@@ -177,9 +177,13 @@ metrics_aggr = {
     "bow_extras": avg_bow_extras
 }
 
-step_idx_str = str(cp_train_metrics["step_idx"]).zfill(10)
+if CHECKPOINT == "vanilla":
+    suffix = "vanilla"
+else:
+    suffix = "step_" + str(cp_train_metrics["step_idx"]).zfill(10)
 
-write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_step_{step_idx_str}.json")
+
+write_json_file(metrics_aggr, EVAL_DIR / f"metrics_aggr_{suffix}.json")
 
 # Detailed results
 metrics_lists = {
@@ -189,11 +193,11 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, EVAL_DIR / f"metrics_lists_step_{step_idx_str}.json")
+write_json_file(metrics_lists, EVAL_DIR / f"metrics_lists_{suffix}.json")
 
 # Write ground text for reference
 write_list_to_text_file(gt_list, EVAL_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-write_list_to_text_file(pred_list, EVAL_DIR / f"prediction_step_{step_idx_str}.txt")
+write_list_to_text_file(pred_list, EVAL_DIR / f"prediction_{suffix}.txt")
 

@@ -183,7 +183,11 @@ logger.info(f"Avg. BoW hits: {avg_bow_hits:.4f}, Avg. BoW extras: {avg_bow_extra
 
 logger.info(f"Save result to {OUTPUT_DIR}")
 
-step_idx_str = str(cp_train_metrics["step_idx"]).zfill(10)
+if CHECKPOINT == "vanilla":
+    suffix = "vanilla"
+else:
+    suffix = "step_" + str(cp_train_metrics["step_idx"]).zfill(10)
+
 
 metrics_aggr = {
     "step_idx": cp_train_metrics["step_idx"],
@@ -195,7 +199,7 @@ metrics_aggr = {
     "bow_extras": avg_bow_extras
 }
 
-write_json_file(metrics_aggr, OUTPUT_DIR / f"metrics_aggr_step_{step_idx_str}.json")
+write_json_file(metrics_aggr, OUTPUT_DIR / f"metrics_aggr_{suffix}.json")
 
 # Detailed results
 metrics_lists = {
@@ -205,12 +209,12 @@ metrics_lists = {
     "bow_extras": [str(val) for val in bow_extras_list]
 }
 
-write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_step_{step_idx_str}.json")
+write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_{suffix}.json")
 
 # Write ground text for reference
 write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
 
 # Write prediction for reference
 pred_list = [pred[task] for pred in pred_list]
-write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_step_{step_idx_str}.txt")
+write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_{suffix}.txt")
 

@@ -166,9 +166,12 @@ metrics = dict(
 
 metrics.update(cp_train_metrics)
 
-step_idx_str = str(cp_train_metrics["step_idx"]).zfill(10)
+if CHECKPOINT == "vanilla":
+    suffix = "vanilla"
+else:
+    suffix = "step_" + str(cp_train_metrics["step_idx"]).zfill(10)
 
-write_ndjson_file(full_results, OUTPUT_DIR / f"full_results_step_{step_idx_str}.json")
-write_json_file(metrics, OUTPUT_DIR / f"metrics_{step_idx_str}.json")
+write_ndjson_file(full_results, OUTPUT_DIR / f"full_results_{suffix}.json")
+write_json_file(metrics, OUTPUT_DIR / f"metrics_{suffix}.json")
     
 logger.info(f"Wrote results to {OUTPUT_DIR}")
