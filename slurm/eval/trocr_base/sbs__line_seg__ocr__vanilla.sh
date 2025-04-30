@@ -20,6 +20,6 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_trocr_ocr.py \
     --model-name trocr_base__sbs__line_seg__ocr__vanilla \
-    --data-dir $PROJECT_DIR/data/lines/sbs/test/ \
+    --data-dir $PROJECT_DIR/data/line_seg/sbs/test/ \
     --checkpoint vanilla \
     --batch-size 10

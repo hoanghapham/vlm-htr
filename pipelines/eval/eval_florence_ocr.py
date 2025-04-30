@@ -31,7 +31,7 @@ args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence_base__mixed__line_seg__ocr",
-#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/lines/mixed",
+#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/line_seg/mixed",
 #     "--mode", "debug"
 # ])
 
