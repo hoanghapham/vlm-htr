@@ -103,16 +103,17 @@ class Trainer():
             self.model.train()
 
             # Train
-            iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
+            # iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
+            iterator = tqdm(range(len(self.train_loader)), desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
             total_error_count = 0
             error_count = 0
 
-            for batch_data in iterator:
+            for batch_idx in iterator:
                 
                 try:
                     # There can be errors in a data point in a batch, so need to try to get the next batch
                     # If fails, skip the batch
-                    # batch_data = next(loader_iterator)
+                    batch_data = next(self.train_loader._get_iterator())
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
                     avg_train_loss  = total_train_loss / step_counter
@@ -387,7 +388,7 @@ def find_best_checkpoint(model_path: str | Path, compare_metric: str = "avg_val_
 
 def find_last_checkpoint(model_path: str | Path):
     model_path = Path(model_path)
-    cp_paths =  [path for path in sorted(model_path.iterdir()) if path.is_dir() and "checkpoint" in str(path)]
+    cp_paths = [path for path in sorted(model_path.iterdir()) if path.is_dir() and "checkpoint" in str(path)]
     assert cp_paths != [], f"No checkpoints found in {model_path}"
 
     return cp_paths[-1]

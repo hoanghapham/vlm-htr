@@ -28,6 +28,14 @@ parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 args = parser.parse_args()
 
+# args = parser.parse_args([
+#     "--data-dir",  str(PROJECT_DIR / "data/page/sbs") ,
+#     "--model-name",  "florence_base__sbs__region__line_od" ,
+#     "--num-train-epochs", "10",
+#     "--max-train-steps", "140000" ,
+#     "--batch-size", "2" ,
+#     "--logging-interval", "14000" ,
+# ])
 
 # Setup constant values
 MODEL_NAME          = args.model_name
@@ -65,10 +73,6 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code=True, 
     revision=REVISION
 )
-
-# All params are unfrozen by default
-# for param in model.parameters():
-#     param.requires_grad = True
 
 
 #%%
