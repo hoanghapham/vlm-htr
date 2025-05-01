@@ -16,7 +16,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_line_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
 from src.post_process import topdown_left_right
 from src.logger import CustomLogger
@@ -148,7 +148,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         batch_cropped_bboxes = []
 
         for bbox_coords in batch:
-            bbox_img = crop_line_image(image, bbox_coords)
+            bbox_img = crop_image(image, bbox_coords)
             batch_cropped_bboxes.append(bbox_img)
 
         # Line segmentation
@@ -166,7 +166,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         batch_cropped_segs  = []
 
         for bbox_img, mask in zip(batch_cropped_bboxes, batch_masks):
-            batch_cropped_segs.append(crop_line_image(bbox_img, mask))
+            batch_cropped_segs.append(crop_image(bbox_img, mask))
 
         # OCR
         _, ocr_output = predict(

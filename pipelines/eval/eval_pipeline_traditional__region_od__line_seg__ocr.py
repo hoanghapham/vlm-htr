@@ -17,13 +17,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import (
-    IMAGE_EXTENSIONS, 
-    crop_image, 
-    crop_line_image, 
-    bbox_xyxy_to_coords, 
-    coords_to_bbox_xyxy,
-)
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords, coords_to_bbox_xyxy,
 from src.data_processing.utils import XMLParser
 from src.post_process import order_bboxes
 from src.logger import CustomLogger
@@ -105,7 +99,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     region_bboxes = [Bbox(*bbox) for bbox in region_bboxes_raw]
 
     # Sort regions
-    sorted_region_indices = order_bboxes([bbox for bbox in region_bboxes], printspace, True)
+    sorted_region_indices = order_bboxes(region_bboxes, printspace, True)
     sorted_region_bboxes = [region_bboxes[i] for i in sorted_region_indices]
 
 
@@ -151,7 +145,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
             # Cut line segs from region images
             for mask in batch:
-                cropped_line_seg = crop_line_image(region_img, mask.astype(int))
+                cropped_line_seg = cr(region_img, mask.astype(int))
                 cropped_line_imgs.append(cropped_line_seg)
 
             # Batch inference

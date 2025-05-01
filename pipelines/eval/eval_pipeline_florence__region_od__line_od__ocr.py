@@ -4,13 +4,11 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-import numpy as np
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
-from htrflow.utils.layout import estimate_printspace
-from htrflow.utils.geometry import Bbox
+
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -18,10 +16,10 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.post_process import topdown_left_right
 from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
-from src.data_processing.florence import predict, FlorenceTask
+from pipelines.steps.florence import region_od, line_od, ocr
+
 
 # Setup
 parser = ArgumentParser()
@@ -29,18 +27,20 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__line_od__ocr"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__region_od__line_od__ocr"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
@@ -51,7 +51,7 @@ if DEBUG:
 
 #%%
 
-logger = CustomLogger(f"pl_flor__{SPLIT_TYPE}__2steps")
+logger = CustomLogger(f"pl_flor__{SPLIT_TYPE}__3steps")
 
 # Load models
 if args.device == "cuda":
@@ -60,14 +60,17 @@ else:
     DEVICE = args.device
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-model_line_od   = AutoModelForCausalLM.from_pretrained(
-                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
-                    trust_remote_code=True).to(DEVICE)
-model_ocr       = AutoModelForCausalLM.from_pretrained(
-                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
-                    trust_remote_code=True).to(DEVICE)
+region_od_model         = AutoModelForCausalLM.from_pretrained(
+                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__region_od/best",
+                          trust_remote_code=True).to(DEVICE)
+model_region_line_od    = AutoModelForCausalLM.from_pretrained(
+                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__region__line_od/best",
+                          trust_remote_code=True).to(DEVICE)
+model_ocr               = AutoModelForCausalLM.from_pretrained(
+                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+                          trust_remote_code=True).to(DEVICE)
 
-processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+processor               = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 #%%
 xml_parser = XMLParser()
@@ -80,7 +83,8 @@ wer_list = []
 bow_hits_list = []
 bow_extras_list = []
 
-# Iterate through pages
+
+# Iterate through images
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
@@ -98,82 +102,58 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     image       = Image.open(img_path).convert("RGB")
     gt_lines    = xml_parser.get_lines(xml_path)
-    printspace  = estimate_printspace(np.array(image))
 
 
-    ## Line OD
-    logger.info("Line detection")
-
-    _, model_line_od_output = predict(
-        model_line_od, 
-        processor, 
-        task_prompt=FlorenceTask.OD,
-        user_prompt=None, 
-        images=[image], 
-        device=DEVICE
-    )
-
-    bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+    ## Region OD
+    logger.info("Region detection")
+    sorted_region_bboxes = region_od(region_od_model, processor, image, DEVICE)
     
-    # If cant't detect lines, skip the page
-    if len(bboxes_raw) == 0:
-        logger.warning("Can't detect lines on the page")
-        continue
+    
+    ## Line OD within region
+    logger.info("Line detection within region")
+    # cropped_region_imgs = []
 
-    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
+    for region_bbox in sorted_region_bboxes:
+        region_mask  = bbox_xyxy_to_coords(region_bbox)
+        region_img          = crop_image(image, region_mask)
+        # cropped_region_imgs.append(region_img)
 
-    # Sort lines
-    sorted_indices          = topdown_left_right(bboxes)
-    sorted_bboxes           = [bboxes[i] for i in sorted_indices]
-    sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
-
-
-    ## OCR
-    logger.info("Text recognition")
-    page_trans = []
-
-    iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
-
-    for i in tqdm(iterator, total=len(iterator), unit="batch"):
-
-        # Create a batch of cropped line images
-        batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
-        cropped_imgs = []
-
-        # Cut line segs from region images
-        for coords in batch:
-            img = crop_image(image, coords)
-            cropped_imgs.append(img)
-
-        # Batch inference
-        _, model_ocr_output = predict(
-            model_ocr, 
-            processor, 
-            task_prompt=FlorenceTask.OCR,
-            user_prompt=None, 
-            images=cropped_imgs, 
-            device=DEVICE
-        )
-        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
-        page_trans += line_trans
+        ## Line OD
+        sorted_line_bboxes = line_od(model_region_line_od, processor, region_img, DEVICE)
+        if len(sorted_line_bboxes) == 0:
+            logger.warning("Can't find lines on the region image")
+            continue
 
 
-#%%
+        ## OCR
+        logger.info("Text recognition")
+        sorted_line_masks = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
+        iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
+        page_trans = []
+
+        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+
+            # Create a batch of cropped line bboxes
+            # Aggregate line images to do batch OCR
+            batch = sorted_line_masks[i:i+BATCH_SIZE]
+            batch_cropped_lines = []
+
+            for mask in batch:
+                line_img = crop_image(image, mask)
+                batch_cropped_lines.append(line_img)
+
+            # OCR
+            line_trans = ocr(model_ocr, processor, batch_cropped_lines, DEVICE)
+            page_trans += line_trans
+
+
     # Stitching. Transcriptions are already in the right order
-    pred_text = ""
-
-    for line in page_trans:
-        pred_text += line + " "
-
     # Output in .hyp extension to be used with E2EHTREval
+    pred_text = " ".join(page_trans)
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = ""
-
-    for line in gt_lines:
-        gt_text += line["transcription"] + " "
-
+    gt_text = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
 
     # Evaluation
@@ -220,3 +200,6 @@ avg_metrics = {
 
 write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
 # %%
+
+# from src.visualization import draw_segment_masks
+# draw_segment_masks(bbox_img, [mask])

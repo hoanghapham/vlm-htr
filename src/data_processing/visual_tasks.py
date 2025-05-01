@@ -249,52 +249,53 @@ def sort_polygons(polygons, y_threshold=10):
     return [poly for group in grouped for poly in group]
 
 
-def crop_image(img_pil, coords):
-    coords = np.array(coords)
-    img = np.array(img_pil)
-    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
+# def crop_image(img_pil, coords):
+#     coords = np.array(coords)
+#     img = np.array(img_pil)
+#     mask = np.zeros(img.shape[0:2], dtype=np.uint8)
 
-    try:
-        # Ensure the coordinates are within the bounds of the image
-        coords[:, 0] = np.clip(coords[:, 0], 0, img.shape[1] - 1)
-        coords[:, 1] = np.clip(coords[:, 1], 0, img.shape[0] - 1)
+#     try:
+#         # Ensure the coordinates are within the bounds of the image
+#         coords[:, 0] = np.clip(coords[:, 0], 0, img.shape[1] - 1)
+#         coords[:, 1] = np.clip(coords[:, 1], 0, img.shape[0] - 1)
 
-        # Draw the mask
-        cv2.drawContours(mask, [coords], -1, (255, 255, 255), -1, cv2.LINE_AA)
+#         # Draw the mask
+#         cv2.drawContours(mask, [coords], -1, (255, 255, 255), -1, cv2.LINE_AA)
 
-        # Apply mask to image
-        res = cv2.bitwise_and(img, img, mask=mask)
-        rect = cv2.boundingRect(coords)
+#         # Apply mask to image
+#         res = cv2.bitwise_and(img, img, mask=mask)
+#         rect = cv2.boundingRect(coords)
 
-        # Ensure the bounding box is within the image dimensions
-        rect = (
-            max(0, rect[0]),
-            max(0, rect[1]),
-            min(rect[2], img.shape[1] - rect[0]),
-            min(rect[3], img.shape[0] - rect[1]),
-        )
+#         # Ensure the bounding box is within the image dimensions
+#         rect = (
+#             max(0, rect[0]),
+#             max(0, rect[1]),
+#             min(rect[2], img.shape[1] - rect[0]),
+#             min(rect[3], img.shape[0] - rect[1]),
+#         )
 
-        wbg = np.ones_like(img, np.uint8) * 255
-        cv2.bitwise_not(wbg, wbg, mask=mask)
+#         wbg = np.ones_like(img, np.uint8) * 255
+#         cv2.bitwise_not(wbg, wbg, mask=mask)
 
-        # Overlap the resulted cropped image on the white background
-        dst = wbg + res
+#         # Overlap the resulted cropped image on the white background
+#         dst = wbg + res
 
-        # Use validated rect for cropping
-        cropped = dst[rect[1] : rect[1] + rect[3], rect[0] : rect[0] + rect[2]]
+#         # Use validated rect for cropping
+#         cropped = dst[rect[1] : rect[1] + rect[3], rect[0] : rect[0] + rect[2]]
 
-        # Convert the NumPy array back to a PIL image
-        cropped_pil = PILImage.fromarray(cropped)
+#         # Convert the NumPy array back to a PIL image
+#         cropped_pil = PILImage.fromarray(cropped)
 
-        return cropped_pil
+#         return cropped_pil
 
-    except Exception as e:
-        print(f"Error in cropping: {e}")
-        return img_pil  # Return the original image if there's an error
+#     except Exception as e:
+#         print(f"Error in cropping: {e}")
+#         return img_pil  # Return the original image if there's an error
 
 
-def crop_line_image(img, coords: list[tuple[int, int]]):
-    """Crops a line image based on the provided coordinates."""
+def crop_image(img, coords: list[tuple[int, int]]):
+    """Crops an image based on the provided polygon coordinates. 
+    Apply a white background for areas outside of the polygon"""
     image_array = np.array(img)
     mask = np.zeros(image_array.shape[:2], dtype=np.uint8)
     cv2.drawContours(mask, [np.array(coords)], -1, (255, 255, 255), -1, cv2.LINE_AA)
