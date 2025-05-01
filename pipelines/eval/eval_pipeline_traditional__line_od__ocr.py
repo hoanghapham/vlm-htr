@@ -107,7 +107,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     line_bboxes_raw = results_line_od[0].boxes.xyxy
     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
-    if len(line_bbox) == 0:
+    if len(line_bboxes) == 0:
         logger.warning(f"No line detected")
         cer_list.append(Ratio(0, 0))
         wer_list.append(Ratio(0, 0))
