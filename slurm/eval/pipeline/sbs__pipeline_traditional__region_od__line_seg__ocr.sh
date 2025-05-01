@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_traditional__region_od__line_seg__ocr.py \
     --split-type sbs \
-    --ocr-batch-size 6
+    --batch-size 6

@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_traditional__line_od__ocr.py \
     --split-type mixed \
-    --ocr-batch-size 6
+    --batch-size 6

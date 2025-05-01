@@ -27,21 +27,21 @@ from src.data_processing.florence import predict, FlorenceTask
 # Setup
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
-parser.add_argument("--ocr-batch-size", default=6)
+parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--split-type", "mixed",
-#     "--ocr-batch-size", "2",
+#     "--batch-size", "2",
 # ])
 
-SPLIT_TYPE          = args.split_type
-OCR_BATCH_SIZE      = int(args.ocr_batch_size)
-DEBUG               = args.debug == "true"
-TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__single_model"
+SPLIT_TYPE      = args.split_type
+BATCH_SIZE      = int(args.batch_size)
+DEBUG           = args.debug == "true"
+TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__single_model"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
@@ -128,12 +128,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info("Text recognition")
     page_trans = []
 
-    iterator = list(range(0, len(sorted_line_masks), OCR_BATCH_SIZE))
+    iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line images
-        batch = sorted_line_masks[i:i+OCR_BATCH_SIZE]
+        batch = sorted_line_masks[i:i+BATCH_SIZE]
         cropped_line_imgs = []
 
         # Cut line segs from region images

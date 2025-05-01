@@ -33,12 +33,12 @@ from src.evaluation.utils import Ratio
 # Setup
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
-parser.add_argument("--ocr-batch-size", default=6)
+parser.add_argument("--batch-size", default=6)
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
-OCR_BATCH_SIZE  = int(args.ocr_batch_size)
+BATCH_SIZE      = int(args.batch_size)
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
 OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
 DEBUG           = args.debug == "true"
@@ -141,12 +141,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     for region_idx, (region_img, masks) in enumerate(zip(cropped_regions, region_line_masks)):
         region_trans = []
 
-        iterator = list(range(0, len(masks), OCR_BATCH_SIZE))
+        iterator = list(range(0, len(masks), BATCH_SIZE))
         
         for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"Region {region_idx}/{len(cropped_regions)}"):
 
             # Create a batch of cropped line images
-            batch = masks[i:i+OCR_BATCH_SIZE]
+            batch = masks[i:i+BATCH_SIZE]
             cropped_line_imgs = []
 
             # Cut line segs from region images

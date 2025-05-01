@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_florence__line_od__ocr.py \
     --split-type sbs \
-    --ocr-batch-size 4
+    --batch-size 4
