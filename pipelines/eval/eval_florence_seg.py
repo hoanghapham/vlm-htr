@@ -16,7 +16,7 @@ from src.data_processing.florence import FlorenceTask, FlorenceSingleLineSegData
 
 from src.train import load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
-from src.evaluation.visual_metrics import polygon_to_mask, compute_seg_metrics
+from src.evaluation.visual_metrics import polygon_to_binary_mask, compute_seg_metrics
 #%%
 
 parser = ArgumentParser()
@@ -31,7 +31,8 @@ args = parser.parse_args()
 #     "--model-name", "florence_base__mixed__line_cropped__line_seg",
 #     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/mixed",
 #     "--checkpoint", "best",
-#     # "--mode", "debug"
+#     "--batch-size", "2",
+#     "--debug", "true"
 # ])
 
 # Setup paths
@@ -115,9 +116,9 @@ for start_idx in tqdm(iterator):
     for i, _ in enumerate(batch):
         try:
             pred_mask_num       = list(zip(pred_masks_florence[i][::2], pred_masks_florence[i][1::2]))
-            pred_mask_binary    = polygon_to_mask(pred_mask_num, images[i].size)
+            pred_mask_binary    = polygon_to_binary_mask(pred_mask_num, images[i].size)
             gt_mask_num         = batch[i]["polygon"]
-            gt_mask_binary      = polygon_to_mask(gt_mask_num, images[i].size)
+            gt_mask_binary      = polygon_to_binary_mask(gt_mask_num, images[i].size)
             metrics             = compute_seg_metrics(pred_mask_binary, gt_mask_binary)
 
             all_metrics.append(metrics)
@@ -133,6 +134,9 @@ for start_idx in tqdm(iterator):
 
         except Exception as e:
             logger.exception(e)
+        
+    if DEBUG:
+        break
 
 
 if CHECKPOINT == "vanilla":
@@ -151,3 +155,10 @@ logger.info(f"Avg metrics: {avg_metrics_str}")
 write_json_file(avg_metrics, OUTPUT_DIR / f"avg_metrics_{suffix}.json")
 
 logger.info(f"Wrote results to {OUTPUT_DIR}")
+
+#%%
+
+# from src.visualization import draw_segment_masks
+
+# draw_segment_masks(images[1], [full_results[1]["gt_mask_num"]])
+# draw_segment_masks(images[1], [full_results[1]["pred_mask_num"]])

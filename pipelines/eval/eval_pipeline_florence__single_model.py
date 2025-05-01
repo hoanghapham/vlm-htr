@@ -47,8 +47,8 @@ img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 if DEBUG:
-    img_paths = [img_paths[0, 704]]
-    xml_paths = [xml_paths[0, 704]]
+    img_paths = [img_paths[0], img_paths[704]]
+    xml_paths = [xml_paths[0], xml_paths[704]]
 
 #%%
 

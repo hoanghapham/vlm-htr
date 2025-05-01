@@ -46,8 +46,8 @@ img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 if DEBUG:
-    img_paths = [img_paths[0, 704]]
-    xml_paths = [xml_paths[0, 704]]
+    img_paths = [img_paths[0], img_paths[704]]
+    xml_paths = [xml_paths[0], xml_paths[704]]
 
 #%%
 
@@ -122,9 +122,9 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
 
     # Sort lines
-    sorted_indices = topdown_left_right([bbox for bbox in bboxes])
-    sorted_bboxes  = [bboxes[i] for i in sorted_indices]
-    sorted_bboxes_coords   = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
+    sorted_indices          = topdown_left_right([bbox for bbox in bboxes])
+    sorted_bboxes           = [bboxes[i] for i in sorted_indices]
+    sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
 
 
     ## OCR
