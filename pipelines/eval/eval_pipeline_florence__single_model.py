@@ -49,7 +49,7 @@ xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 #%%
 
-logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
+logger = CustomLogger(f"pl_flor__{SPLIT_TYPE}__single_model")
 
 # Load models
 if args.device == "cuda":

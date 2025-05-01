@@ -34,23 +34,25 @@ from src.evaluation.utils import Ratio
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--ocr-batch-size", default=6)
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
-SPLIT_TYPE          = args.split_type
-OCR_BATCH_SIZE    = int(args.ocr_batch_size)
-TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}"
-
+SPLIT_TYPE      = args.split_type
+OCR_BATCH_SIZE  = int(args.ocr_batch_size)
+TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
+DEBUG           = args.debug == "true"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
-# img_paths = [PROJECT_DIR / "data/page/mixed/test/images/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.jpg"]
-# xml_paths   = [PROJECT_DIR / "data/page/mixed/test/page_xmls/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.xml"]
+if DEBUG:
+    img_paths = [img_paths[704]]
+    xml_paths = [xml_paths[704]]
 
 #%%
 
-logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
+logger = CustomLogger(f"pl_trad__{SPLIT_TYPE}__3steps")
 
 # Load models
 model_region_od = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")

@@ -29,6 +29,7 @@ parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--ocr-batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
@@ -38,18 +39,20 @@ args = parser.parse_args()
 
 SPLIT_TYPE          = args.split_type
 OCR_BATCH_SIZE      = int(args.ocr_batch_size)
+DEBUG               = args.debug == "true"
 TEST_DATA_DIR       = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
 OUTPUT_DIR          = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__line_od__ocr"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
-# img_paths   = [PROJECT_DIR / "data/page/mixed/test/images/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.jpg"]
-# xml_paths   = [PROJECT_DIR / "data/page/mixed/test/page_xmls/Göta_hovrätt__Brottsmålsprotokoll__1730-1733__40005349_00087.xml"]
+if DEBUG:
+    img_paths = [img_paths[704]]
+    xml_paths = [xml_paths[704]]
 
 #%%
 
-logger = CustomLogger(f"eval_pipeline_traditional__{SPLIT_TYPE}")
+logger = CustomLogger(f"pl_flor__{SPLIT_TYPE}__2steps")
 
 # Load models
 if args.device == "cuda":
