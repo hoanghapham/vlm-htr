@@ -113,36 +113,36 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         device=DEVICE
     )
 
-    line_bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+    bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
 
-    if len(line_bboxes_raw) == 0:
+    if len(bboxes_raw) == 0:
         logger.warning("No object found")
         continue
 
-    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
+    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
 
     # Sort lines
-    sorted_line_indices = topdown_left_right([bbox for bbox in line_bboxes])
-    sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
-    sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
+    sorted_indices = topdown_left_right([bbox for bbox in bboxes])
+    sorted_bboxes  = [bboxes[i] for i in sorted_indices]
+    sorted_bboxes_coords   = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
 
 
     ## OCR
     logger.info("Text recognition")
     page_trans = []
 
-    iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
+    iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line images
-        batch = sorted_line_masks[i:i+BATCH_SIZE]
-        cropped_line_imgs = []
+        batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
+        cropped_imgs = []
 
         # Cut line segs from region images
-        for mask in batch:
-            cropped_line_seg = crop_line_image(image, mask)
-            cropped_line_imgs.append(cropped_line_seg)
+        for coords in batch:
+            img = crop_line_image(image, coords)
+            cropped_imgs.append(img)
 
         # Batch inference
         _, model_ocr_output = predict(
@@ -150,7 +150,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             processor, 
             task_prompt=FlorenceTask.OCR,
             user_prompt=None, 
-            images=cropped_line_imgs, 
+            images=cropped_imgs, 
             device=DEVICE
         )
         line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
