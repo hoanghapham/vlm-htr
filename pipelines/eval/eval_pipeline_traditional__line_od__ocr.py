@@ -107,6 +107,14 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     line_bboxes_raw = results_line_od[0].boxes.xyxy
     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
+    if len(line_bbox) == 0:
+        logger.warning(f"No line detected")
+        cer_list.append(Ratio(0, 0))
+        wer_list.append(Ratio(0, 0))
+        bow_hits_list.append(Ratio(0, 0))
+        bow_extras_list.append(Ratio(0, 0))
+        continue
+
     # Sort lines
     sorted_line_indices = topdown_left_right(line_bboxes)
     sorted_line_bboxes = [line_bboxes[i] for i in sorted_line_indices]
