@@ -99,7 +99,7 @@ def compute_masks_region_coverage(pred_mask, truth_mask):
 
 # Segmentation metrics
 # From ChatGPT
-def polygon_to_mask(polygon, image_size):
+def polygon_to_binary_mask(polygon: list[tuple[int, int]], image_size):
     """
     Convert polygon to binary mask.
     
@@ -163,8 +163,8 @@ def compute_seg_metrics(pred_mask, gt_mask):
 
 
 def compute_iou_matrix(pred_polygons, gt_polygons, image_size):
-    pred_masks = [polygon_to_mask(p, image_size) for p in pred_polygons]
-    gt_masks = [polygon_to_mask(g, image_size) for g in gt_polygons]
+    pred_masks = [polygon_to_binary_mask(p, image_size) for p in pred_polygons]
+    gt_masks = [polygon_to_binary_mask(g, image_size) for g in gt_polygons]
 
     iou_matrix = np.zeros((len(gt_masks), len(pred_masks)))
     for i, g_mask in enumerate(gt_masks):

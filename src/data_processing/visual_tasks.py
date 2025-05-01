@@ -293,7 +293,7 @@ def crop_image(img_pil, coords):
         return img_pil  # Return the original image if there's an error
 
 
-def crop_line_image(img, coords):
+def crop_line_image(img, coords: list[tuple[int, int]]):
     """Crops a line image based on the provided coordinates."""
     image_array = np.array(img)
     mask = np.zeros(image_array.shape[:2], dtype=np.uint8)

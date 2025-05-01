@@ -162,24 +162,3 @@ def draw_object_bbox_segment(image: Image, bbox: tuple, mask: list[tuple], fig_s
 
     ax.axis('off')
     plt.show()
-
-
-def draw_image_with_mask(image, mask, alpha = 0.5):
-    """Draw image with overlaid mask."""
-    
-    mask_color = random_color()
-    
-    # Convert image and mask to numpy arrays
-    img_np = np.array(image)
-    mask_rgb = np.zeros_like(img_np)
-    mask_rgb[mask] = mask_color
-
-    # Overlay mask on image
-    overlaid = img_np.copy()
-    overlaid[mask] = (1 - alpha) * img_np[mask] + alpha * mask_rgb[mask]
-
-    # Plot
-    plt.figure(figsize=(10, 10))
-    plt.imshow(overlaid.astype(np.uint8))
-    plt.axis('off')
-    plt.show()
