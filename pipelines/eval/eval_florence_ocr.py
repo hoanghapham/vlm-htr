@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 
 import torch
 from tqdm import tqdm
-from peft import get_peft_model, LoraConfig
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
 
@@ -63,10 +62,6 @@ logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=True)
 logger.info("Load model")
 processor   = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 model       = AutoModelForCausalLM.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
-
-if "lora" in MODEL_NAME:
-    config = LoraConfig.from_pretrained(PROJECT_DIR / "configs/lora")
-    model = get_peft_model(model, config)
 
 # Load checkpoint to evaluate
 cp_train_metrics = {}
