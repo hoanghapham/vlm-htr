@@ -19,4 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_florence__line_od__line_seg__ocr.py \
     --split-type mixed \
-    --batch-size 4
+    --batch-size 2

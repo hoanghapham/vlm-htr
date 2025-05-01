@@ -129,7 +129,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
 
     # Sort lines
-    sorted_indices          = topdown_left_right([bbox for bbox in bboxes])
+    sorted_indices          = topdown_left_right(bboxes)
     sorted_bboxes           = [bboxes[i] for i in sorted_indices]
     sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
 
