@@ -29,12 +29,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -46,8 +48,8 @@ img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 if DEBUG:
-    img_paths = [img_paths[0, 704]]
-    xml_paths = [xml_paths[0, 704]]
+    img_paths = [img_paths[0], img_paths[704]]
+    xml_paths = [xml_paths[0], xml_paths[704]]
 
 #%%
 
@@ -62,6 +64,9 @@ REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
 model_line_od   = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
+                    trust_remote_code=True).to(DEVICE)
+model_line_seg   = AutoModelForCausalLM.from_pretrained(
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_cropped__line_seg/best",
                     trust_remote_code=True).to(DEVICE)
 model_ocr       = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
@@ -81,6 +86,7 @@ bow_hits_list = []
 bow_extras_list = []
 
 
+# Iterate through images
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
@@ -113,51 +119,65 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         device=DEVICE
     )
 
-    line_bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
+    bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
 
-    if len(line_bboxes_raw) == 0:
+    if len(bboxes_raw) == 0:
         logger.warning("No object found")
         continue
 
-    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
+    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
 
     # Sort lines
-    sorted_line_indices = topdown_left_right([bbox for bbox in line_bboxes])
-    sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
-    sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
+    sorted_indices          = topdown_left_right([bbox for bbox in bboxes])
+    sorted_bboxes           = [bboxes[i] for i in sorted_indices]
+    sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
 
 
-    # TODO: Line seg
-
-
-
-    ## OCR
-    logger.info("Text recognition")
+    ## Line seg then OCR
+    logger.info("Line segmentation -> Text recognition")
     page_trans = []
 
-    iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
+    # Iterate through detected lines
+    iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
-        # Create a batch of cropped line images
-        batch = sorted_line_masks[i:i+BATCH_SIZE]
-        cropped_line_imgs = []
+        # Create a batch of cropped line bboxes
+        batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
+        batch_cropped_bboxes = []
 
-        # Cut line segs from region images
-        for mask in batch:
-            cropped_line_seg = crop_line_image(image, mask)
-            cropped_line_imgs.append(cropped_line_seg)
+        for bbox_coords in batch:
+            bbox_img = crop_line_image(image, bbox_coords)
+            batch_cropped_bboxes.append(bbox_img)
 
-        # Batch inference
-        _, model_ocr_output = predict(
+        # Line segmentation
+        _, line_seg_output = predict(
+            model_line_seg, 
+            processor, 
+            task_prompt=FlorenceTask.REGION_TO_SEGMENTATION,
+            user_prompt=None, 
+            images=batch_cropped_bboxes, 
+            device=DEVICE
+        )
+
+        batch_raw_masks     = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in line_seg_output]
+        batch_masks         = [np.array(list(zip(mask[::2], mask[1::2]))).astype(int) for mask in batch_raw_masks]
+        batch_cropped_segs  = []
+
+        for bbox_img, mask in zip(batch_cropped_bboxes, batch_masks):
+            batch_cropped_segs.append(crop_line_image(bbox_img, mask))
+
+        # OCR
+        _, ocr_output = predict(
             model_ocr, 
             processor, 
             task_prompt=FlorenceTask.OCR,
             user_prompt=None, 
-            images=cropped_line_imgs, 
+            images=batch_cropped_segs, 
             device=DEVICE
         )
-        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
+
+        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in ocr_output]
         page_trans += line_trans
 
 
@@ -223,3 +243,7 @@ avg_metrics = {
 
 write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
 # %%
+
+from src.visualization import draw_segment_masks
+
+draw_segment_masks(bbox_img, [mask])
