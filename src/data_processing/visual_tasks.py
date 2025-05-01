@@ -293,18 +293,20 @@ def sort_polygons(polygons, y_threshold=10):
 #         return img_pil  # Return the original image if there's an error
 
 
-def crop_image(img, coords: list[tuple[int, int]]):
+def crop_image(img, polygon: Polygon):
     """Crops an image based on the provided polygon coordinates. 
     Apply a white background for areas outside of the polygon"""
     image_array = np.array(img)
-    mask = np.zeros(image_array.shape[:2], dtype=np.uint8)
-    cv2.drawContours(mask, [np.array(coords)], -1, (255, 255, 255), -1, cv2.LINE_AA)
+    point_list = [(point[0], point[1]) for point in polygon]
 
-    coords = np.array(coords)
+    mask = np.zeros(image_array.shape[:2], dtype=np.uint8)
+    cv2.drawContours(mask, [np.array(point_list)], -1, (255, 255, 255), -1, cv2.LINE_AA)
+
+    coords_array = np.array(point_list)
 
     # Apply mask to image
     res = cv2.bitwise_and(image_array, image_array, mask=mask)
-    rect = cv2.boundingRect(coords)
+    rect = cv2.boundingRect(coords_array)
 
     # Create a white background and overlay the cropped image
     wbg = np.ones_like(image_array, np.uint8) * 255

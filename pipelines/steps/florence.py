@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 import numpy as np
 from htrflow.utils.geometry import Bbox, Polygon
@@ -10,6 +11,8 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.florence import predict, FlorenceTask
 from pipelines.steps.reading_order import topdown_left_right
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> list[Bbox]:
@@ -73,8 +76,8 @@ def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cro
     if len(raw_masks) == 0:
         return []
 
-    int_masks   = [np.array(mask).astype(int) for mask in raw_masks]
-    masks       = [Polygon(mask) for mask in int_masks]
+    int_coords  = [[int(coord) for coord in mask] for mask in raw_masks]
+    masks       = [Polygon(zip(mask[::2], mask[1::2])) for mask in int_coords]
     
     return masks
 

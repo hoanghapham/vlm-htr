@@ -14,10 +14,10 @@ def compute_ocr_metrics(gt_text: str, pred_text: str, return_type: str = "ratio"
     wer = WER()
     bow = BagOfWords()
 
-    cer_value = cer.compute(gt_text, pred_text)["cer"],
-    wer_value = wer.compute(gt_text, pred_text)["wer"],
-    bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"],
-    bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"],
+    cer_value = cer.compute(gt_text, pred_text)["cer"]
+    wer_value = wer.compute(gt_text, pred_text)["wer"]
+    bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
+    bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
 
     result = dict()
 

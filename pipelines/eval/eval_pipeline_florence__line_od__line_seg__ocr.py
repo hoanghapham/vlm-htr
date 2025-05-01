@@ -7,7 +7,6 @@ import torch
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
-from htrflow.evaluate import CER, WER, BagOfWords
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -27,14 +26,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-#     "--device", "cpu",
-#     "--debug", "true",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -74,15 +73,10 @@ processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_
 
 #%%
 xml_parser = XMLParser()
-cer = CER()
-wer = WER()
-bow = BagOfWords()
-
 cer_list = []
 wer_list = []
 bow_hits_list = []
 bow_extras_list = []
-
 
 
 # Iterate through images
@@ -137,6 +131,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         # OCR
         line_trans = ocr(ocr_model, processor, batch_cropped_line_segs, DEVICE)
         page_trans += line_trans
+
 
     # Stitching. Transcriptions are already in the right order
     # Output in .hyp extension to be used with E2EHTREval
