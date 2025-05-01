@@ -22,7 +22,6 @@ from src.post_process import topdown_left_right
 from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
 from src.data_processing.florence import predict, FlorenceTask
-# from src.visualization import draw_bboxes_xyxy
 
 # Setup
 parser = ArgumentParser()

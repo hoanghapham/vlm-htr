@@ -33,13 +33,13 @@ parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--ocr-batch-size", default=6)
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--split-type", "mixed",
-    "--ocr-batch-size", "2",
-    "--debug", "true",
-])
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--ocr-batch-size", "2",
+#     "--debug", "true",
+# ])
 
 
 SPLIT_TYPE          = args.split_type
