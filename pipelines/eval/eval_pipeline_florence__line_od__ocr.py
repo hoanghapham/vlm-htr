@@ -4,7 +4,6 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-import numpy as np
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
@@ -32,6 +31,8 @@ args = parser.parse_args()
 # args = parser.parse_args([
 #     "--split-type", "mixed",
 #     "--batch-size", "2",
+#     "--device", "cpu",
+#     "--debug", "true"
 # ])
 
 SPLIT_TYPE      = args.split_type

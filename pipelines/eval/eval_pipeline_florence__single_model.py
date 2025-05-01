@@ -23,7 +23,6 @@ from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
 from src.data_processing.florence import predict, FlorenceTask
 from pipelines.steps.reading_order import topdown_left_right
-# from src.visualization import draw_bboxes_xyxy
 
 # Setup
 parser = ArgumentParser()
@@ -31,12 +30,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true"
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -48,8 +49,8 @@ img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 if DEBUG:
-    img_paths = [img_paths[0], img_paths[704]]
-    xml_paths = [xml_paths[0], xml_paths[704]]
+    img_paths = [img_paths[0], img_paths[500]]
+    xml_paths = [xml_paths[0], xml_paths[500]]
 
 #%%
 
