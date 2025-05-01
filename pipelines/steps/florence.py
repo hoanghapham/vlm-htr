@@ -1,8 +1,15 @@
-from htrflow.utils.geometry import Bbox
+import sys
+from pathlib import Path
+import numpy as np
+from htrflow.utils.geometry import Bbox, Polygon
+from transformers import AutoModelForCausalLM, AutoProcessor
+from PIL.Image import Image as PILImage
+
+PROJECT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_DIR))
+
 from src.data_processing.florence import predict, FlorenceTask
 from src.post_process import topdown_left_right
-from PIL.Image import Image as PILImage
-from transformers import AutoModelForCausalLM, AutoProcessor
 
 
 def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> list[Bbox]:
@@ -46,6 +53,23 @@ def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image
     sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
     return sorted_line_bboxes
     
+
+def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cropped_line_images: list[PILImage], device: str = "cpu") -> list[Polygon]:
+    _, line_seg_output = predict(
+        line_seg_model, 
+        processor, 
+        task_prompt=FlorenceTask.REGION_TO_SEGMENTATION,
+        user_prompt=None, 
+        images=cropped_line_images, 
+        device=device
+    )
+
+    raw_masks   = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in line_seg_output]
+    int_masks   = [np.array(mask).astype(int) for mask in raw_masks]
+    masks       = [Polygon(mask) for mask in int_masks]
+    
+    return masks
+
 
 def ocr(ocr_model: AutoModelForCausalLM, processor: AutoProcessor, line_images: list[PILImage], device: str = "cpu") -> list[str]:
     _, ocr_output = predict(

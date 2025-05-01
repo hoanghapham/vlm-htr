@@ -4,13 +4,10 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-import numpy as np
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
-from htrflow.utils.layout import estimate_printspace
-from htrflow.utils.geometry import Bbox
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -18,10 +15,10 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.post_process import topdown_left_right
-from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
-from src.data_processing.florence import predict, FlorenceTask
+from src.logger import CustomLogger
+from pipelines.steps.florence import line_od, line_seg, ocr
+
 
 # Setup
 parser = ArgumentParser()
@@ -62,13 +59,13 @@ else:
     DEVICE = args.device
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-model_line_od   = AutoModelForCausalLM.from_pretrained(
+line_od_model   = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
                     trust_remote_code=True).to(DEVICE)
-model_line_seg   = AutoModelForCausalLM.from_pretrained(
+line_seg_model   = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_cropped__line_seg/best",
                     trust_remote_code=True).to(DEVICE)
-model_ocr       = AutoModelForCausalLM.from_pretrained(
+ocr_model       = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
                     trust_remote_code=True).to(DEVICE)
 
@@ -84,6 +81,7 @@ cer_list = []
 wer_list = []
 bow_hits_list = []
 bow_extras_list = []
+
 
 
 # Iterate through images
@@ -104,34 +102,11 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     image       = Image.open(img_path).convert("RGB")
     gt_lines    = xml_parser.get_lines(xml_path)
-    printspace  = estimate_printspace(np.array(image))
-
 
     ## Line OD
     logger.info("Line detection")
-
-    _, model_line_od_output = predict(
-        model_line_od, 
-        processor, 
-        task_prompt=FlorenceTask.OD,
-        user_prompt=None, 
-        images=[image], 
-        device=DEVICE
-    )
-
-    bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
-
-    # If can't find lines, skip the page
-    if len(bboxes_raw) == 0:
-        logger.warning("Can't find lines on the page")
-        continue
-
-    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
-
-    # Sort lines
-    sorted_indices          = topdown_left_right(bboxes)
-    sorted_bboxes           = [bboxes[i] for i in sorted_indices]
-    sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
+    sorted_line_bboxes          = line_od(line_od_model, processor, image, DEVICE)
+    sorted_line_bboxes_coords   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
 
 
     ## Line seg then OCR
@@ -139,50 +114,29 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     page_trans = []
 
     # Iterate through detected lines
-    iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
+    iterator = list(range(0, len(sorted_line_bboxes_coords), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line bboxes
-        batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
-        batch_cropped_bboxes = []
+        batch = sorted_line_bboxes_coords[i:i+BATCH_SIZE]
+        batch_cropped_line_imgs = []
 
         for bbox_coords in batch:
-            bbox_img = crop_image(image, bbox_coords)
-            batch_cropped_bboxes.append(bbox_img)
+            line_img = crop_image(image, bbox_coords)
+            batch_cropped_line_imgs.append(line_img)
 
         # Line segmentation
-        _, line_seg_output = predict(
-            model_line_seg, 
-            processor, 
-            task_prompt=FlorenceTask.REGION_TO_SEGMENTATION,
-            user_prompt=None, 
-            images=batch_cropped_bboxes, 
-            device=DEVICE
-        )
+        masks = line_seg(line_seg_model, processor, batch_cropped_line_imgs)
+        batch_cropped_line_segs   = []
 
-        batch_raw_masks     = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in line_seg_output]
-        batch_masks         = [np.array(list(zip(mask[::2], mask[1::2]))).astype(int) for mask in batch_raw_masks]
-        batch_cropped_segs  = []
-
-        for bbox_img, mask in zip(batch_cropped_bboxes, batch_masks):
-            batch_cropped_segs.append(crop_image(bbox_img, mask))
-
+        for line_img, mask in zip(batch_cropped_line_imgs, masks):
+            batch_cropped_line_segs.append(crop_image(line_img, mask))
+        
         # OCR
-        _, ocr_output = predict(
-            model_ocr, 
-            processor, 
-            task_prompt=FlorenceTask.OCR,
-            user_prompt=None, 
-            images=batch_cropped_segs, 
-            device=DEVICE
-        )
-
-        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in ocr_output]
+        line_trans = ocr(ocr_model, processor, batch_cropped_line_segs, DEVICE)
         page_trans += line_trans
 
-
-#%%
     # Stitching. Transcriptions are already in the right order
     pred_text = ""
 
@@ -247,4 +201,4 @@ write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
 
 from src.visualization import draw_segment_masks
 
-draw_segment_masks(bbox_img, [mask])
+draw_segment_masks(line_img, [mask])
