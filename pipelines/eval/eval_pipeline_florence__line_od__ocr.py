@@ -9,8 +9,6 @@ from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
-from htrflow.utils.layout import estimate_printspace
-from htrflow.utils.geometry import Bbox
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -18,10 +16,10 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.post_process import topdown_left_right
-from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
-from src.data_processing.florence import predict, FlorenceTask
+from src.evaluation.ocr_metrics import compute_ocr_metrics
+from src.logger import CustomLogger
+from pipelines.steps.florence import line_od, ocr
 
 # Setup
 parser = ArgumentParser()
@@ -60,10 +58,10 @@ else:
     DEVICE = args.device
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-model_line_od   = AutoModelForCausalLM.from_pretrained(
+line_od_model   = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
                     trust_remote_code=True).to(DEVICE)
-model_ocr       = AutoModelForCausalLM.from_pretrained(
+ocr_model       = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
                     trust_remote_code=True).to(DEVICE)
 
@@ -98,109 +96,65 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     image       = Image.open(img_path).convert("RGB")
     gt_lines    = xml_parser.get_lines(xml_path)
-    printspace  = estimate_printspace(np.array(image))
 
 
     ## Line OD
     logger.info("Line detection")
+    sorted_line_bboxes = line_od(line_od_model, processor, image, DEVICE)
 
-    _, model_line_od_output = predict(
-        model_line_od, 
-        processor, 
-        task_prompt=FlorenceTask.OD,
-        user_prompt=None, 
-        images=[image], 
-        device=DEVICE
-    )
-
-    bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
-    
-    # If cant't detect lines, skip the page
-    if len(bboxes_raw) == 0:
+    if len(sorted_line_bboxes) == 0:
         logger.warning("Can't detect lines on the page")
         continue
 
-    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
-
-    # Sort lines
-    sorted_indices          = topdown_left_right(bboxes)
-    sorted_bboxes           = [bboxes[i] for i in sorted_indices]
-    sorted_bboxes_coords    = [bbox_xyxy_to_coords(box) for box in sorted_bboxes]
-
-
     ## OCR
     logger.info("Text recognition")
-    page_trans = []
+    sorted_bboxes_coords = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
 
     iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
+    page_trans = []
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line images
         batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
-        cropped_imgs = []
+        cropped_line_imgs = []
 
         # Cut line segs from region images
-        for coords in batch:
-            img = crop_image(image, coords)
-            cropped_imgs.append(img)
+        for bbox_coords in batch:
+            line_img = crop_image(image, bbox_coords)
+            cropped_line_imgs.append(line_img)
 
         # Batch inference
-        _, model_ocr_output = predict(
-            model_ocr, 
-            processor, 
-            task_prompt=FlorenceTask.OCR,
-            user_prompt=None, 
-            images=cropped_imgs, 
-            device=DEVICE
-        )
-        line_trans = [output[FlorenceTask.OCR].replace("<pad>", "") for output in model_ocr_output]
+        line_trans = ocr(ocr_model, processor, cropped_line_imgs, DEVICE)
         page_trans += line_trans
 
 
-#%%
     # Stitching. Transcriptions are already in the right order
-    pred_text = ""
-
-    for line in page_trans:
-        pred_text += line + " "
-
     # Output in .hyp extension to be used with E2EHTREval
+    pred_text = " ".join(page_trans)
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = ""
-
-    for line in gt_lines:
-        gt_text += line["transcription"] + " "
-
+    gt_text = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
+
 
     # Evaluation
     try:
-        cer_value = cer.compute(gt_text, pred_text)["cer"]
-        wer_value = wer.compute(gt_text, pred_text)["wer"]
-        bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
-        bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
+        metrics_ratio   = compute_ocr_metrics(gt_text, pred_text, return_type="ratio")
+        metrics_str     = compute_ocr_metrics(gt_text, pred_text, return_type="str")
     except Exception as e:
         logger.exception(e)
         continue
 
-    cer_list.append(cer_value)
-    wer_list.append(wer_value)
-    bow_hits_list.append(bow_hits_value)
-    bow_extras_list.append(bow_extras_value)
+    cer_list.append(metrics_ratio["cer"])
+    wer_list.append(metrics_ratio["wer"])
+    bow_hits_list.append(metrics_ratio["bow_hits"])
+    bow_extras_list.append(metrics_ratio["bow_extras"])
 
-    page_metrics = {
-        "cer": {"str": str(cer_value), "float": float(cer_value)},
-        "wer": {"str": str(wer_value), "float": float(wer_value)},
-        "bow_hits": {"str": str(bow_hits_value), "float": float(bow_hits_value)},
-        "bow_extras": {"str": str(bow_extras_value), "float": float(bow_extras_value)}
-    }
+    logger.info(f"CER: {float(metrics_ratio['cer']):.4f}, WER: {float(metrics_ratio['wer']):.4f}, BoW hits: {float(metrics_ratio['bow_hits']):.4f}, BoW extras: {float(metrics_ratio['bow_extras']):.4f}")
 
-    logger.info(f"CER: {float(cer_value):.4f}, WER: {float(wer_value):.4f}, BoW hits: {float(bow_hits_value):.4f}, BoW extras: {float(bow_extras_value):.4f}")
-
-    write_json_file(page_metrics, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
+    write_json_file(metrics_str, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
 
 # Averaging metrics across all pages

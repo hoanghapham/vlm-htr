@@ -9,7 +9,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.florence import predict, FlorenceTask
-from src.post_process import topdown_left_right
+from pipelines.steps.reading_order import topdown_left_right
 
 
 def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> list[Bbox]:
@@ -23,6 +23,10 @@ def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, i
     )
 
     region_bboxes_raw = region_od_output[0][FlorenceTask.OD]["bboxes"]
+
+    if len(region_bboxes_raw) == 0:
+        return []
+
     region_bboxes = [Bbox(*bbox) for bbox in region_bboxes_raw]
 
     # Sort regions
@@ -65,6 +69,10 @@ def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cro
     )
 
     raw_masks   = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in line_seg_output]
+
+    if len(raw_masks) == 0:
+        return []
+
     int_masks   = [np.array(mask).astype(int) for mask in raw_masks]
     masks       = [Polygon(mask) for mask in int_masks]
     

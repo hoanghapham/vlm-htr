@@ -9,7 +9,6 @@ from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
 
-
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
@@ -18,6 +17,7 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_
 from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
+from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.florence import region_od, line_od, ocr
 
 
@@ -114,8 +114,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     # cropped_region_imgs = []
 
     for region_bbox in sorted_region_bboxes:
-        region_mask  = bbox_xyxy_to_coords(region_bbox)
-        region_img          = crop_image(image, region_mask)
+        region_mask = bbox_xyxy_to_coords(region_bbox)
+        region_img  = crop_image(image, region_mask)
         # cropped_region_imgs.append(region_img)
 
         ## Line OD
@@ -158,29 +158,20 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Evaluation
     try:
-        cer_value = cer.compute(gt_text, pred_text)["cer"]
-        wer_value = wer.compute(gt_text, pred_text)["wer"]
-        bow_hits_value = bow.compute(gt_text, pred_text)["bow_hits"]
-        bow_extras_value = bow.compute(gt_text, pred_text)["bow_extras"]
+        metrics_ratio   = compute_ocr_metrics(gt_text, pred_text, return_type="ratio")
+        metrics_str     = compute_ocr_metrics(gt_text, pred_text, return_type="str")
     except Exception as e:
         logger.exception(e)
         continue
 
-    cer_list.append(cer_value)
-    wer_list.append(wer_value)
-    bow_hits_list.append(bow_hits_value)
-    bow_extras_list.append(bow_extras_value)
+    cer_list.append(metrics_ratio["cer"])
+    wer_list.append(metrics_ratio["wer"])
+    bow_hits_list.append(metrics_ratio["bow_hits"])
+    bow_extras_list.append(metrics_ratio["bow_extras"])
 
-    page_metrics = {
-        "cer": {"str": str(cer_value), "float": float(cer_value)},
-        "wer": {"str": str(wer_value), "float": float(wer_value)},
-        "bow_hits": {"str": str(bow_hits_value), "float": float(bow_hits_value)},
-        "bow_extras": {"str": str(bow_extras_value), "float": float(bow_extras_value)}
-    }
+    logger.info(f"CER: {float(metrics_ratio['cer']):.4f}, WER: {float(metrics_ratio['wer']):.4f}, BoW hits: {float(metrics_ratio['bow_hits']):.4f}, BoW extras: {float(metrics_ratio['bow_extras']):.4f}")
 
-    logger.info(f"CER: {float(cer_value):.4f}, WER: {float(wer_value):.4f}, BoW hits: {float(bow_hits_value):.4f}, BoW extras: {float(bow_extras_value):.4f}")
-
-    write_json_file(page_metrics, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
+    write_json_file(metrics_str, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
 
 # Averaging metrics across all pages

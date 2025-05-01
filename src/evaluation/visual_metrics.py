@@ -1,18 +1,18 @@
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from sklearn.metrics import precision_recall_fscore_support
-from shapely import Polygon, union_all
-from htrflow.evaluate import Ratio
-from src.evaluation.utils import Ratio
 
 import numpy as np
-from shapely.geometry import Polygon
-from PIL import Image, ImageDraw
+from sklearn.metrics import precision_recall_fscore_support
 from skimage.segmentation import find_boundaries
-
-from itertools import product
 from scipy.optimize import linear_sum_assignment
+
+from shapely import Polygon, union_all
+from shapely.geometry import Polygon
+from htrflow.evaluate import Ratio
+from PIL import Image, ImageDraw
+
+from src.evaluation.utils import Ratio
 
 
 def compute_bbox_iou(box1, box2):
