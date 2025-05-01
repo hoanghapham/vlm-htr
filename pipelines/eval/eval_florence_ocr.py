@@ -212,6 +212,10 @@ write_json_file(metrics_lists, OUTPUT_DIR / f"metrics_lists_{suffix}.json")
 write_list_to_text_file(gt_list, OUTPUT_DIR / "ground_truth.txt")
 
 # Write prediction for reference
-pred_list = [pred[task] for pred in pred_list]
-write_list_to_text_file(pred_list, OUTPUT_DIR / f"prediction_{suffix}.txt")
+out_pred_list = []
+
+for pred in pred_list:
+    out_pred_list += [data[task] for data in pred]
+
+write_list_to_text_file(out_pred_list, OUTPUT_DIR / f"prediction_{suffix}.txt")
 
