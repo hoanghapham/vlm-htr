@@ -121,8 +121,9 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
 
+    # If can't find lines, skip the page
     if len(bboxes_raw) == 0:
-        logger.warning("No object found")
+        logger.warning("Can't find lines on the page")
         continue
 
     bboxes = [Bbox(*bbox) for bbox in bboxes_raw]

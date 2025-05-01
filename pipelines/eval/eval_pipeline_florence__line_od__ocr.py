@@ -80,7 +80,7 @@ wer_list = []
 bow_hits_list = []
 bow_extras_list = []
 
-
+# Iterate through pages
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
@@ -114,9 +114,10 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     )
 
     bboxes_raw = model_line_od_output[0][FlorenceTask.OD]["bboxes"]
-
+    
+    # If cant't detect lines, skip the page
     if len(bboxes_raw) == 0:
-        logger.warning("No object found")
+        logger.warning("Can't detect lines on the page")
         continue
 
     bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
