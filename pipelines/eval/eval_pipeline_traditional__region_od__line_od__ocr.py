@@ -144,7 +144,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
                 batch_line_imgs.append(line_img)
 
             # Batch inference
-            line_trans = ocr(ocr_model, processor, batch_line_imgs, device=DEVICE)
+            try:
+                line_trans = ocr(ocr_model, processor, batch_line_imgs, device=DEVICE)
+            except Exception as e:
+                logger.warning(f"Failed to OCR line images: {e}")
+                continue
+
             region_trans += line_trans
 
         page_trans.append(region_trans)

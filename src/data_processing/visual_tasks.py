@@ -318,6 +318,7 @@ def crop_image(img, polygon: Polygon):
     # cv2_image_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
     return PILImage.fromarray(cropped).convert("RGB")
 
+
 class Bbox():
     def __init__(self, xyxy: tuple):
         self.xyxy = xyxy
