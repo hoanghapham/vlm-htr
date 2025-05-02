@@ -127,8 +127,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             batch_line_imgs = []
 
             for mask in batch:
-                cropped_line_seg = crop_image(region_img, mask)
-                batch_line_imgs.append(cropped_line_seg)
+                line_img = crop_image(region_img, mask)
+                batch_line_imgs.append(line_img)
 
             # Batch inference
             line_trans = ocr(ocr_model, processor, batch_line_imgs, device=DEVICE)

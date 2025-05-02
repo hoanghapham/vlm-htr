@@ -84,7 +84,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
-    if img_metric_path.exists():
+    if img_metric_path.exists() and not DEBUG:
         logger.info(f"Skip: {img_path.name}")
         img_metric = read_json_file(img_metric_path)
         cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
