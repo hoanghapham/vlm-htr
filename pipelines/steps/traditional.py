@@ -18,6 +18,9 @@ def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> li
     bboxes_raw = result_od[0].boxes.xyxy
     bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
 
+    if len(bboxes) == 0:
+        return []
+
     # Sort regions
     sorted_region_indices = topdown_left_right(bboxes)
     sorted_bboxes = [bboxes[i] for i in sorted_region_indices]
