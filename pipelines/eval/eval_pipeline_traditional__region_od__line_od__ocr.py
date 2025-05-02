@@ -136,7 +136,11 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             batch_line_imgs = []
 
             for mask in batch:
-                line_img = crop_image(region_img, mask)
+                try:
+                    line_img = crop_image(region_img, mask)
+                except Exception as e:
+                    logger.warning(f"Failed to crop line image: {e}")
+                    continue
                 batch_line_imgs.append(line_img)
 
             # Batch inference
