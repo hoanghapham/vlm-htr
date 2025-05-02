@@ -4,14 +4,10 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-import numpy as np
 from ultralytics import YOLO
 from tqdm import tqdm
 from PIL import Image
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from htrflow.utils.layout import estimate_printspace
-from htrflow.utils.geometry import Bbox
-from htrflow.evaluate import CER, WER, BagOfWords
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -19,24 +15,23 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.post_process import topdown_left_right
 from src.logger import CustomLogger
 from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-
+from pipelines.steps.traditional import line_od, ocr
 
 # Setup
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-#     "--debug", "true",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--debug", "true",
+])
 
 
 SPLIT_TYPE      = args.split_type
@@ -58,32 +53,30 @@ if DEBUG:
 logger = CustomLogger(f"pl_trad__{SPLIT_TYPE}__2steps")
 
 # Load models
-model_line_od  = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__line_od/weights/best.pt")
+line_od_model  = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__line_od/weights/best.pt")
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
 processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model_ocr           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
+ocr_model           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
 
 #%%
 xml_parser = XMLParser()
-cer = CER()
-wer = WER()
-bow = BagOfWords()
-
 cer_list = []
 wer_list = []
 bow_hits_list = []
 bow_extras_list = []
 
 
+
+#%%
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     # logger.info(f"Processing image {img_idx+1}/{len(img_paths)}")
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
-    if img_metric_path.exists():
+    if img_metric_path.exists() and not DEBUG:
         logger.info(f"Skip: {img_path.name}")
         img_metric = read_json_file(img_metric_path)
         cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
@@ -96,26 +89,14 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     image = Image.open(img_path).convert("RGB")
     gt_lines = xml_parser.get_lines(xml_path)
-    printspace = estimate_printspace(np.array(image))
 
     ## line OD
     logger.info("Line detection")
-    results_line_od = model_line_od.predict(image, verbose=False, device=DEVICE)
-    line_bboxes_raw = results_line_od[0].boxes.xyxy
-    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
+    sorted_line_bboxes = line_od(line_od_model, image, DEVICE)
 
-    if len(line_bboxes) == 0:
+    if len(sorted_line_bboxes) == 0:
         logger.warning("No line detected")
-        cer_list.append(Ratio(0, 0))
-        wer_list.append(Ratio(0, 0))
-        bow_hits_list.append(Ratio(0, 0))
-        bow_extras_list.append(Ratio(0, 0))
         continue
-
-    # Sort lines
-    sorted_line_indices = topdown_left_right(line_bboxes)
-    sorted_line_bboxes = [line_bboxes[i] for i in sorted_line_indices]
-
 
     ## OCR
     logger.info("Text recognition")
@@ -127,36 +108,25 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
         # Create a batch of cropped line images
         batch = sorted_line_bboxes[i:i+BATCH_SIZE]
-        cropped_line_imgs = []
+        batch_line_imgs = []
 
         # Cut line segs from line images
         for line_bbox in batch:
             crop_coords = bbox_xyxy_to_coords(line_bbox)
-            cropped_line_img = crop_image(image, crop_coords)
-
-            cropped_line_imgs.append(cropped_line_img)
+            line_imgs = crop_image(image, crop_coords)
+            batch_line_imgs.append(line_imgs)
 
         # Batch inference
-        pixel_values    = processor(images=cropped_line_imgs, return_tensors="pt").pixel_values.to(DEVICE)
-        generated_ids   = model_ocr.generate(inputs=pixel_values)
-        line_trans      = processor.batch_decode(generated_ids, skip_special_tokens=True)
+        line_trans = ocr(ocr_model, processor, batch_line_imgs, device=DEVICE)
         page_trans += line_trans
 
     # Stitching. Transcriptions are already in the right order
-    pred_text = ""
-
-    for line in page_trans:
-        pred_text += line + " "
-
     # Output in .hyp extension to be used with E2EHTREval
+    pred_text = " ".join(page_trans)
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = ""
-
-    for line in gt_lines:
-        gt_text += line["transcription"] + " "
-
+    gt_text = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
     
     try:

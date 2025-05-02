@@ -1,9 +1,9 @@
 import sys
 import os
 from pathlib import Path
-import numpy as np
-from htrflow.utils.geometry import Bbox, Polygon
+
 from transformers import AutoModelForCausalLM, AutoProcessor
+from htrflow.utils.geometry import Bbox, Polygon
 from PIL.Image import Image as PILImage
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
