@@ -20,7 +20,7 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__mixed__line_od__ocr \
-    --data-dir $PROJECT_DIR/data/line_bbox/mixed/test/ \
+    --data-dir $PROJECT_DIR/data/page/mixed/test/ \
     --output-dir $PROJECT_DIR/evaluations/florence_base__mixed__line_od__line_od/ \
     --object-class line \
     --checkpoint best \
