@@ -101,6 +101,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info("Line detection")
     cropped_regions = []
     region_line_masks = []
+    lines_found = 0
 
     for bbox in sorted_region_bboxes:
         # Crop image to region
@@ -117,7 +118,11 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
         sorted_line_masks = [bbox_xyxy_to_coords(bbox) for bbox in sorted_line_bboxes]
         region_line_masks.append(sorted_line_masks)
+        lines_found += len(sorted_line_masks)
 
+    if lines_found == 0:
+        logger.warning(f"No lines detected in page")
+        continue
 
     # OCR
     logger.info("Text recognition")
