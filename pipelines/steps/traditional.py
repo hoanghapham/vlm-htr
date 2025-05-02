@@ -1,16 +1,42 @@
 import sys
-import os
 from pathlib import Path
 
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from htrflow.utils.geometry import Bbox, Polygon
-from PIL.Image import Image as PILImage
 from ultralytics import YOLO
+from htrflow.utils.geometry import Bbox, Polygon, Point
+from PIL.Image import Image as PILImage
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from src.data_processing.visual_tasks import coords_to_bbox_xyxy
 from pipelines.steps.reading_order import topdown_left_right
+
+
+def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> list[Bbox]:
+    result_od = od_model.predict(image, verbose=False, device=device)
+    bboxes_raw = result_od[0].boxes.xyxy
+    bboxes = [Bbox(*bbox) for bbox in bboxes_raw]
+
+    # Sort regions
+    sorted_region_indices = topdown_left_right(bboxes)
+    sorted_bboxes = [bboxes[i] for i in sorted_region_indices]
+    return sorted_bboxes
+
+
+def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") -> list[PILImage]:
+    results_line_seg = line_seg_model(region_img, verbose=False, device=device)
+    
+    if results_line_seg[0].masks is None:
+        return []
+
+    # Sort masks
+    masks               = [Polygon([Point(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
+    line_bboxes         = [Bbox(*coords_to_bbox_xyxy(line)) for line in masks if len(line) > 0]
+    sorted_line_indices = topdown_left_right(line_bboxes)
+    sorted_line_masks   = [masks[i] for i in sorted_line_indices]
+
+    return sorted_line_masks
 
 
 def line_od(line_od_model: YOLO, image: PILImage, device: str = "cpu") -> list[Bbox]:

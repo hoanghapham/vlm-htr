@@ -8,27 +8,30 @@ from ultralytics import YOLO
 from tqdm import tqdm
 from PIL import Image
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from htrflow.utils.geometry import Bbox
-from htrflow.evaluate import CER, WER, BagOfWords
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords, coords_to_bbox_xyxy
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
 from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
+from pipelines.steps.traditional import object_detection, line_seg, ocr
 from src.logger import CustomLogger
-from pipelines.steps.reading_order import topdown_left_right
-
 
 # Setup
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
+
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "6",
+    "--debug", "true"
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -48,21 +51,17 @@ if DEBUG:
 logger = CustomLogger(f"pl_trad__{SPLIT_TYPE}__3steps")
 
 # Load models
-model_region_od = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")
-model_line_seg  = YOLO(PROJECT_DIR / f"models/trained/yolo11m_seg__{SPLIT_TYPE}__region__line_seg/weights/best.pt")
+region_od_model = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")
+line_seg_model  = YOLO(PROJECT_DIR / f"models/trained/yolo11m_seg__{SPLIT_TYPE}__region__line_seg/weights/best.pt")
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
 processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
-model_ocr           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
+ocr_model           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
 
 #%%
 xml_parser = XMLParser()
-cer = CER()
-wer = WER()
-bow = BagOfWords()
-
 cer_list = []
 wer_list = []
 bow_hits_list = []
@@ -76,7 +75,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
-    if img_metric_path.exists():
+    if img_metric_path.exists() and not DEBUG:
         logger.info(f"Skip: {img_path.name}")
         img_metric = read_json_file(img_metric_path)
         cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
@@ -92,14 +91,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Region OD
     logger.info("Region detection")
-    results_region_od = model_region_od.predict(image, verbose=False, device=DEVICE)
-    region_bboxes_raw = results_region_od[0].boxes.xyxy
-    region_bboxes = [Bbox(*bbox) for bbox in region_bboxes_raw]
-
-    # Sort regions
-    sorted_region_indices = topdown_left_right(region_bboxes)
-    sorted_region_bboxes = [region_bboxes[i] for i in sorted_region_indices]
-
+    sorted_region_bboxes = object_detection(region_od_model, image, device=DEVICE)
+    
 
     ## Line seg
     logger.info("Line segmentation")
@@ -113,18 +106,9 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         cropped_regions.append(region_img)
 
         # Segment lines
-        results_line_seg = model_line_seg(region_img, verbose=False, device=DEVICE)
-        if results_line_seg[0].masks is None:
-            continue
-
-        masks = results_line_seg[0].masks.xy
-
-        # Sort masks
-        line_bboxes = [Bbox(*coords_to_bbox_xyxy(line.astype(int))) for line in masks if len(line) > 0]
-        sorted_line_indices = order_bboxes(line_bboxes, printspace, False)
-        sorted_line_masks = [masks[i] for i in sorted_line_indices]
-
+        sorted_line_masks = line_seg(line_seg_model, region_img, device=DEVICE)
         region_line_masks.append(sorted_line_masks)
+
 
     # OCR
     logger.info("Text recognition")
@@ -138,18 +122,16 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"Region {region_idx}/{len(cropped_regions)}"):
 
             # Create a batch of cropped line images
-            batch = masks[i:i+BATCH_SIZE]
-            cropped_line_imgs = []
-
             # Cut line segs from region images
+            batch = masks[i:i+BATCH_SIZE]
+            batch_line_imgs = []
+
             for mask in batch:
-                cropped_line_seg = cr(region_img, mask.astype(int))
-                cropped_line_imgs.append(cropped_line_seg)
+                cropped_line_seg = crop_image(region_img, mask)
+                batch_line_imgs.append(cropped_line_seg)
 
             # Batch inference
-            pixel_values    = processor(images=cropped_line_imgs, return_tensors="pt").pixel_values.to(DEVICE)
-            generated_ids   = model_ocr.generate(inputs=pixel_values)
-            line_trans      = processor.batch_decode(generated_ids, skip_special_tokens=True)
+            line_trans = ocr(ocr_model, processor, batch_line_imgs, device=DEVICE)
             region_trans += line_trans
 
         page_trans.append(region_trans)
@@ -165,7 +147,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = ""
+    gt_text = " ".join([line["transcription"] for line in gt_lines])
 
     for line in gt_lines:
         gt_text += line["transcription"] + " "
