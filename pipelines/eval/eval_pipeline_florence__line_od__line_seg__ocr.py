@@ -122,7 +122,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             batch_cropped_line_imgs.append(line_img)
 
         # Line segmentation
-        masks = line_seg(line_seg_model, processor, batch_cropped_line_imgs)
+        masks = line_seg(line_seg_model, processor, batch_cropped_line_imgs, DEVICE)
         batch_cropped_line_segs   = []
 
         for line_img, mask in zip(batch_cropped_line_imgs, masks):
