@@ -1,8 +1,9 @@
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+import numpy as np
+import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
 from datasets import load_from_disk, concatenate_datasets
-import numpy as np
 
 
 class XMLParser():

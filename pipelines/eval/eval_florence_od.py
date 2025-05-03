@@ -30,10 +30,10 @@ parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "florence_base__mixed__page__region_od__lora",
+#     "--model-name", "florence_base__mixed__page__region_od",
 #     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/mixed",
 #     "--checkpoint", "best",
-#     "--mode", "debug"
+#     "--debug", "true"
 # ])
 
 # Setup paths
