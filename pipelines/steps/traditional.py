@@ -3,7 +3,8 @@ from pathlib import Path
 
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from ultralytics import YOLO
-from htrflow.utils.geometry import Bbox, Polygon, Point
+from htrflow.utils.geometry import Bbox
+from shapely.geometry import Polygon
 from PIL.Image import Image as PILImage
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -34,7 +35,7 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
         return []
 
     # Sort masks
-    masks               = [Polygon([Point(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
+    masks               = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
     line_bboxes         = [Bbox(*coords_to_bbox_xyxy(line)) for line in masks if len(line) > 0]
     sorted_line_indices = topdown_left_right(line_bboxes)
     sorted_line_masks   = [masks[i] for i in sorted_line_indices]

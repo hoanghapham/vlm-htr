@@ -12,7 +12,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
@@ -26,14 +26,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-#     "--device", "cpu",
-#     "--debug", "true",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -94,42 +94,39 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
-
     image       = Image.open(img_path).convert("RGB")
     gt_lines    = xml_parser.get_lines(xml_path)
 
+
     ## Line OD
     logger.info("Line detection")
-    sorted_line_bboxes          = line_od(line_od_model, processor, image, DEVICE)
-    sorted_line_bboxes_coords   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
-
+    line_od_output          = line_od(line_od_model, processor, image, DEVICE)
 
     ## Line seg then OCR
     logger.info("Line segmentation -> Text recognition")
     page_trans = []
 
     # Iterate through detected lines
-    iterator = list(range(0, len(sorted_line_bboxes_coords), BATCH_SIZE))
+    iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line bboxes
-        batch = sorted_line_bboxes_coords[i:i+BATCH_SIZE]
-        batch_cropped_line_imgs = []
+        batch = line_od_output.polygons[i:i+BATCH_SIZE]
+        batch_line_bbox_imgs = []
 
-        for bbox_coords in batch:
-            line_img = crop_image(image, bbox_coords)
-            batch_cropped_line_imgs.append(line_img)
+        for bbox_polygon in batch:
+            batch_line_bbox_imgs.append(crop_image(image, bbox_polygon))
 
         # Line segmentation
-        masks = line_seg(line_seg_model, processor, batch_cropped_line_imgs, DEVICE)
-        batch_cropped_line_segs   = []
+        line_seg_output     = line_seg(line_seg_model, processor, batch_line_bbox_imgs, DEVICE)
+        batch_line_seg_imgs = []
 
-        for line_img, mask in zip(batch_cropped_line_imgs, masks):
-            batch_cropped_line_segs.append(crop_image(line_img, mask))
+        for line_img, mask in zip(batch_line_bbox_imgs, line_seg_output.polygons):
+            batch_line_seg_imgs.append(crop_image(line_img, mask))
         
         # OCR
-        line_trans = ocr(ocr_model, processor, batch_cropped_line_segs, DEVICE)
+        line_trans = ocr(ocr_model, processor, batch_line_seg_imgs, DEVICE)
         page_trans += line_trans
 
 

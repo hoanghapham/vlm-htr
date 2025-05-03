@@ -3,20 +3,28 @@ import os
 from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoProcessor
-from htrflow.utils.geometry import Bbox, Polygon
+from htrflow.utils.geometry import Bbox
+from shapely.geometry import Polygon
 from PIL.Image import Image as PILImage
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.florence import predict, FlorenceTask
+from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy
 from pipelines.steps.reading_order import topdown_left_right
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> list[Bbox]:
-    _, region_od_output = predict(
+class ODOutput():
+    def __init__(self, object_bboxes: list[Bbox], object_polygons: list[Polygon]):
+        self.bboxes = object_bboxes
+        self.polygons = object_polygons
+
+
+def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> ODOutput:
+    _, output = predict(
         region_od_model, 
         processor, 
         task_prompt=FlorenceTask.OD,
@@ -25,21 +33,22 @@ def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, i
         device=device
     )
 
-    region_bboxes_raw = region_od_output[0][FlorenceTask.OD]["bboxes"]
+    bboxes_raw = output[0][FlorenceTask.OD]["bboxes"]
 
-    if len(region_bboxes_raw) == 0:
+    if len(bboxes_raw) == 0:
         return []
 
-    region_bboxes = [Bbox(*bbox) for bbox in region_bboxes_raw]
-
     # Sort regions
-    sorted_region_indices = topdown_left_right(region_bboxes)
-    sorted_region_bboxes = [region_bboxes[i] for i in sorted_region_indices]
-    return sorted_region_bboxes
+    bboxes           = [Bbox(*bbox) for bbox in bboxes_raw]
+    sorted_indices   = topdown_left_right(bboxes)
+    sorted_bboxes    = [bboxes[i] for i in sorted_indices]
+    sorted_polygons  = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
+
+    return ODOutput(sorted_bboxes, sorted_polygons)
 
 
-def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> list[Bbox]:
-    _, line_od_output = predict(
+def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image: PILImage, device: str = "cpu") -> ODOutput:
+    _, output = predict(
         line_od_model, 
         processor, 
         task_prompt=FlorenceTask.OD,
@@ -48,21 +57,21 @@ def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image
         device=device
     )
 
-    line_bboxes_raw = line_od_output[0][FlorenceTask.OD]["bboxes"]
+    bboxes_raw = output[0][FlorenceTask.OD]["bboxes"]
 
-    if len(line_bboxes_raw) == 0:
+    if len(bboxes_raw) == 0:
         return []
 
-    line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
-
     # Sort lines
-    sorted_line_indices = topdown_left_right(line_bboxes)
-    sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
-    return sorted_line_bboxes
+    bboxes              = [Bbox(*bbox) for bbox in bboxes_raw]
+    sorted_indices      = topdown_left_right(bboxes)
+    sorted_bboxes       = [bboxes[i] for i in sorted_indices]
+    sorted_polygons     = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
+    return ODOutput(sorted_bboxes, sorted_polygons)
     
 
-def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cropped_line_images: list[PILImage], device: str = "cpu") -> list[Polygon]:
-    _, line_seg_output = predict(
+def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cropped_line_images: list[PILImage], device: str = "cpu") -> ODOutput:
+    _, output = predict(
         line_seg_model, 
         processor, 
         task_prompt=FlorenceTask.REGION_TO_SEGMENTATION,
@@ -71,15 +80,15 @@ def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cro
         device=device
     )
 
-    raw_masks   = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in line_seg_output]
+    raw_polygons   = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in output]
 
-    if len(raw_masks) == 0:
+    if len(raw_polygons) == 0:
         return []
 
-    int_coords  = [[int(coord) for coord in mask] for mask in raw_masks]
-    masks       = [Polygon(zip(mask[::2], mask[1::2])) for mask in int_coords]
-    
-    return masks
+    int_coords  = [[int(coord) for coord in mask] for mask in raw_polygons]
+    polygons    = [Polygon(zip(mask[::2], mask[1::2])) for mask in int_coords]  # List of length 1
+    bboxes      = [polygon_to_bbox_xyxy(poly) for poly in polygons]
+    return ODOutput(bboxes, polygons)
 
 
 def ocr(ocr_model: AutoModelForCausalLM, processor: AutoProcessor, line_images: list[PILImage], device: str = "cpu") -> list[str]:

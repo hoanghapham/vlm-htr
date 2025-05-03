@@ -101,6 +101,16 @@ def coords_to_bbox_xyxy(coords: list[tuple]):
     return x1, y1, x2, y2
 
 
+def polygon_to_bbox_xyxy(polygon: Polygon):
+    x_coords = [tup[0] for tup in polygon.boundary.coords]
+    y_coords = [tup[1] for tup in polygon.boundary.coords]
+    x1 = min(x_coords)
+    y1 = min(y_coords)
+    x2 = max(x_coords)
+    y2 = max(y_coords)
+    return x1, y1, x2, y2
+
+
 # Conversion between normal format and YOLO
 
 def bbox_xyxy_to_yolo_format(bbox: tuple | list, img_width: int, img_height: int, class_id=0) -> str:
