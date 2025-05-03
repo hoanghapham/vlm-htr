@@ -17,13 +17,13 @@ parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
 parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--split-type", "mixed",
-    "--task", "region__line_od",    
-    "--debug", "true"
-])
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--task", "region__line_od",    
+#     "--debug", "true"
+# ])
 
 SPLIT_TYPE  = args.split_type
 TASK        = args.task
