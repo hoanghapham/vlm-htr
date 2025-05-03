@@ -145,7 +145,7 @@ class RegionLineODDataset(BaseImgXMLDataset):
             bboxes=self.region_lines_shifted[idx],
             img_volume=img_volume,
             img_filename=img_filename,
-            unique_key=f"{img_volume}_{img_filename}_{self.region_ids[idx]}",
+            unique_key=f"{img_filename}_{self.region_ids[idx]}",
             img_path=self.idx_to_img_path[idx],
             xml_path=self.idx_to_img_path[idx]
         )

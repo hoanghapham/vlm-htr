@@ -1,7 +1,8 @@
 # %%
 import sys
+import os
+import shutil
 from pathlib import Path
-from shutil import copy
 PROJECT_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
@@ -16,13 +17,13 @@ parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
 parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--task", "region__line_od",    
-#     "--debug", "true"
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--task", "region__line_od",    
+    "--debug", "true"
+])
 
 SPLIT_TYPE  = args.split_type
 TASK        = args.task
@@ -103,13 +104,11 @@ count_val = 0
 count_test = 0
 
 # Iterate through datapoints
-for data in tqdm(dataset):
+for data in tqdm(dataset, total=len(dataset), desc=f"Write data to {YOLO_DATA_DIR}"):
     img_filename = normalize_name(data["img_filename"])
-    image = data["image"]
-    bboxes = data["bboxes"]
-    yolo_bboxes = bboxes_xyxy_to_yolo_format(bboxes, image.width, image.height)
-    source_img_path = data["img_path"]
+    img_volume = data["img_volume"]
 
+    # Determine write path
     if img_filename in split_page_names["train"]:
         dest_images_dir, dest_labels_dir = target_dirs["train"]
         count_train += 1
@@ -125,7 +124,24 @@ for data in tqdm(dataset):
     unique_key = data["unique_key"]
     dest_image_path = dest_images_dir / f"{unique_key}.png"
     dest_label_path = dest_labels_dir / f"{unique_key}.txt"
-    
+
+    full_img_path = dest_images_dir / f"{img_volume}_{img_filename}.png"
+    full_label_path = dest_labels_dir / f"{img_volume}_{img_filename}.txt"
+
+    # Temp fix, should be removed
+    if full_label_path.exists() and full_label_path.exists():
+        shutil.move(full_img_path, dest_image_path)
+        shutil.move(full_label_path, dest_label_path)
+        os.remove(full_img_path)
+        os.remove(full_label_path)
+        continue
+
+    # Write data  
+    image = data["image"]
+    bboxes = data["bboxes"]
+    yolo_bboxes = bboxes_xyxy_to_yolo_format(bboxes, image.width, image.height)
+    source_img_path = data["img_path"]
+
     image.save(dest_image_path)
     write_list_to_text_file(yolo_bboxes, dest_label_path)
 
