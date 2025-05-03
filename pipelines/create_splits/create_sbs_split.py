@@ -64,4 +64,4 @@ split_info = {
     "test": test_names
 }
 
-write_json_file(split_info, PROJECT_DIR / "data/split_info/sbs.json")
+write_json_file(split_info, PROJECT_DIR / "configs/split_info/sbs.json")

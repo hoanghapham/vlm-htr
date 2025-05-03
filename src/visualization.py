@@ -1,7 +1,7 @@
 import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from PIL import Image
+from PIL.Image import Image
 from src.data_processing.visual_tasks import bbox_xyxy_to_xywh
 import numpy as np
 

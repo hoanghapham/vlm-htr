@@ -249,11 +249,15 @@ def sort_polygons(polygons, y_threshold=10):
     return [poly for group in grouped for poly in group]
 
 
-def crop_image(img, polygon: Polygon):
+def crop_image(img, polygon: Polygon | list[tuple[int, int]]):
     """Crops an image based on the provided polygon coordinates. 
     Apply a white background for areas outside of the polygon"""
     image_array = np.array(img)
     # point_list = [(point[0], point[1]) for point in polygon]
+
+    if isinstance(polygon, list):
+        polygon = Polygon(polygon)
+
     points_array = np.array(list(polygon.boundary.coords)).astype(int)
 
     mask = np.zeros(image_array.shape[:2], dtype=np.uint8)

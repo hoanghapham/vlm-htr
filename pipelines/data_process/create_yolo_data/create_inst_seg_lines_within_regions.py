@@ -28,7 +28,7 @@ YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/{SPLIT_TYPE}/{dataset_name}"
 dsets = []
 print("Load all datasets")
 dir_paths   = sorted([path for path in SOURCE_DATA_DIR.iterdir() if path.is_dir()])
-split_info  = read_json_file(PROJECT_DIR / f"data/split_info/{SPLIT_TYPE}.json")
+split_info  = read_json_file(PROJECT_DIR / f"configs/split_info/{SPLIT_TYPE}.json")
 
 
 # %%

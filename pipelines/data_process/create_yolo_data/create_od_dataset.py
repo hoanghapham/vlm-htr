@@ -2,37 +2,40 @@
 import sys
 from pathlib import Path
 from shutil import copy
-PROJECT_DIR = Path(__file__).parent.parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import yaml
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.visual_tasks import (
-    bboxes_xyxy_to_yolo_format, 
-    TextRegionBboxDataset, 
-    TextLineBboxDataset, 
-)
+from src.data_processing.visual_tasks import bboxes_xyxy_to_yolo_format
+from src.data_processing.generic_datasets import PageRegionODDataset, PageLineODDataset, RegionLineODDataset
 from tqdm import tqdm
 
 parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
-parser.add_argument("--object-class", default="region")
+parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
-SPLIT_TYPE      = args.split_type
-OBJECT_CLASS    = args.object_class
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--task", "region__line_od",    
+#     "--debug", "true"
+# ])
+
+SPLIT_TYPE  = args.split_type
+TASK        = args.task
+DEBUG       = args.debug == "true"
 
 supported_split_types = ["sbs", "mixed"]
 assert SPLIT_TYPE in supported_split_types, f"{SPLIT_TYPE} must be in: {supported_split_types}"
 
-supported_object_classes = ["region", "line"]
-assert OBJECT_CLASS in supported_object_classes, f"{OBJECT_CLASS} must be in: {supported_object_classes}"
+supported_tasks = ["page__region_od", "page__line_od", "region__line_od"]
+assert TASK in supported_tasks, f"{TASK} must be in: {supported_tasks}"
 
-
-DATASET_NAME = f"{OBJECT_CLASS}_od"
 SOURCE_DATA_DIR = PROJECT_DIR / "data/raw/riksarkivet"
-YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/" / SPLIT_TYPE / DATASET_NAME
+YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/" / SPLIT_TYPE / TASK
 
 
 # %%
@@ -59,7 +62,7 @@ yolo_data_config = {
     "train": "train/images",
     "val": "val/images",
     "test": "test/images",
-    "names": {0: OBJECT_CLASS},
+    "names": {0: TASK},
     "nc": 1
 }
 
@@ -67,7 +70,7 @@ yaml.safe_dump(yolo_data_config, open(YOLO_DATA_DIR / "config.yaml", "w"))
 
 # %%
 # Prepare split info
-split_info  = read_json_file(PROJECT_DIR / f"data/split_info/{SPLIT_TYPE}.json")
+split_info  = read_json_file(PROJECT_DIR / f"configs/split_info/{SPLIT_TYPE}.json")
 
 norm_train_names = [normalize_name(name) for name in split_info["train"]]
 norm_val_names = [normalize_name(name) for name in split_info["val"]]
@@ -82,18 +85,22 @@ split_page_names = {
 #%%
 # Load data
 
-if OBJECT_CLASS == "region":
-    dataset = TextRegionBboxDataset(SOURCE_DATA_DIR)
-elif OBJECT_CLASS == "line":
-    dataset = TextLineBboxDataset(SOURCE_DATA_DIR)
+if TASK == "page__region_od":
+    dataset = PageRegionODDataset(SOURCE_DATA_DIR)
+elif TASK == "page__line_od":
+    dataset = PageLineODDataset(SOURCE_DATA_DIR)
+elif TASK == "region__line_od":
+    dataset = RegionLineODDataset(SOURCE_DATA_DIR)
+
+#%%
+# from src.visualization import draw_bboxes_xyxy
+# draw_bboxes_xyxy(dataset[0]["image"], dataset[0]["bboxes"])
 
 # %%
 # Write data
-
 count_train = 0
 count_val = 0
 count_test = 0
-
 
 # Iterate through datapoints
 for data in tqdm(dataset):
@@ -115,11 +122,15 @@ for data in tqdm(dataset):
         dest_images_dir, dest_labels_dir = target_dirs["test"]
         count_test += 1
 
-    dest_image_path = dest_images_dir / Path(source_img_path).name
-    dest_label_path = dest_labels_dir / (Path(source_img_path).stem + ".txt")
+    unique_key = data["unique_key"]
+    dest_image_path = dest_images_dir / f"{unique_key}.png"
+    dest_label_path = dest_labels_dir / f"{unique_key}.txt"
     
-    copy(source_img_path, dest_image_path)
+    image.save(dest_image_path)
     write_list_to_text_file(yolo_bboxes, dest_label_path)
+
+    if DEBUG:
+        break
 
 print(f"Wrote {count_train} train, {count_val} val, {count_test} test images.")
     

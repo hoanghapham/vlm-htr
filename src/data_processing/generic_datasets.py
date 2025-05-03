@@ -6,6 +6,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from abc import ABC, abstractmethod
 from typing import Iterable
 from PIL import Image
+from tqdm import tqdm
 
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.file_tools import list_files
@@ -63,7 +64,7 @@ class BaseImgXMLDataset(ABC):
             if len(lines) > 0 and len(regions) > 0:
                 self.img_paths.append(img)
                 self.xml_paths.append(xml)
-    
+
     
 class PageRegionODDataset(BaseImgXMLDataset):
 
@@ -94,21 +95,40 @@ class RegionLineODDataset(BaseImgXMLDataset):
 
         self.idx_to_img_path: list[Path] = []
         self.idx_to_xml_path: list[Path] = []
+        self.region_ids = []
         self.region_bboxes = []
         self.region_polygons = []
-        self.region_lines = []
+        self.region_lines_raw = []
+        self.region_lines_shifted = []
 
         # Preload region - line data
-        for idx, (img, xml) in enumerate(zip(self.img_paths, self.xml_paths)):
+        for img, xml in tqdm(zip(self.img_paths, self.xml_paths), total=len(self.img_paths), desc="Validate data"):
             regions = self.xmlparser.get_regions(xml)
             
             for region in regions:
                 if len(region["lines"]) > 0:
                     self.idx_to_img_path.append(img)
                     self.idx_to_xml_path.append(xml)
+                    self.region_ids.append(region["region_id"])
                     self.region_bboxes.append(region["bbox"])
                     self.region_polygons.append(region["polygon"])
-                    self.region_lines.append(region["lines"])
+                    self.region_lines_raw.append(region["lines"])
+
+                    # Shift lines to match region bbox
+                    shifted_bboxes = []
+                    shift_x = region["bbox"][0]
+                    shift_y = region["bbox"][1]
+
+                    for line in region["lines"]:
+                        shifted = (
+                            line["bbox"][0] - shift_x, 
+                            line["bbox"][1] - shift_y,
+                            line["bbox"][2] - shift_x, 
+                            line["bbox"][3] - shift_y
+                        )
+                        shifted_bboxes.append(shifted)
+
+                    self.region_lines_shifted.append(shifted_bboxes)
 
 
     def __getitem__(self, idx):
@@ -117,17 +137,15 @@ class RegionLineODDataset(BaseImgXMLDataset):
         img_volume      = self.idx_to_img_path[idx].parent.name
         full_image      = Image.open(self.idx_to_img_path[idx]).convert("RGB")
 
-        region_polygon = self.region_polygons[idx]
-        region_image = crop_image(full_image, region_polygon)
-
-        region_lines = self.region_lines[idx]
-        line_bboxes = [data["bbox"] for data in region_lines]
+        region_polygon  = self.region_polygons[idx]
+        region_image    = crop_image(full_image, region_polygon)
 
         return dict(
             image=region_image,
-            bboxes=line_bboxes,
+            bboxes=self.region_lines_shifted[idx],
             img_volume=img_volume,
             img_filename=img_filename,
+            unique_key=f"{img_volume}_{img_filename}_{self.region_ids[idx]}",
             img_path=self.idx_to_img_path[idx],
             xml_path=self.idx_to_img_path[idx]
         )
