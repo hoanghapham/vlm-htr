@@ -3,13 +3,14 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from typing import Iterable, Sequence
+from typing import Sequence
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
-from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
+from src.data_processing.utils import load_arrow_datasets
+from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_coords
+from src.data_processing.generic_datasets import BaseImgXMLDataset
 
 
 class FlorenceTask():
