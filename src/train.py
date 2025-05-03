@@ -96,7 +96,8 @@ class Trainer():
         
         # Train loop
         total_train_loss = 0
-        step_counter = self.start_step  # Keep track of how many steps was done across epochs
+        global_step_counter = self.start_step   # Keep track of how many steps was done across epochs / runs
+        local_step_counter = 0                  # Keep track of how many steps was done in the current run
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
@@ -116,31 +117,31 @@ class Trainer():
                     batch_data = next(self.train_loader._get_iterator())
                     step_loss = self._train_one_step(batch_data)
                     total_train_loss += step_loss
-                    avg_train_loss  = total_train_loss / step_counter
+                    avg_train_loss  = total_train_loss / local_step_counter
                     iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset error count if success
                     error_count = 0
 
-                    is_logging_point = (step_counter % self.logging_interval == 0) or step_counter == (self.max_train_steps)
+                    is_logging_point = (global_step_counter % self.logging_interval == 0) or global_step_counter == (self.max_train_steps)
                     
                     if is_logging_point:
-                        avg_val_loss = self._evaluate(step_counter)
-                        self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {step_counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
+                        avg_val_loss = self._evaluate(global_step_counter)
+                        self._save_checkpoint(global_step_counter, avg_train_loss, avg_val_loss)
+                        self.logger.info(f"Saved checkpoint {global_step_counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
                         self.copy_last_checkpoint()
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
 
                         if self.tsb_logger is not None:
-                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, step_counter)
-                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, step_counter)
+                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_counter)
+                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_counter)
                     
-                    # Advance step_counter
-                    step_counter += 1
+                    # Advance global_step_counter
+                    global_step_counter += 1
 
-                    if step_counter > self.max_train_steps:
+                    if global_step_counter > self.max_train_steps:
                         break
 
                 except Exception as e:
@@ -149,14 +150,14 @@ class Trainer():
                     self.logger.exception(e)
                     continue
             
-            # If enstep_countering errors more than MAX_ERROR_RETRIES times, end training
+            # If englobal_step_countering errors more than MAX_ERROR_RETRIES times, end training
             if error_count > MAX_ERROR_RETRIES:
                 self.logger.error(f"ERROR {MAX_ERROR_RETRIES} times, end training early")
-                self._save_checkpoint(step_counter, avg_train_loss, avg_val_loss)
-                self.logger.info(f"Saved checkpoint {step_counter}")
+                self._save_checkpoint(global_step_counter, avg_train_loss, avg_val_loss)
+                self.logger.info(f"Saved checkpoint {global_step_counter}")
                 break
 
-            if step_counter > self.max_train_steps:
+            if global_step_counter > self.max_train_steps:
                 break
         
         # Copy best checkpoints
