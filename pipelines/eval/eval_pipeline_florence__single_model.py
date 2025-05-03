@@ -22,7 +22,6 @@ from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
 from src.data_processing.florence import predict, FlorenceTask
-from pipelines.steps.reading_order import topdown_left_right
 
 # Setup
 parser = ArgumentParser()
@@ -121,7 +120,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
     # Sort lines
-    sorted_line_indices = topdown_left_right(line_bboxes)
+    sorted_line_indices = sort_top_down_left_right(line_bboxes)
     sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
     sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
 

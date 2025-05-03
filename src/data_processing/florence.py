@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from src.data_processing.utils import XMLParser, load_arrow_datasets
-from src.data_processing.visual_tasks import BaseImgXMLDataset, coords_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import BaseImgXMLDataset, polygon_to_bbox_xyxy, crop_image, bbox_xyxy_to_coords
 
 
 class FlorenceTask():

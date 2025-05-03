@@ -91,14 +91,14 @@ def bbox_xywh_to_xyxy(bbox):
     return x1, y1, x2, y2
 
 
-def coords_to_bbox_xyxy(coords: list[tuple]):
-    x_coords = [tup[0] for tup in coords]
-    y_coords = [tup[1] for tup in coords]
-    x1 = min(x_coords)
-    y1 = min(y_coords)
-    x2 = max(x_coords)
-    y2 = max(y_coords)
-    return x1, y1, x2, y2
+# def coords_to_bbox_xyxy(coords: list[tuple]):
+#     x_coords = [tup[0] for tup in coords]
+#     y_coords = [tup[1] for tup in coords]
+#     x1 = min(x_coords)
+#     y1 = min(y_coords)
+#     x2 = max(x_coords)
+#     y2 = max(y_coords)
+#     return x1, y1, x2, y2
 
 
 def polygon_to_bbox_xyxy(polygon: Polygon):

@@ -1,10 +1,35 @@
+import sys
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_DIR))
+
 from typing import Sequence
 from htrflow.utils.geometry import Bbox
+from htrflow.evaluate import Ratio
+
+from src.file_tools import read_json_file
+
+
+def read_img_metrics(
+    img_metric_path: str | Path, 
+    cer_list: list, 
+    wer_list: list, 
+    bow_hits_list: list, 
+    bow_extras_list: list
+) -> tuple[list, list, list, list]:
+    img_metric = read_json_file(img_metric_path)
+    cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
+    wer_list.append(Ratio(*img_metric["wer"]["str"].split("/")))
+    bow_hits_list.append(Ratio(*img_metric["bow_hits"]["str"].split("/")))
+    bow_extras_list.append(Ratio(*img_metric["bow_extras"]["str"].split("/")))
+
+    return cer_list, wer_list, bow_hits_list, bow_extras_list
 
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with slight modifications
 
-def order_bboxes(bboxes: Sequence[Bbox], printspace: Bbox, is_twopage: bool):
+def sort_bboxes(bboxes: Sequence[Bbox], printspace: Bbox, is_twopage: bool):
     """Order bounding boxes with respect to printspace
 
     This function estimates the reading order based on the following:
@@ -37,7 +62,7 @@ def order_bboxes(bboxes: Sequence[Bbox], printspace: Bbox, is_twopage: bool):
 
 
 # Code from ChatGPT
-def topdown_left_right(bboxes: Sequence[Bbox], split_x: float | None = None):
+def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = None):
     """Order bounding boxes topdown-left right.
 
     Automatically splits bounding boxes into 'left' and 'right' groups based

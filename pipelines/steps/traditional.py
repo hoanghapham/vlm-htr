@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.visual_tasks import coords_to_bbox_xyxy
-from pipelines.steps.reading_order import topdown_left_right
+from pipelines.steps.reading_order import sort_top_down_left_right
 
 
 def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> list[Bbox]:
@@ -23,7 +23,7 @@ def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> li
         return []
 
     # Sort regions
-    sorted_region_indices = topdown_left_right(bboxes)
+    sorted_region_indices = sort_top_down_left_right(bboxes)
     sorted_bboxes = [bboxes[i] for i in sorted_region_indices]
     return sorted_bboxes
 
@@ -37,7 +37,7 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
     # Sort masks
     masks               = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
     line_bboxes         = [Bbox(*coords_to_bbox_xyxy(line)) for line in masks if len(line) > 0]
-    sorted_line_indices = topdown_left_right(line_bboxes)
+    sorted_line_indices = sort_top_down_left_right(line_bboxes)
     sorted_line_masks   = [masks[i] for i in sorted_line_indices]
 
     return sorted_line_masks
@@ -52,7 +52,7 @@ def line_od(line_od_model: YOLO, image: PILImage, device: str = "cpu") -> list[B
         return []
 
     # Sort lines
-    sorted_line_indices = topdown_left_right(line_bboxes)
+    sorted_line_indices = sort_top_down_left_right(line_bboxes)
     sorted_line_bboxes = [line_bboxes[i] for i in sorted_line_indices]
     return sorted_line_bboxes
 

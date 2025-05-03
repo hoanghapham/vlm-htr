@@ -12,7 +12,7 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.florence import predict, FlorenceTask
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy
-from pipelines.steps.reading_order import topdown_left_right
+from pipelines.steps.general import sort_top_down_left_right
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -40,7 +40,7 @@ def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, i
 
     # Sort regions
     bboxes           = [Bbox(*bbox) for bbox in bboxes_raw]
-    sorted_indices   = topdown_left_right(bboxes)
+    sorted_indices   = sort_top_down_left_right(bboxes)
     sorted_bboxes    = [bboxes[i] for i in sorted_indices]
     sorted_polygons  = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
 
@@ -64,7 +64,7 @@ def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image
 
     # Sort lines
     bboxes              = [Bbox(*bbox) for bbox in bboxes_raw]
-    sorted_indices      = topdown_left_right(bboxes)
+    sorted_indices      = sort_top_down_left_right(bboxes)
     sorted_bboxes       = [bboxes[i] for i in sorted_indices]
     sorted_polygons     = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
     return ODOutput(sorted_bboxes, sorted_polygons)
