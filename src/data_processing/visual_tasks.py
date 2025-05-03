@@ -249,49 +249,6 @@ def sort_polygons(polygons, y_threshold=10):
     return [poly for group in grouped for poly in group]
 
 
-# def crop_image(img_pil, coords):
-#     coords = np.array(coords)
-#     img = np.array(img_pil)
-#     mask = np.zeros(img.shape[0:2], dtype=np.uint8)
-
-#     try:
-#         # Ensure the coordinates are within the bounds of the image
-#         coords[:, 0] = np.clip(coords[:, 0], 0, img.shape[1] - 1)
-#         coords[:, 1] = np.clip(coords[:, 1], 0, img.shape[0] - 1)
-
-#         # Draw the mask
-#         cv2.drawContours(mask, [coords], -1, (255, 255, 255), -1, cv2.LINE_AA)
-
-#         # Apply mask to image
-#         res = cv2.bitwise_and(img, img, mask=mask)
-#         rect = cv2.boundingRect(coords)
-
-#         # Ensure the bounding box is within the image dimensions
-#         rect = (
-#             max(0, rect[0]),
-#             max(0, rect[1]),
-#             min(rect[2], img.shape[1] - rect[0]),
-#             min(rect[3], img.shape[0] - rect[1]),
-#         )
-
-#         wbg = np.ones_like(img, np.uint8) * 255
-#         cv2.bitwise_not(wbg, wbg, mask=mask)
-
-#         # Overlap the resulted cropped image on the white background
-#         dst = wbg + res
-
-#         # Use validated rect for cropping
-#         cropped = dst[rect[1] : rect[1] + rect[3], rect[0] : rect[0] + rect[2]]
-
-#         # Convert the NumPy array back to a PIL image
-#         cropped_pil = PILImage.fromarray(cropped)
-
-#         return cropped_pil
-
-#     except Exception as e:
-#         print(f"Error in cropping: {e}")
-#         return img_pil  # Return the original image if there's an error
-
 
 def crop_image(img, polygon: Polygon):
     """Crops an image based on the provided polygon coordinates. 
@@ -317,39 +274,6 @@ def crop_image(img, polygon: Polygon):
 
     # cv2_image_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
     return PILImage.fromarray(cropped).convert("RGB")
-
-
-class Bbox():
-    def __init__(self, xyxy: tuple):
-        self.xyxy = xyxy
-        self.xywh = bbox_xyxy_to_xywh(xyxy)
-        self.polygon = bbox_xyxy_to_polygon(xyxy)
-        self.points = self.polygon.exterior.coords
-
-    @staticmethod
-    def from_xywh(xywh: tuple) -> Self:
-        xyxy = bbox_xywh_to_xyxy(xywh)
-        return Bbox(xyxy)
-
-    @staticmethod
-    def from_polygon_coords(coords: list[tuple]) -> Self:
-        x_coords = [tup[0] for tup in coords]
-        y_coords = [tup[1] for tup in coords]
-        x1 = min(x_coords)
-        y1 = min(y_coords)
-        x2 = max(x_coords)
-        y2 = max(y_coords)
-        return Bbox(xyxy=(x1, y1, x2, y2))
-    
-    @property
-    def area(self):
-        return self.polygon.area
-    
-    def __getitem__(self, idx):
-        return self.xyxy[idx]
-
-    def __repr__(self):
-        return str(self.xyxy)
 
 
 class BaseImgXMLDataset(ABC):
@@ -404,7 +328,6 @@ class BaseImgXMLDataset(ABC):
                 self.img_paths.append(img)
                 self.xml_paths.append(xml)
     
-
     
 class TextRegionBboxDataset(BaseImgXMLDataset):
 
