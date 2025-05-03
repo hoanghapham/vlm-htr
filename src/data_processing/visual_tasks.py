@@ -61,7 +61,7 @@ def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
     return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
 
 
-def bbox_xyxy_to_polygon(bbox: list[tuple]) -> list[Polygon]:
+def bbox_xyxy_to_polygon(bbox: list[tuple]) -> Polygon:
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
     # Order polygon points counter-clockwise
@@ -101,9 +101,16 @@ def bbox_xywh_to_xyxy(bbox):
 #     return x1, y1, x2, y2
 
 
-def polygon_to_bbox_xyxy(polygon: Polygon):
-    x_coords = [tup[0] for tup in polygon.boundary.coords]
-    y_coords = [tup[1] for tup in polygon.boundary.coords]
+def polygon_to_bbox_xyxy(polygon: Polygon | list[tuple[int, int]]):
+
+    if isinstance(polygon, Polygon):
+        boundary = polygon.boundary.coords
+    else:
+        boundary = polygon
+
+    x_coords = [tup[0] for tup in boundary]
+    y_coords = [tup[1] for tup in boundary]
+
     x1 = min(x_coords)
     y1 = min(y_coords)
     x2 = max(x_coords)
@@ -581,8 +588,8 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
 
             for i, line in enumerate(lines_data):
                 line_id = str(i).zfill(4)
-                bbox = coords_to_bbox_xyxy(line["coords"])
-                bbox_coords = bbox_xyxy_to_coords(bbox)
+                bbox        = polygon_to_bbox_xyxy(line["coords"])
+                bbox_coords = bbox_xyxy_to_polygon(bbox).boundary.coords
                 try:
                     cropped_image = self.crop_line_image(image_array, bbox_coords)
                 except Exception as e:
@@ -768,7 +775,7 @@ class HTRDatasetBuilder(GeneratorBasedBuilder):
                 continue
 
             translated_polygon = [(x - min_x, y - min_y) for x, y in clipped_line_polygon]
-            bbox = coords_to_bbox_xyxy(translated_polygon)
+            bbox = polygon_to_bbox_xyxy(translated_polygon)
             # transcription = "".join(line.itertext()).strip()
 
             annotations.append(
