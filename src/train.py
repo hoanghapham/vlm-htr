@@ -97,9 +97,8 @@ class Trainer():
             param.requires_grad = True
         
         # Train loop
-        total_train_loss = 0
+        train_losses = []
         global_step_counter = self.start_step   # Keep track of how many steps was done across epochs / runs
-        local_step_counter = 1                  # Keep track of how many steps was done in the current run
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
@@ -116,10 +115,11 @@ class Trainer():
                 try:
                     # There can be errors in a data point in a batch, so need to try to get the next batch
                     # If fails, skip the batch
-                    batch_data = next(self.train_loader._get_iterator())
-                    step_loss = self._train_one_step(batch_data)
-                    total_train_loss += step_loss
-                    avg_train_loss  = total_train_loss / local_step_counter
+                    batch_data      = next(self.train_loader._get_iterator())
+                    step_loss       = self._train_one_step(batch_data)
+                    
+                    train_losses.append(step_loss)
+                    avg_train_loss  = sum(train_losses) / len(train_losses)
                     iterator.set_postfix({"loss": avg_train_loss})
                     
                     # Reset error count if success
@@ -141,7 +141,6 @@ class Trainer():
                             self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_counter)
                     
                     # Advance global_step_counter
-                    local_step_counter += 1
                     global_step_counter += 1
 
                     if global_step_counter > self.max_train_steps:
