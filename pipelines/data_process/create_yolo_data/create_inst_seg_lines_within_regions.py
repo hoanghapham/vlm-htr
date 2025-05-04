@@ -1,7 +1,7 @@
 # %%
 import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
+PROJECT_DIR = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from argparse import ArgumentParser
@@ -14,10 +14,17 @@ from tqdm import tqdm
 
 
 parser = ArgumentParser()
-parser.add_argument("--split-type", default="sbs")
+parser.add_argument("--split-type", default="mixed")
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--debug", "true"
+# ])
+
 SPLIT_TYPE      = args.split_type
+DEBUG           = args.debug == "true"
 
 dataset_name    = "inst_seg_lines_within_regions"
 SOURCE_DATA_DIR = PROJECT_DIR / "data/processed/riksarkivet" / dataset_name
@@ -133,6 +140,9 @@ for idx, path in enumerate(dir_paths):
             image.save(test_dest / "images/" / f"{img_filename}.png")
             write_list_to_text_file(yolo_annotations, test_dest / "labels/" / f"{img_filename}.txt")
             count_test += 1
+    if DEBUG:
+        break
 
 print(f"Wrote {count_train} train, {count_val} val, {count_test} test images.")
     
+# %%

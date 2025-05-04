@@ -363,8 +363,7 @@ class YOLOSingleLineSegDataset(BaseImgXMLDataset):
         return dict(
             unique_key = unique_key,
             image = line_img,
+            bbox = new_bbox,
             polygon = new_polygon,
             yolo_polygon = yolo_polygon,
-            bbox = new_bbox,
-            polygon = new_polygon
         )
