@@ -36,7 +36,8 @@ class Trainer():
         tsb_logger: SummaryWriter,
         max_train_steps: int = None, 
         resume: bool = True,
-        logging_interval: int = 100
+        logging_interval: int = 100,
+        debug: bool = False
     ):
         self.model          = model
         self.optimizer      = optimizer
@@ -50,6 +51,7 @@ class Trainer():
         self.num_train_epochs   = num_train_epochs
         self.start_step         = 1
         self.resume             = resume
+        self.debug              = debug
 
         # Determine max training steps
         if max_train_steps is None:
@@ -145,6 +147,9 @@ class Trainer():
                     if global_step_counter > self.max_train_steps:
                         break
 
+                    if self.debug:
+                        break
+
                 except Exception as e:
                     error_count += 1
                     total_error_count += 1
@@ -197,6 +202,9 @@ class Trainer():
                 outputs = self.model(**batch_data)
                 loss = outputs.loss
                 val_loss += loss.item()
+
+                if self.debug:
+                    break
 
         avg_val_loss = val_loss / len(self.val_loader)
         # self.val_losses.append(avg_val_loss)
