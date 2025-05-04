@@ -20,7 +20,7 @@ parser.add_argument("--debug", required=False, default="false")
 
 args = parser.parse_args([
     "--split-type", "mixed",
-    "--task", "page__line_od",    
+    "--task", "region__line_od",    
     "--debug", "true"
 ])
 

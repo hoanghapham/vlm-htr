@@ -195,14 +195,14 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
 
         # Pre-load region data from all XMLs
         self.regions_data = []
-        for idx, xml in enumerate(self.xml_paths):
+        for img, xml in zip(img_paths, xml_paths):
             regions = self.xmlparser.get_regions(xml)   # Fields: region_id, bbox, polygon, transcription
 
             if len(regions) > 0:
                 self.regions_data += regions    # List of individual regions, not grouped by page
-                self.region_to_img_path += [self.img_paths[idx]] * len(regions)
+                self.region_to_img_path += [img] * len(regions)
 
-                valid_img_paths.append(self.img_paths[idx])
+                valid_img_paths.append(img)
                 valid_xml_paths.append(xml)
         
         return valid_img_paths, valid_xml_paths
@@ -275,8 +275,8 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         self.region_data = []
 
         for img, xml in zip(img_paths, xml_paths):
-            lines = self.xmlparser.get_lines(xml) # Fields: region_id, line_id, bbox, polygon, transcription
-            regions = self.xmlparser.get_regions(xml) # Fields: region_id, bbox, polygon, transcription
+            lines = self.xmlparser.get_lines(xml)       # Fields: region_id, line_id, bbox, polygon, transcription
+            regions = self.xmlparser.get_regions(xml)   # Fields: region_id, bbox, polygon, transcription
 
             if lines > 0 and self.object_class == "line":
                 valid_img_paths.append(img)

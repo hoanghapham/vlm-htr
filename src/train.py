@@ -97,7 +97,7 @@ class Trainer():
         # Train loop
         total_train_loss = 0
         global_step_counter = self.start_step   # Keep track of how many steps was done across epochs / runs
-        local_step_counter = 0                  # Keep track of how many steps was done in the current run
+        local_step_counter = 1                  # Keep track of how many steps was done in the current run
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
