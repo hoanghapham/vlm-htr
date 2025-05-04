@@ -10,7 +10,7 @@ from PIL import Image
 
 from src.data_processing.utils import load_arrow_datasets
 from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_coords
-from data_processing.base_datasets import BaseImgXMLDataset
+from src.data_processing.base_datasets import BaseImgXMLDataset
 
 
 class FlorenceTask():
@@ -127,7 +127,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         for idx, xml in enumerate(xml_paths):
             lines = self.xmlparser.get_lines(xml) # Fields: region_id, line_id, bbox, polygon, transcription
             
-            if lines > 0:
+            if len(lines) > 0:
                 valid_img_paths.append(img_paths[idx])
                 valid_xml_paths.append(xml)
 
@@ -188,19 +188,27 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
         self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
         self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
 
-        # List to convert a global line idx to path of an image
+    def validate_and_load(self, img_paths, xml_paths):
+        valid_img_paths = []
+        valid_xml_paths = []
         self.region_to_img_path = []
 
         # Pre-load region data from all XMLs
-        # Fields: region_id, bbox, polygon, transcription
-        # TODO: Define a function to get region data, and get lines data from region
         self.regions_data = []
         for idx, xml in enumerate(self.xml_paths):
-            regions = self.xmlparser.get_regions(xml)
-            self.regions_data += regions
-            self.region_to_img_path += [self.img_paths[idx]] * len(regions)
+            regions = self.xmlparser.get_regions(xml)   # Fields: region_id, bbox, polygon, transcription
 
-    def __len__(self):
+            if len(regions) > 0:
+                self.regions_data += regions    # List of individual regions, not grouped by page
+                self.region_to_img_path += [self.img_paths[idx]] * len(regions)
+
+                valid_img_paths.append(self.img_paths[idx])
+                valid_xml_paths.append(xml)
+        
+        return valid_img_paths, valid_xml_paths
+
+    @property
+    def nsamples(self):
         return len(self.regions_data)
     
     def _get_one(self, idx):
@@ -239,12 +247,6 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
             answer = answer,
         )
     
-    def __getitem__(self, idx: int | slice):
-        if isinstance(idx, int):
-            return self._get_one(idx)
-        else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.regions_data)]
-
 
 class FlorencePageTextODDataset(BaseImgXMLDataset):
 
@@ -262,6 +264,32 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
+    @property
+    def nsamples(self):
+        return len(self.img_paths)
+
+    def validate_and_load(self, img_paths, xml_paths):
+        valid_img_paths = []
+        valid_xml_paths = []
+        self.lines_data = []
+        self.region_data = []
+
+        for img, xml in zip(img_paths, xml_paths):
+            lines = self.xmlparser.get_lines(xml) # Fields: region_id, line_id, bbox, polygon, transcription
+            regions = self.xmlparser.get_regions(xml) # Fields: region_id, bbox, polygon, transcription
+
+            if lines > 0 and self.object_class == "line":
+                valid_img_paths.append(img)
+                valid_xml_paths.append(xml)
+                self.lines_data += lines
+            
+            elif regions > 0 and self.object_class == "region":
+                valid_img_paths.append(img)
+                valid_xml_paths.append(xml)
+                self.region_data += regions
+        
+        return valid_img_paths, valid_xml_paths
+
     def _get_one(self, idx):
         image = Image.open(self.img_paths[idx]).convert("RGB")
         xml = self.xml_paths[idx]
@@ -273,8 +301,8 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
 
         # Original bbox in xyxy format
         # Quantize bbox to coordinates relative to 1000 bins
-        bboxes  = [data["bbox"] for data in objects]
-        quantized_bboxes = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
+        bboxes              = [data["bbox"] for data in objects]
+        quantized_bboxes    = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
 
         # # Convert bbox info to text
         bbox_texts = []
@@ -287,21 +315,15 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         answer = "".join(bbox_texts)
         
         return dict(
-            question=self.task,
-            answer=answer,
-            image=image,
-            original_bboxes=bboxes,
-            quantized_bboxes=quantized_bboxes,
-            image_path=self.img_paths[idx],
-            xml_path=self.xml_paths[idx]
+            question         = self.task,
+            answer           = answer,
+            image            = image,
+            original_bboxes  = bboxes,
+            quantized_bboxes = quantized_bboxes,
+            image_path       = self.img_paths[idx],
+            xml_path         = self.xml_paths[idx]
         )
     
-    def __getitem__(self, idx: int | slice):
-        if isinstance(idx, int):
-            return self._get_one(idx)
-        else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.img_paths)]
-
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
 class BoxQuantizer(object):

@@ -9,20 +9,20 @@ from argparse import ArgumentParser
 
 import yaml
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
+from src.data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
 from tqdm import tqdm
 
 parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
 parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--task", "region__line_od",    
-#     "--debug", "true"
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--task", "page__line_od",    
+    "--debug", "true"
+])
 
 SPLIT_TYPE  = args.split_type
 TASK        = args.task
@@ -72,14 +72,10 @@ yaml.safe_dump(yolo_data_config, open(YOLO_DATA_DIR / "config.yaml", "w"))
 # Prepare split info
 split_info  = read_json_file(PROJECT_DIR / f"configs/split_info/{SPLIT_TYPE}.json")
 
-norm_train_names = [normalize_name(name) for name in split_info["train"]]
-norm_val_names = [normalize_name(name) for name in split_info["val"]]
-norm_test_names = [normalize_name(name) for name in split_info["test"]]
-
 split_page_names = {
-    "train": norm_train_names,
-    "val": norm_val_names,
-    "test": norm_test_names
+    "train": [normalize_name(name) for name in split_info["train"]],
+    "val": [normalize_name(name) for name in split_info["val"]],
+    "test": [normalize_name(name) for name in split_info["test"]]
 }
 
 #%%

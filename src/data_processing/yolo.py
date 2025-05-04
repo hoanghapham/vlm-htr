@@ -4,7 +4,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from PIL import Image
-from tqdm import tqdm
 
 from shapely.geometry import Polygon
 from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_polygon
@@ -143,11 +142,11 @@ class YOLOPageRegionODDataset(BaseImgXMLDataset):
         for idx, xml in enumerate(xml_paths):
             regions = self.xmlparser.get_regions(xml)  # Fields: region_id, line_id, bbox, polygon, transcription
             
-            if regions > 0:
+            if len(regions) > 0:
                 valid_img_paths.append(img_paths[idx])
                 valid_xml_paths.append(xml)
 
-            self.page_regions_data += regions
+            self.page_regions_data.append(regions)
         
         return valid_img_paths, valid_xml_paths
 
@@ -164,6 +163,7 @@ class YOLOPageRegionODDataset(BaseImgXMLDataset):
             yolo_bboxes=yolo_bboxes,
             img_volume=img_volume,
             img_filename=img_filename,
+            unique_key=img_filename,
             img_path=self.img_paths[idx],
             xml_path=self.xml_paths[idx]
         )
@@ -190,7 +190,7 @@ class YOLORegionLineODDataset(BaseImgXMLDataset):
         self.region_lines_shifted = []
 
         # Preload region - line data
-        for img, xml in tqdm(zip(img_paths, xml_paths), total=len(self.img_paths), desc="Validate data"):
+        for img, xml in zip(img_paths, xml_paths):
             regions = self.xmlparser.get_regions(xml)
             
             for region in regions:
@@ -268,11 +268,11 @@ class YOLOPageLineODDataset(BaseImgXMLDataset):
         for idx, xml in enumerate(xml_paths):
             lines = self.xmlparser.get_lines(xml)  # Fields: region_id, line_id, bbox, polygon, transcription
             
-            if lines > 0:
+            if len(lines) > 0:
                 valid_img_paths.append(img_paths[idx])
                 valid_xml_paths.append(xml)
 
-            self.page_lines_data += lines
+            self.page_lines_data.append(lines)
         
         return valid_img_paths, valid_xml_paths
 
@@ -280,10 +280,11 @@ class YOLOPageLineODDataset(BaseImgXMLDataset):
         img_filename    = Path(self.img_paths[idx]).stem
         img_volume      = Path(self.img_paths[idx]).parent.name
         image           = Image.open(self.img_paths[idx]).convert("RGB")
-        bboxes          = [data["bbox"] for data in self.page_lines_data]
+        bboxes          = [data["bbox"] for data in self.page_lines_data[idx]]
         yolo_bboxes     = bboxes_xyxy_to_yolo_format(bboxes, image.width, image.height)
         
         return dict(
+            unique_key=img_filename,
             image=image,
             bboxes=bboxes,
             yolo_bboxes=yolo_bboxes,
@@ -307,7 +308,6 @@ class YOLOSingleLineSegDataset(BaseImgXMLDataset):
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir)
-
 
     def validate_and_load(self, img_paths, xml_paths):
         valid_img_paths = []
