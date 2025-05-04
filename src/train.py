@@ -139,6 +139,7 @@ class Trainer():
                             self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_counter)
                     
                     # Advance global_step_counter
+                    local_step_counter += 1
                     global_step_counter += 1
 
                     if global_step_counter > self.max_train_steps:
