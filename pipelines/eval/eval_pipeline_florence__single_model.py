@@ -15,13 +15,14 @@ from htrflow.utils.geometry import Bbox
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
+from src.file_tools import list_files, write_json_file, write_text_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.evaluation.utils import Ratio
-from src.evaluation.ocr_metrics import compute_ocr_metrics
-from src.logger import CustomLogger
 from src.data_processing.florence import predict, FlorenceTask
+from src.evaluation.ocr_metrics import compute_ocr_metrics
+from pipelines.steps.general import read_img_metrics, sort_top_down_left_right
+from src.logger import CustomLogger
+
 
 # Setup
 parser = ArgumentParser()
@@ -85,11 +86,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
     if img_metric_path.exists() and not DEBUG:
         logger.info(f"Skip: {img_path.name}")
-        img_metric = read_json_file(img_metric_path)
-        cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
-        wer_list.append(Ratio(*img_metric["wer"]["str"].split("/")))
-        bow_hits_list.append(Ratio(*img_metric["bow_hits"]["str"].split("/")))
-        bow_extras_list.append(Ratio(*img_metric["bow_extras"]["str"].split("/")))
+        cerlist, werlist, bow_hits_list, bow_extras_list = read_img_metrics(
+            img_metric_path, cer_list, wer_list, bow_hits_list, bow_extras_list)
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
@@ -128,7 +126,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     ## OCR
     logger.info("Text recognition")
     page_trans = []
-
     iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):

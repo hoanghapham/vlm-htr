@@ -13,7 +13,7 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
-from src.train import load_best_checkpoint, load_last_checkpoint, load_checkpoint
+from src.train import load_checkpoint
 from src.data_processing.trocr import create_collate_fn
 from src.data_processing.utils import load_arrow_datasets
 from src.evaluation.utils import Ratio
