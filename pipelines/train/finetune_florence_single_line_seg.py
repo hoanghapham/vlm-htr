@@ -18,8 +18,6 @@ from src.train import Trainer
 from src.logger import CustomLogger
 
 
-
-
 #%%
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
@@ -28,15 +26,17 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
+parser.add_argument("--debug", default=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--data-dir", "/Users/hoanghapham/Projects/thesis-data/riksarkivet",
 #     "--model-name", "demo",
-#     "--num-train-epochs", "5",
-#     "--max-train-steps", "11",
+#     "--num-train-epochs", "1",
+#     "--max-train-steps", "1",
 #     "--batch-size", "2",
-#     "--logging-interval", "3"
+#     "--logging-interval", "1", 
+#     "--debug", "true"
 # ])
 
 
@@ -47,6 +47,7 @@ NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
+DEBUG               = args.debug == "true"
 
 MODEL_OUT_DIR = PROJECT_DIR / "models" / MODEL_NAME
 
@@ -128,8 +129,11 @@ trainer = Trainer(
     model_out_dir        = MODEL_OUT_DIR,
     logger               = logger,
     tsb_logger           = tsb_logger,
-    logging_interval     = LOGGING_INTERVAL
+    logging_interval     = LOGGING_INTERVAL,
+    debug                = DEBUG
 )
 
 
 trainer.train()
+
+# %%

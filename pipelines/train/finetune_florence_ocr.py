@@ -26,15 +26,17 @@ parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--user-prompt", required=False)
+parser.add_argument("--debug", default=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--data-dir", str(PROJECT_DIR / "data/cropped/mixed"),
+#     "--data-dir", str(PROJECT_DIR / "data/line_seg/mixed"),
 #     "--model-name", "demo",
-#     "--num-train-epochs", "5",
-#     "--max-train-steps", "11",
+#     "--num-train-epochs", "1",
+#     "--max-train-steps", "1",
 #     "--batch-size", "2",
-#     "--logging-interval", "3"
+#     "--logging-interval", "1",
+#     "--debug", "true"
 # ])
 
 
@@ -46,6 +48,7 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 USER_PROMPT         = args.user_prompt  # Can be used as the custom question
+DEBUG               = args.debug == "true"
 
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
@@ -125,8 +128,11 @@ trainer = Trainer(
     model_out_dir        = MODEL_OUT_DIR,
     logger               = logger,
     tsb_logger           = tsb_logger,
-    logging_interval     = LOGGING_INTERVAL
+    logging_interval     = LOGGING_INTERVAL,
+    debug                = DEBUG
 )
 
 
 trainer.train()
+
+# %%

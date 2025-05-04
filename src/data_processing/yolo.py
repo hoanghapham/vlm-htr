@@ -125,6 +125,11 @@ class YOLOPageRegionODDataset(BaseImgXMLDataset):
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
 
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
+
     @property
     def nsamples(self):
         return len(self.img_paths)
@@ -173,6 +178,11 @@ class YOLORegionLineODDataset(BaseImgXMLDataset):
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
+
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
 
     @property
     def nsamples(self):
@@ -251,6 +261,11 @@ class YOLOPageLineODDataset(BaseImgXMLDataset):
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
 
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
+
     @property
     def nsamples(self):
         return len(self.img_paths)
@@ -308,6 +323,11 @@ class YOLOSingleLineSegDataset(BaseImgXMLDataset):
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir)
+
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
 
     def validate_and_load(self, img_paths, xml_paths):
         valid_img_paths = []

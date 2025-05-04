@@ -27,12 +27,8 @@ class BaseImgXMLDataset(ABC):
     def __init__(self, data_dir: str | Path):
         self.data_dir = Path(data_dir)
         self.xmlparser = XMLParser()
-        img_paths, xml_paths = self.validate_data_dir(data_dir)
-
-        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
-        self.img_paths = []
-        self.xml_paths = []
-        self.img_paths, self.xml_paths = self.validate_and_load(img_paths, xml_paths)
+        self._all_img_paths, self._all_xml_paths = self.validate_data_dir(data_dir)
+        
 
     def validate_data_dir(self, data_dir: str | Path):
         img_paths = list_files(data_dir, IMAGE_EXTENSIONS)

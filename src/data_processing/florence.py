@@ -114,6 +114,11 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
         self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
 
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
+
     def validate_and_load(self, img_paths, xml_paths):
         valid_img_paths = []
         valid_xml_paths = []
@@ -188,6 +193,11 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
         self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
         self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
 
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
+
     def validate_and_load(self, img_paths, xml_paths):
         valid_img_paths = []
         valid_xml_paths = []
@@ -254,7 +264,7 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         self, 
         data_dir: str | Path,
         task: FlorenceTask = FlorenceTask.OD, 
-        object_class: str = "region", 
+        object_class: str = "region"
     ):
         assert object_class in ["region", "line"]
         super().__init__(data_dir=data_dir)
@@ -263,6 +273,11 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
         self.task = task
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
+
+        # Validate that the xml file has the data type we need, then set self.img_paths and self.xml_paths
+        self.img_paths = []
+        self.xml_paths = []
+        self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
 
     @property
     def nsamples(self):
@@ -278,12 +293,12 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
             lines = self.xmlparser.get_lines(xml)       # Fields: region_id, line_id, bbox, polygon, transcription
             regions = self.xmlparser.get_regions(xml)   # Fields: region_id, bbox, polygon, transcription
 
-            if lines > 0 and self.object_class == "line":
+            if len(lines) > 0 and self.object_class == "line":
                 valid_img_paths.append(img)
                 valid_xml_paths.append(xml)
                 self.lines_data += lines
             
-            elif regions > 0 and self.object_class == "region":
+            elif len(regions) > 0 and self.object_class == "region":
                 valid_img_paths.append(img)
                 valid_xml_paths.append(xml)
                 self.region_data += regions
