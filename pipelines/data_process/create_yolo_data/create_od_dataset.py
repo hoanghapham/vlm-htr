@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 import yaml
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
 from src.data_processing.visual_tasks import bboxes_xyxy_to_yolo_format
-from src.data_processing.generic_datasets import PageRegionODDataset, PageLineODDataset, RegionLineODDataset
+from data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
 from tqdm import tqdm
 
 parser = ArgumentParser()
@@ -87,11 +87,11 @@ split_page_names = {
 # Load data
 
 if TASK == "page__region_od":
-    dataset = PageRegionODDataset(SOURCE_DATA_DIR)
+    dataset = YOLOPageRegionODDataset(SOURCE_DATA_DIR)
 elif TASK == "page__line_od":
-    dataset = PageLineODDataset(SOURCE_DATA_DIR)
+    dataset = YOLOPageLineODDataset(SOURCE_DATA_DIR)
 elif TASK == "region__line_od":
-    dataset = RegionLineODDataset(SOURCE_DATA_DIR)
+    dataset = YOLORegionLineODDataset(SOURCE_DATA_DIR)
 
 #%%
 # from src.visualization import draw_bboxes_xyxy
@@ -139,7 +139,7 @@ for data in tqdm(dataset, total=len(dataset), desc=f"Write data to {YOLO_DATA_DI
     # Write data  
     image = data["image"]
     bboxes = data["bboxes"]
-    yolo_bboxes = bboxes_xyxy_to_yolo_format(bboxes, image.width, image.height)
+    yolo_bboxes = data["yolo_bboxes"]
     source_img_path = data["img_path"]
 
     image.save(dest_image_path)

@@ -8,10 +8,7 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 import yaml
 from src.file_tools import write_text_file
-from src.data_processing.visual_tasks import (
-    bbox_xyxy_to_yolo_format, 
-    coords_to_yolo_format,
-)
+from src.data_processing.yolo import bbox_xyxy_to_yolo_format, coords_to_yolo_format
 
 from src.data_processing.florence import FlorenceSingleLineSegDataset
 from src.file_tools import list_files, normalize_name

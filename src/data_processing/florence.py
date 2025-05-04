@@ -10,7 +10,7 @@ from PIL import Image
 
 from src.data_processing.utils import load_arrow_datasets
 from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_coords
-from src.data_processing.generic_datasets import BaseImgXMLDataset
+from data_processing.base_datasets import BaseImgXMLDataset
 
 
 class FlorenceTask():
@@ -43,7 +43,7 @@ def bbox_xyxy_to_florence(bbox, box_quantizer, image):
     return text
 
 
-def bboxes_xyxy_to_florence(bboxes, box_quantizer, image):
+def bboxes_xyxy_to_florence(bbox, box_quantizer, image):
     quantized_bboxes = box_quantizer.quantize(torch.Tensor([bbox]), size=image.size)
     bbox_texts = []
     for bbox in quantized_bboxes:
@@ -68,74 +68,6 @@ def polygons_to_florence(polygons: list[list[tuple]], coords_quantizer, image):
         points_str = coords_to_florence(polygon, coords_quantizer, image)
         polygon_texts.append(points_str)
     return polygon_texts
-
-
-# class FlorenceRegionLineODDataset(Dataset):
-#     """Receive a cached arrow dataset created from the HTRDatasetBuilder.line_od_within_regions() method.
-#     Input data are region image, output are bbox of lines
-#     """
-#     def __init__(self, data: Dataset, task: FlorenceTask = FlorenceTask.REGION_TO_SEGMENTATION):
-#         self.data = data
-#         self.task = task
-#         self.box_quantizer      = BoxQuantizer(mode="floor", bins=(1000, 1000))
-#         self.coords_quantizer   = CoordinatesQuantizer(mode="floor", bins=(1000, 1000))
-
-#         total_lines = 0
-#         reg_to_lines = {}
-#         line_to_reg = []
-#         line_to_local_line = []
-
-#         # Create map
-#         current_idx = 0
-
-#         for reg_idx, sample in enumerate(data):
-#             n_lines = len(sample["annotations"])
-#             total_lines += n_lines
-#             reg_to_lines[reg_idx] = list(range(current_idx, current_idx + n_lines))
-            
-#             # List containing duplicates of reg_idx to match (global) line idx to region
-#             line_to_reg += [reg_idx] * n_lines
-
-#             # List containing local line idx, used to map global to local linie idx
-#             line_to_local_line += list(range(n_lines))
-
-#             current_idx += n_lines
-        
-#         self.total_lines = total_lines
-#         self.reg_to_lines = reg_to_lines
-#         self.line_to_reg = line_to_reg
-#         self.line_to_local_line = line_to_local_line
-
-#     def __len__(self):
-#         return self.total_lines
-
-#     def __getitem__(self, idx):
-#         """Return one line by translating the global dataset's line idx to region's local line idx"""
-        
-#         reg_idx = self.line_to_reg[idx]                 # Find the region idx from the global line idx
-#         local_line_idx = self.line_to_local_line[idx]   # Convert global line idx to a local line idx
-
-#         example = self.data[reg_idx]                # Get one region
-#         image = example["image"].convert("RGB")     
-
-#         line    = example["annotations"][local_line_idx]   # Get one line within the region
-#         bbox = line["bbox"]
-#         bboxes  = coords_to_bbox_xyxy(polygon)
-
-#         florence_bbox       = bboxes_xyxy_to_florence([bboxes], self.box_quantizer, image)[0]
-#         florence_polygon    = polygons_to_florence([polygon], self.coords_quantizer, image)[0]
-        
-#         question = self.task + florence_bbox
-
-#         return dict(
-#             task=self.task,
-#             question=question,
-#             answer=florence_polygon,
-#             image=image 
-#         )
-    
-#     def select(self, indices: Iterable):
-#         return [self.__getitem__(idx) for idx in indices]
 
 
 class FlorenceOCRDataset(Dataset):
@@ -177,22 +109,35 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir)
+
         self.task               = FlorenceTask.REGION_TO_SEGMENTATION
         self.box_quantizer      = BoxQuantizer("floor", (1000, 1000))
         self.coords_quantizer   = CoordinatesQuantizer("floor", (1000, 1000))
 
+    def validate_and_load(self, img_paths, xml_paths):
+        valid_img_paths = []
+        valid_xml_paths = []
+
         # List to convert a global line idx to path of an image
         self.line_to_img_path = []
-
+        
         # Pre-load lines data from all XMLs
-        # Fields: region_id, line_id, bbox, polygon, transcription
         self.lines_data = []
-        for idx, xml in enumerate(self.xml_paths):
-            lines = self.xmlparser.get_lines(xml)
-            self.lines_data += lines
-            self.line_to_img_path += [self.img_paths[idx]] * len(lines)
 
-    def __len__(self):
+        for idx, xml in enumerate(xml_paths):
+            lines = self.xmlparser.get_lines(xml) # Fields: region_id, line_id, bbox, polygon, transcription
+            
+            if lines > 0:
+                valid_img_paths.append(img_paths[idx])
+                valid_xml_paths.append(xml)
+
+            self.lines_data += lines
+            self.line_to_img_path += [img_paths[idx]] * len(lines)
+        
+        return valid_img_paths, valid_xml_paths
+
+    @property
+    def nsamples(self):
         return len(self.lines_data)
 
     def _get_one(self, idx):
@@ -233,12 +178,6 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
             polygon = new_polygon
         )
     
-    def __getitem__(self, idx: int | slice):
-        if isinstance(idx, int):
-            return self._get_one(idx)
-        else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < len(self.lines_data)]
-
 
 class FlorenceRegionLineODDataset(BaseImgXMLDataset):
     """Dataset that returns a region and bounding boxes of lines in the region"""
@@ -264,15 +203,14 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
     def __len__(self):
         return len(self.regions_data)
     
-
     def _get_one(self, idx):
         image       = Image.open(self.region_to_img_path[idx]).convert("RGB")
         data        = self.regions_data[idx]
         unique_key  = data["unique_key"]
 
         # Crop region image
-        bbox_coords         = bbox_xyxy_to_coords(data["bbox"])
-        cropped_region_img  = crop_image(image, bbox_coords)
+        bbox_coords = bbox_xyxy_to_coords(data["bbox"])
+        region_img  = crop_image(image, bbox_coords)
         
         # Shift bbox and polygon to follow the newly cropped images
         shift_x = data["bbox"][0]
@@ -288,17 +226,15 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
             )
 
             # Convert bbox and polygon to florence text format
-            florence_bbox   = bbox_xyxy_to_florence(new_bbox, self.box_quantizer, cropped_region_img)
+            florence_bbox = bbox_xyxy_to_florence(new_bbox, self.box_quantizer, region_img)
             texts.append("line" + florence_bbox)
 
         answer = "".join(texts)
 
-
         # Form input question
-
         return dict(
             unique_key = unique_key,
-            image = cropped_region_img,
+            image = region_img,
             question = FlorenceTask.OD,
             answer = answer,
         )
@@ -336,10 +272,9 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
             objects = self.xmlparser.get_lines(xml)  
 
         # Original bbox in xyxy format
-        bboxes = [data["bbox"] for data in objects]
-
         # Quantize bbox to coordinates relative to 1000 bins
-        quantized_bboxes    = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
+        bboxes  = [data["bbox"] for data in objects]
+        quantized_bboxes = self.box_quantizer.quantize(torch.Tensor(bboxes), size=image.size)
 
         # # Convert bbox info to text
         bbox_texts = []
