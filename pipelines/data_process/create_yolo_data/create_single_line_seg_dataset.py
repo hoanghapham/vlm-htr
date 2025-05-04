@@ -8,9 +8,8 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 import yaml
 from src.file_tools import write_text_file
-from src.data_processing.yolo import bbox_xyxy_to_yolo_format, coords_to_yolo_format
 
-from src.data_processing.florence import FlorenceSingleLineSegDataset
+from src.data_processing.yolo import YOLOSingleLineSegDataset
 from src.file_tools import list_files, normalize_name
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 
@@ -79,7 +78,7 @@ counts = dict(
 
 for split, source_dir in source_dirs.items():
     print(f"Load data from {source_dir}")
-    dataset = FlorenceSingleLineSegDataset(source_dir)
+    dataset = (source_dir)
     dest_images_dir = YOLO_DATA_DIR / split / "images"
     dest_labels_dir = YOLO_DATA_DIR / split / "labels"
 
@@ -94,18 +93,17 @@ for split, source_dir in source_dirs.items():
     for data in tqdm(dataset.select(range(len(existing_files), len(dataset))), total=total):
         unique_key  = data["unique_key"]
 
-        image       = data["image"]
-        bbox        = data["bbox"]
-        polygon     = data["polygon"]
-        yolo_bbox   = bbox_xyxy_to_yolo_format(bbox, image.width, image.height, class_id=0)
-        yolo_seg    = coords_to_yolo_format(polygon, image.width, image.height, class_id=0)
+        image           = data["image"]
+        bbox            = data["bbox"]
+        polygon         = data["polygon"]
+        yolo_polygon    = data["yolo_polygon"]
 
         # Write data
         dest_image_path = dest_images_dir / (unique_key + ".png")
         image.save(dest_image_path)
         
         dest_label_path = dest_labels_dir / (unique_key + ".txt")
-        write_text_file(yolo_seg, dest_label_path)
+        write_text_file(yolo_polygon, dest_label_path)
 
         counts[split] += 1
 

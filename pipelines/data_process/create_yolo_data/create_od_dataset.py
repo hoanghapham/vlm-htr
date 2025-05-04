@@ -9,7 +9,6 @@ from argparse import ArgumentParser
 
 import yaml
 from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.visual_tasks import bboxes_xyxy_to_yolo_format
 from data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
 from tqdm import tqdm
 
