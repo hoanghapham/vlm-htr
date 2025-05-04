@@ -16,7 +16,7 @@
 source activate /crex/proj/uppmax2020-2-2/hapham/envs/htrflow
 
 DATA_DIR="/proj/uppmax2020-2-2/hapham/data/polis/images"
-PROJECT_DIR="/proj/uppmax2020-2-2/hapham/vlm"
+PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 
 cd $PROJECT_DIR
 

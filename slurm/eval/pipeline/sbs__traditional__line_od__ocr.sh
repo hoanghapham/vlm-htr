@@ -14,7 +14,7 @@
 
 
 source activate /crex/proj/uppmax2020-2-2/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2020-2-2/hapham/vlm"
+PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_traditional__line_od__ocr.py \
