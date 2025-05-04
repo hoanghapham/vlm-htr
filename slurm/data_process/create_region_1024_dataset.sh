@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH -A uppmax2024-2-24
+#SBATCH -A uppmax2020-2-2
 #SBATCH -M snowy
 #SBATCH -p node
 #SBATCH -N 1
@@ -13,9 +13,9 @@
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
 
 
-source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR="/proj/uppmax2024-2-24/hapham/vlm"
-DATA_DIR="/proj/uppmax2024-2-24/hapham/data/hovratt"
+source activate /crex/proj/uppmax2020-2-2/hapham/envs/vlm
+PROJECT_DIR="/proj/uppmax2020-2-2/hapham/vlm"
+DATA_DIR="/proj/uppmax2020-2-2/hapham/data/hovratt"
 
 cd $PROJECT_DIR
 
