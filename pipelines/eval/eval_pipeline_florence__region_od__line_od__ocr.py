@@ -113,6 +113,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info("Line detection within region")
     # cropped_region_imgs = []
 
+    page_trans = []
+
     for region_polygon in region_od_output.polygons:
         region_img  = crop_image(image, region_polygon)
 
@@ -122,12 +124,10 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
             logger.warning("Can't find lines on the region image")
             continue
 
-
         ## OCR
         logger.info("Text recognition")
         iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
-        page_trans = []
-
+        
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
             # Create a batch of cropped line bboxes
