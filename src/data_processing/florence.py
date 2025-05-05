@@ -158,7 +158,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         shift_x = data["bbox"][0]
         shift_y = data["bbox"][1]
 
-        new_bbox = (
+        shifted_bbox = (
             0, 
             0,
             data["bbox"][2] - shift_x, 
@@ -168,7 +168,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         new_polygon = [(x - shift_x, y - shift_y) for (x, y) in data["polygon"]]
 
         # Convert bbox and polygon to florence text format
-        florence_bbox   = bbox_xyxy_to_florence(new_bbox, self.box_quantizer, cropped_line_img)
+        florence_bbox   = bbox_xyxy_to_florence(shifted_bbox, self.box_quantizer, cropped_line_img)
         florence_polygon = coords_to_florence(new_polygon, self.coords_quantizer, cropped_line_img)
 
         # Form input question
@@ -179,7 +179,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
             image = cropped_line_img,
             question = question,
             answer = florence_polygon,
-            bbox = new_bbox,
+            bbox = shifted_bbox,
             polygon = new_polygon
         )
     
@@ -234,27 +234,38 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
         shift_x = data["bbox"][0]
         shift_y = data["bbox"][1]
 
-        texts = []
+        shifted_bboxes = []
+        bbox_texts = []
         for line in data["lines"]:
-            new_bbox = (
+            shifted_bbox = (
                 line["bbox"][0] - shift_x, 
                 line["bbox"][1] - shift_y,
                 line["bbox"][2] - shift_x, 
                 line["bbox"][3] - shift_y
             )
+            shifted_bboxes.append(shifted_bbox)
 
             # Convert bbox and polygon to florence text format
-            florence_bbox = bbox_xyxy_to_florence(new_bbox, self.box_quantizer, region_img)
-            texts.append("line" + florence_bbox)
+            florence_bbox = bbox_xyxy_to_florence(shifted_bbox, self.box_quantizer, region_img)
+            bbox_texts.append("line" + florence_bbox)
 
-        answer = "".join(texts)
+        answer = "".join(bbox_texts)
+
+        # question         = self.task,
+        #     answer           = answer,
+        #     image            = image,
+        #     original_bboxes  = bboxes,
+        #     quantized_bboxes = quantized_bboxes,
+        #     image_path       = self.img_paths[idx],
+        #     xml_path         = self.xml_paths[idx]
 
         # Form input question
         return dict(
-            unique_key = unique_key,
-            image = region_img,
-            question = FlorenceTask.OD,
-            answer = answer,
+            question        = self.task,
+            answer          = answer,
+            image           = region_img,
+            original_bboxes = shifted_bboxes,
+            unique_key      = unique_key,
         )
     
 
@@ -263,14 +274,13 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
     def __init__(
         self, 
         data_dir: str | Path,
-        task: FlorenceTask = FlorenceTask.OD, 
         object_class: str = "region"
     ):
         assert object_class in ["region", "line"]
         super().__init__(data_dir=data_dir)
         
         self.object_class = object_class
-        self.task = task
+        self.task = FlorenceTask.OD
         self.user_prompt = None
         self.box_quantizer = BoxQuantizer(mode="floor", bins=(1000, 1000))
 
@@ -334,9 +344,9 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
             answer           = answer,
             image            = image,
             original_bboxes  = bboxes,
-            quantized_bboxes = quantized_bboxes,
             image_path       = self.img_paths[idx],
-            xml_path         = self.xml_paths[idx]
+            xml_path         = self.xml_paths[idx],
+            unique_key       = self.img_paths[idx].stem
         )
     
 

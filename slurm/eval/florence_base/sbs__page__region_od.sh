@@ -22,4 +22,4 @@ python pipelines/eval/eval_florence_od.py \
     --model-name florence_base__sbs__page__region_od \
     --data-dir $PROJECT_DIR/data/page/sbs/test \
     --checkpoint best \
-    --object-class region
+    --task page__region_od

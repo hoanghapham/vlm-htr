@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.logger import CustomLogger
-from src.data_processing.florence import FlorenceTask, FlorencePageTextODDataset, predict
+from src.data_processing.florence import FlorenceTask, FlorencePageTextODDataset, FlorenceRegionLineODDataset, predict
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
 from src.train import load_checkpoint
 from src.file_tools import write_json_file, write_ndjson_file
@@ -24,7 +24,7 @@ parser.add_argument("--data-dir", required=True)
 parser.add_argument("--output-dir", required=False)
 parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
 parser.add_argument("--checkpoint-path", required=False)
-parser.add_argument("--object-class", default="region")
+parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
@@ -41,7 +41,7 @@ MODEL_NAME          = args.model_name
 DATA_DIR            = Path(args.data_dir)
 CHECKPOINT          = args.checkpoint
 CHECKPOINT_PATH     = args.checkpoint_path
-OBJECT_CLASS        = args.object_class
+TASK                = args.task
 BATCH_SIZE          = int(args.batch_size)
 DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
@@ -87,12 +87,15 @@ model.eval()
 
 #%%
 # Load test data
-test_dataset = FlorencePageTextODDataset(DATA_DIR, task=FlorenceTask.OD, object_class=OBJECT_CLASS)
+if TASK == "page__region_od":
+    test_dataset = FlorencePageTextODDataset(DATA_DIR, object_class="region")
+elif TASK == "page__line_od":
+    test_dataset = FlorencePageTextODDataset(DATA_DIR, object_class="line")
+elif TASK == "region__line_od":
+    test_dataset = FlorenceRegionLineODDataset(DATA_DIR)
 
 
 # Evaluate
-task = FlorenceTask.OD
-
 full_results    = []
 predictions     = []
 groundtruths     = []
@@ -112,7 +115,7 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
     _, parsed_output = predict(
         model, 
         processor, 
-        task_prompt=task,
+        task_prompt=FlorenceTask.OD,
         user_prompt=None, 
         images=images, 
         device=DEVICE
@@ -124,7 +127,7 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
 
     for in_data, out_data in zip(batch_data, parsed_output):
 
-        pred_bboxes     = out_data[task]["bboxes"]
+        pred_bboxes     = out_data[FlorenceTask.OD]["bboxes"]
         pred_polygons   = [bbox_xyxy_to_polygon(box) for box in pred_bboxes]
 
         gt_bboxes       = in_data["original_bboxes"]
