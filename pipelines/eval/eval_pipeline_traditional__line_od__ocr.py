@@ -58,7 +58,7 @@ line_od_model  = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
+LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_bbox__ocr/best"
 processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
 ocr_model           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
 

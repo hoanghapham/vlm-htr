@@ -53,11 +53,11 @@ logger = CustomLogger(f"pl_trad__{SPLIT_TYPE}__3steps")
 
 # Load models
 region_od_model     = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__region_od/weights/best.pt")
-line_od_model       = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__page__line_od/weights/best.pt")
+line_od_model       = YOLO(PROJECT_DIR / f"models/trained/yolo11m__{SPLIT_TYPE}__region__line_od/weights/best.pt")
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
-LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best"
+LOCAL_MODEL_PATH    = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_bbox__ocr/best"
 processor           = TrOCRProcessor.from_pretrained(REMOTE_MODEL_PATH)
 ocr_model           = VisionEncoderDecoderModel.from_pretrained(LOCAL_MODEL_PATH).to(DEVICE)
 
