@@ -140,7 +140,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
                 batch_cropped_lines.append(line_img)
 
             # OCR
-            line_trans = ocr(model_ocr, processor, batch_cropped_lines, DEVICE)
+            try:
+                line_trans = ocr(model_ocr, processor, batch_cropped_lines, DEVICE)
+            except Exception as e:
+                logger.warning(f"Failed to OCR line images: {e}")
+                continue
+            
             page_trans += line_trans
 
 
