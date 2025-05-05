@@ -4,19 +4,17 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-import numpy as np
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
-from htrflow.utils.layout import estimate_printspace
 from htrflow.utils.geometry import Bbox
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_polygon
 from src.data_processing.utils import XMLParser
 from src.data_processing.florence import predict, FlorenceTask
 from src.evaluation.ocr_metrics import compute_ocr_metrics
@@ -94,7 +92,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     image       = Image.open(img_path).convert("RGB")
     gt_lines    = xml_parser.get_lines(xml_path)
-    printspace  = estimate_printspace(np.array(image))
 
 
     ## Line OD
@@ -120,7 +117,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     # Sort lines
     sorted_line_indices = sort_top_down_left_right(line_bboxes)
     sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
-    sorted_line_masks   = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
+    sorted_line_masks   = [bbox_xyxy_to_polygon(box) for box in sorted_line_bboxes]
 
 
     ## OCR

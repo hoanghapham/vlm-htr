@@ -39,20 +39,20 @@ IMAGE_EXTENSIONS = [
 
 
 # General conversion functions
-def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
-    x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
+# def bbox_xyxy_to_coords(bbox: list[tuple]) -> list[tuple[int, int]]:
+#     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
-    # Order coords counter-clockwise
-    x2 = x1 
-    y2 = y1 + height
+#     # Order coords counter-clockwise
+#     x2 = x1 
+#     y2 = y1 + height
 
-    x3 = x1 + width
-    y3 = y1 + height
+#     x3 = x1 + width
+#     y3 = y1 + height
 
-    x4 = x1 + width
-    y4 = y1
+#     x4 = x1 + width
+#     y4 = y1
 
-    return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+#     return [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
 
 
 def bbox_xyxy_to_polygon(bbox: list[tuple]) -> Polygon:

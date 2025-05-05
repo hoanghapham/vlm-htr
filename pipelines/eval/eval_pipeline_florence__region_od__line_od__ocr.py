@@ -13,7 +13,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
 from src.evaluation.ocr_metrics import compute_ocr_metrics
@@ -103,36 +103,36 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Region OD
     logger.info("Region detection")
-    sorted_region_bboxes = region_od(region_od_model, processor, image, DEVICE)
+    region_od_output = region_od(region_od_model, processor, image, DEVICE)
     
+    if len(region_od_output.bboxes) == 0:
+        logger.warning("Can't detect regions on the page")
+        continue
     
     ## Line OD within region
     logger.info("Line detection within region")
     # cropped_region_imgs = []
 
-    for region_bbox in sorted_region_bboxes:
-        region_mask = bbox_xyxy_to_coords(region_bbox)
-        region_img  = crop_image(image, region_mask)
-        # cropped_region_imgs.append(region_img)
+    for region_polygon in region_od_output.polygons:
+        region_img  = crop_image(image, region_polygon)
 
         ## Line OD
-        sorted_line_bboxes = line_od(model_region_line_od, processor, region_img, DEVICE)
-        if len(sorted_line_bboxes) == 0:
+        line_od_output = line_od(model_region_line_od, processor, region_img, DEVICE)
+        if len(line_od_output.bboxes) == 0:
             logger.warning("Can't find lines on the region image")
             continue
 
 
         ## OCR
         logger.info("Text recognition")
-        sorted_line_masks = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
-        iterator = list(range(0, len(sorted_line_masks), BATCH_SIZE))
+        iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
         page_trans = []
 
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
             # Create a batch of cropped line bboxes
             # Aggregate line images to do batch OCR
-            batch = sorted_line_masks[i:i+BATCH_SIZE]
+            batch = line_od_output.polygons[i:i+BATCH_SIZE]
             batch_cropped_lines = []
 
             for mask in batch:

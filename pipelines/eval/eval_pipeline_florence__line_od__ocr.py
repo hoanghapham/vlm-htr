@@ -12,8 +12,8 @@ from htrflow.evaluate import CER, WER, BagOfWords
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.file_tools import list_files, write_json_file, write_text_file
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
@@ -98,23 +98,22 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Line OD
     logger.info("Line detection")
-    sorted_line_bboxes = line_od(line_od_model, processor, image, DEVICE)
+    line_od_output = line_od(line_od_model, processor, image, DEVICE)
 
-    if len(sorted_line_bboxes) == 0:
+    if len(line_od_output.bboxes) == 0:
         logger.warning("Can't detect lines on the page")
         continue
 
     ## OCR
     logger.info("Text recognition")
-    sorted_bboxes_coords = [bbox_xyxy_to_coords(box) for box in sorted_line_bboxes]
 
-    iterator = list(range(0, len(sorted_bboxes_coords), BATCH_SIZE))
+    iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
     page_trans = []
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line images
-        batch = sorted_bboxes_coords[i:i+BATCH_SIZE]
+        batch = line_od_output.polygons[i:i+BATCH_SIZE]
         cropped_line_imgs = []
 
         # Cut line segs from region images
