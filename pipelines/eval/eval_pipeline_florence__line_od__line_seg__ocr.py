@@ -66,7 +66,7 @@ line_seg_model   = AutoModelForCausalLM.from_pretrained(
                     PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_cropped__line_seg/best",
                     trust_remote_code=True).to(DEVICE)
 ocr_model       = AutoModelForCausalLM.from_pretrained(
-                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_seg__ocr/best",
                     trust_remote_code=True).to(DEVICE)
 
 processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
