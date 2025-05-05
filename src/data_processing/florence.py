@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from src.data_processing.utils import load_arrow_datasets
-from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_polygon
 from src.data_processing.base_datasets import BaseImgXMLDataset
 
 
@@ -151,7 +151,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         unique_key  = data["unique_key"]
 
         # Crop image to a line using bbox
-        bbox_coords = bbox_xyxy_to_coords(data["bbox"])
+        bbox_coords = bbox_xyxy_to_polygon(data["bbox"])
         cropped_line_img = crop_image(image, bbox_coords)
         
         # Shift bbox and polygon to follow the newly cropped images
@@ -227,7 +227,7 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
         unique_key  = data["unique_key"]
 
         # Crop region image
-        bbox_coords = bbox_xyxy_to_coords(data["bbox"])
+        bbox_coords = bbox_xyxy_to_polygon(data["bbox"])
         region_img  = crop_image(image, bbox_coords)
         
         # Shift bbox and polygon to follow the newly cropped images
