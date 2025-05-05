@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval/pipeline/sbs__pipeline_traditional__line_od__ocr
-#SBATCH -o logs_uppmax/eval/pipeline/sbs__pipeline_traditional__line_od__ocr.out
-#SBATCH -e logs_uppmax/eval/pipeline/sbs__pipeline_traditional__line_od__ocr.out
+#SBATCH -J eval/pipeline/sbs__traditional__line_od__ocr
+#SBATCH -o logs_uppmax/eval/pipeline/sbs__traditional__line_od__ocr.out
+#SBATCH -e logs_uppmax/eval/pipeline/sbs__traditional__line_od__ocr.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
