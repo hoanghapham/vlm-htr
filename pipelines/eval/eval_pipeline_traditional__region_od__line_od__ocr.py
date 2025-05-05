@@ -13,7 +13,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.traditional import object_detection, ocr
@@ -88,9 +88,9 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Region OD
     logger.info("Region detection")
-    sorted_region_bboxes = object_detection(region_od_model, image, device=DEVICE)
+    region_od_output = object_detection(region_od_model, image, device=DEVICE)
 
-    if len(sorted_region_bboxes) == 0:
+    if len(region_od_output.bboxes) == 0:
         logger.warning(f"No regions detected in page")
         continue
 
@@ -100,22 +100,20 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     region_line_masks = []
     lines_found = 0
 
-    for bbox in sorted_region_bboxes:
+    for region_polygon in region_od_output.polygons:
         # Crop image to region
-        crop_coords = bbox_xyxy_to_coords(bbox)
-        region_img = crop_image(image, crop_coords)
+        region_img = crop_image(image, region_polygon)
         cropped_regions.append(region_img)
 
         # Detect lines in region
-        sorted_line_bboxes = object_detection(line_od_model, region_img, device=DEVICE)
+        line_od_output = object_detection(line_od_model, region_img, device=DEVICE)
 
-        if len(sorted_line_bboxes) == 0:
+        if len(line_od_output.bboxes) == 0:
             logger.warning(f"No lines detected in region")
             continue
 
-        sorted_line_masks = [bbox_xyxy_to_coords(bbox) for bbox in sorted_line_bboxes]
-        region_line_masks.append(sorted_line_masks)
-        lines_found += len(sorted_line_masks)
+        region_line_masks.append(line_od_output.polygons)
+        lines_found += len(line_od_output.polygons)
 
     if lines_found == 0:
         logger.warning(f"No lines detected in page")

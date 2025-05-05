@@ -12,13 +12,12 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.file_tools import list_files, write_json_file, write_text_file
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
-from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-from pipelines.steps.traditional import line_od, ocr
+from pipelines.steps.traditional import object_detection, ocr
 from pipelines.steps.general import read_img_metrics
 
 # Setup
@@ -90,28 +89,27 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## line OD
     logger.info("Line detection")
-    sorted_line_bboxes = line_od(line_od_model, image, DEVICE)
+    line_od_output = object_detection(line_od_model, image, DEVICE)
 
-    if len(sorted_line_bboxes) == 0:
+    if len(line_od_output.bboxes) == 0:
         logger.warning("No line detected")
         continue
 
     ## OCR
     logger.info("Text recognition")
 
-    iterator = list(range(0, len(sorted_line_bboxes), BATCH_SIZE))
+    iterator = list(range(0, len(line_od_output.bboxes), BATCH_SIZE))
     page_trans = []
 
     for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
         # Create a batch of cropped line images
-        batch = sorted_line_bboxes[i:i+BATCH_SIZE]
+        batch = line_od_output.polygons[i:i+BATCH_SIZE]
         batch_line_imgs = []
 
         # Cut line segs from line images
-        for line_bbox in batch:
-            crop_coords = bbox_xyxy_to_coords(line_bbox)
-            line_imgs = crop_image(image, crop_coords)
+        for line_polygon in batch:
+            line_imgs = crop_image(image, line_polygon)
             batch_line_imgs.append(line_imgs)
 
         # Batch inference

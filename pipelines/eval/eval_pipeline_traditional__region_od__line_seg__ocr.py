@@ -12,8 +12,8 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
+from src.file_tools import list_files, write_json_file, write_text_file
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
 from src.data_processing.utils import XMLParser
 from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
@@ -89,7 +89,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Region OD
     logger.info("Region detection")
-    sorted_region_bboxes = object_detection(region_od_model, image, device=DEVICE)
+    region_od_output = object_detection(region_od_model, image, device=DEVICE)
     
 
     ## Line seg
@@ -97,15 +97,14 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     cropped_regions = []
     region_line_masks = []
 
-    for bbox in sorted_region_bboxes:
+    for region_polygon in region_od_output.polygons:
         # Crop image to region
-        crop_coords = bbox_xyxy_to_coords(bbox)
-        region_img = crop_image(image, crop_coords)
+        region_img = crop_image(image, region_polygon)
         cropped_regions.append(region_img)
 
         # Segment lines
-        sorted_line_masks = line_seg(line_seg_model, region_img, device=DEVICE)
-        region_line_masks.append(sorted_line_masks)
+        line_seg_output = line_seg(line_seg_model, region_img, device=DEVICE)
+        region_line_masks.append(line_seg_output.polygons)
 
 
     # OCR
