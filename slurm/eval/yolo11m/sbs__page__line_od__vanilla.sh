@@ -22,4 +22,4 @@ python pipelines/eval/eval_yolo_od.py \
     --model-name yolo11m__sbs__page__line_od__vanilla \
     --checkpoint vanilla \
     --batch-size 10 \
-    --object-class line \
+    --task page__line_od \

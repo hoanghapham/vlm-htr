@@ -12,10 +12,9 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file, read_json_file
+from src.file_tools import list_files, write_json_file, write_text_file
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_xyxy_to_coords
 from src.data_processing.utils import XMLParser
-from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.traditional import object_detection, ocr
 from src.logger import CustomLogger

@@ -97,7 +97,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     ## Line OD
     logger.info("Line detection")
-    line_od_output          = line_od(line_od_model, processor, image, DEVICE)
+    line_od_output = line_od(line_od_model, processor, image, DEVICE)
 
     ## Line seg then OCR
     logger.info("Line segmentation -> Text recognition")

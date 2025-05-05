@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 12:00:00
-#SBATCH -J eval/yolo11m/mixed__page__region_od__vanilla
-#SBATCH -o logs_uppmax/eval/yolo11m/mixed__page__region_od__vanilla.out
-#SBATCH -e logs_uppmax/eval/yolo11m/mixed__page__region_od__vanilla.out
+#SBATCH -J eval/yolo11m/mixed__region__line_od
+#SBATCH -o logs_uppmax/eval/yolo11m/mixed__region__line_od.out
+#SBATCH -e logs_uppmax/eval/yolo11m/mixed__region__line_od.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -19,7 +19,6 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_yolo_od.py \
     --data-dir $PROJECT_DIR/data/page/mixed/test \
-    --model-name yolo11m__mixed__page__region_od__vanilla \
-    --checkpoint vanilla \
-    --batch-size 10 \
-    --task page__region_od \
+    --model-name yolo11m__mixed__region__line_od \
+    --task region__line_od \
+    --batch-size 10

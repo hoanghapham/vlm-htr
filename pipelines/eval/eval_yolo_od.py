@@ -10,9 +10,9 @@ from tqdm import tqdm
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_ndjson_file, write_json_file
-from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, IMAGE_EXTENSIONS
-from src.data_processing.utils import XMLParser
+from src.file_tools import write_ndjson_file, write_json_file
+from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
+from src.data_processing.yolo import YOLOPageLineODDataset, YOLOPageRegionODDataset, YOLORegionLineODDataset
 from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 from src.logger import CustomLogger
 #%%
@@ -22,15 +22,26 @@ parser.add_argument("--data-dir", required=True)
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--batch-size", default=10)
-parser.add_argument("--object-class", required=True, default="region")
+parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
+parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
+
+# args = parser.parse_args([
+#     "--data-dir", str(PROJECT_DIR / "data/page/mixed/test"),
+#     "--model-name", "yolo11m__mixed__page__region_od",
+#     "--checkpoint", "best",
+#     "--batch-size", "2",
+#     "--task", "page__region_od",
+#     "--debug", "true"
+# ])
 
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DATA_DIR            = Path(args.data_dir)
 MODEL_NAME          = args.model_name
-OBJECT_CLASS        = args.object_class
+TASK                = args.task
 BATCH_SIZE          = int(args.batch_size)
 CHECKPOINT          = args.checkpoint
+DEBUG               = args.debug == "true"
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if CHECKPOINT == "vanilla":
@@ -45,39 +56,34 @@ if not OUTPUT_DIR.exists():
 logger = CustomLogger(f"eval__{MODEL_NAME}", log_to_local=False)
 
 #%%
-img_paths = list_files(DATA_DIR, IMAGE_EXTENSIONS)
-xml_paths = list_files(DATA_DIR, [".xml"])
-matched = set([path.stem for path in img_paths]).intersection(set([path.stem for path in xml_paths]))
 
-assert len(img_paths) == len(xml_paths) == len(matched) > 0, \
-    f"Length invalid, or mismatch img-xml pairs: {len(img_paths)} images, {len(xml_paths)} XML files, {len(matched)} matches"
+if TASK == "page__region_od":
+    test_data = YOLOPageRegionODDataset(DATA_DIR)
+elif TASK == "page__line_od":
+    test_data = YOLOPageLineODDataset(DATA_DIR)
+elif TASK == "region__line_od":
+    test_data = YOLORegionLineODDataset(DATA_DIR)
+else:
+    raise NotImplementedError(f"Unknown task: {TASK}")
 
-# Get annotations
-xml_parser = XMLParser()
-annotations = []
+#%%
+if DEBUG:
+    test_data = test_data[0:2]
 
 logger.info("Get annotations")
-for path in xml_paths:
-    if OBJECT_CLASS == "region":
-        objects = xml_parser.get_regions(path)
-    elif OBJECT_CLASS == "line":
-        objects = xml_parser.get_lines(path)
-    img_ann_bboxes = [obj["bbox"] for obj in objects]
-    annotations.append(img_ann_bboxes)
-
+annotations = [data["bboxes"] for data in test_data]
 
 # %%
 logger.info("Get predictions")
 model = YOLO(MODEL_PATH)
 
 results = []
-iterator = list(range(0, len(img_paths), BATCH_SIZE))
+iterator = list(range(0, len(test_data), BATCH_SIZE))
 
 for i in tqdm(iterator, total=len(iterator), unit="batch"):
-    batch = img_paths[i:i+BATCH_SIZE]
-    batch_results = model.predict(batch, verbose=False, device=DEVICE)
+    batch_imgs = [data["image"] for data in test_data[i:i+BATCH_SIZE]]
+    batch_results = model.predict(batch_imgs, verbose=False, device=DEVICE)
     results += batch_results
-
 
 #%%
 predictions = []
@@ -118,6 +124,7 @@ write_json_file(metrics, OUTPUT_DIR / "metrics.json")
 
 # Write results
 full_results = []
+img_paths = [data["img_path"] for data in test_data]
 
 for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, coverage_ratios):
     full_results.append(
@@ -133,3 +140,6 @@ for img_path, ann, pred, coverage in zip(img_paths, annotations, predictions, co
 write_ndjson_file(full_results, OUTPUT_DIR / "full_results.json")
 
 logger.info(f"Wrote results to {OUTPUT_DIR}")
+
+
+# %%

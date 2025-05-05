@@ -20,5 +20,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_yolo_od.py \
     --data-dir $PROJECT_DIR/data/page/sbs/test \
     --model-name yolo11m__sbs__page__region_od \
-    --object-class region \
+    --task page__region_od \
     --batch-size 10
