@@ -36,7 +36,7 @@ def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, i
     bboxes_raw = output[0][FlorenceTask.OD]["bboxes"]
 
     if len(bboxes_raw) == 0:
-        return []
+        return ODOutput([], [])
 
     # Sort regions
     bboxes           = [Bbox(*bbox) for bbox in bboxes_raw]
@@ -60,7 +60,7 @@ def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image
     bboxes_raw = output[0][FlorenceTask.OD]["bboxes"]
 
     if len(bboxes_raw) == 0:
-        return []
+        return ODOutput([], [])
 
     # Sort lines
     bboxes              = [Bbox(*bbox) for bbox in bboxes_raw]
@@ -83,7 +83,7 @@ def line_seg(line_seg_model: AutoModelForCausalLM, processor: AutoProcessor, cro
     raw_polygons   = [output[FlorenceTask.REGION_TO_SEGMENTATION]["polygons"][0][0] for output in output]
 
     if len(raw_polygons) == 0:
-        return []
+        return ODOutput([], [])
 
     int_coords  = [[int(coord) for coord in mask] for mask in raw_polygons]
     polygons    = [Polygon(zip(mask[::2], mask[1::2])) for mask in int_coords]  # List of length 1

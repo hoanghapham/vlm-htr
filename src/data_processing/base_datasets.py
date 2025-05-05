@@ -60,7 +60,7 @@ class BaseImgXMLDataset(ABC):
         if isinstance(idx, int):
             return self._get_one(idx)
         else:
-            return [self._get_one(i) for i in range(idx.start, idx.stop, idx.step or 1) if i < self.nsamples]
+            return [self._get_one(i) for i in range(idx.start or 0, idx.stop or -1, idx.step or 1) if i < self.nsamples]
 
     def select(self, indices: Iterable):
         for idx in indices:
