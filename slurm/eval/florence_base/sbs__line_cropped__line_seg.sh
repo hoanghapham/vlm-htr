@@ -19,7 +19,7 @@ PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_seg.py \
-    --model-name sbs__florence_base__line_cropped__line_seg \
+    --model-name florence_base__sbs__line_cropped__line_seg \
     --data-dir $PROJECT_DIR/data/page/sbs/test/ \
     --checkpoint best \
     --batch-size 2
