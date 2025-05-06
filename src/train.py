@@ -198,10 +198,14 @@ class Trainer():
 
         with torch.no_grad():
             for batch_data in tqdm(self.val_loader, desc=f"Evaluate step {step_idx}/{self.max_train_steps}"):
-                outputs = self.model(**batch_data)
-                loss = outputs.loss
-                val_loss += loss.item()
-
+                try:
+                    outputs = self.model(**batch_data)
+                    loss = outputs.loss
+                    val_loss += loss.item()
+                except Exception as e:
+                    self.logger.exception(e)
+                    continue
+            
                 if self.debug:
                     break
 
