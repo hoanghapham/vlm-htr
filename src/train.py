@@ -122,9 +122,6 @@ class Trainer():
                     avg_train_loss  = sum(train_losses) / len(train_losses)
                     iterator.set_postfix({"loss": avg_train_loss})
                     
-                    # Reset error count if success
-                    error_count = 0
-
                     is_logging_point = (global_step_counter % self.logging_interval == 0) or global_step_counter == (self.max_train_steps)
                     
                     if is_logging_point:
@@ -142,6 +139,9 @@ class Trainer():
                     
                     # Advance global_step_counter
                     global_step_counter += 1
+                    
+                    # Reset error count if success
+                    error_count = 0
 
                     if global_step_counter > self.max_train_steps:
                         break
