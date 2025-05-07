@@ -18,7 +18,7 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_
 from src.data_processing.utils import XMLParser
 from src.data_processing.florence import predict, FlorenceTask
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-from pipelines.steps.general import read_img_metrics, sort_top_down_left_right
+from pipelines.steps.postprocess import read_img_metrics, sort_top_down_left_right
 from src.logger import CustomLogger
 
 

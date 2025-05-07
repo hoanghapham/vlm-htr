@@ -19,7 +19,7 @@ from src.evaluation.utils import Ratio
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.traditional import object_detection, line_seg, ocr
 from src.logger import CustomLogger
-from pipelines.steps.general import read_img_metrics
+from pipelines.steps.postprocess import read_img_metrics
 
 # Setup
 parser = ArgumentParser()

@@ -18,7 +18,7 @@ from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.traditional import object_detection, ocr
-from pipelines.steps.general import read_img_metrics
+from pipelines.steps.postprocess import read_img_metrics
 
 # Setup
 parser = ArgumentParser()

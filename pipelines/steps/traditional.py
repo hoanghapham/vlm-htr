@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon
-from pipelines.steps.general import sort_top_down_left_right
+from pipelines.steps.postprocess import sort_top_down_left_right, sort_bboxes
 
 
 class ODOutput():
