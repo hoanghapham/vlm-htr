@@ -52,6 +52,7 @@ class Trainer():
         self.start_step         = 1
         self.resume             = resume
         self.debug              = debug
+        self.debug_batches      = 10
 
         # Determine max training steps
         if max_train_steps is None:
@@ -97,17 +98,18 @@ class Trainer():
             param.requires_grad = True
         
         # Train loop
+        total_error_count = 0
+        error_count = 0
+
         global_step_idx = self.start_step   # Keep track of how many steps was done across epochs / runs
+        local_step_idx = 0
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
             self.model.train()
 
             # Train
-            # iterator = tqdm(self.train_loader, desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
             iterator = tqdm(range(len(self.train_loader)), desc=f"Epoch {epoch_idx}", total=len(self.train_loader))
-            total_error_count = 0
-            error_count = 0
 
             for batch_idx in iterator:
                 
@@ -135,8 +137,9 @@ class Trainer():
                             self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_idx)
                             self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_idx)
                     
-                    # Advance global_step_idx
+                    # Advance counters
                     global_step_idx += 1
+                    local_step_idx += 1
                     
                     # Reset error count if success
                     error_count = 0
@@ -144,7 +147,7 @@ class Trainer():
                     if global_step_idx > self.max_train_steps:
                         break
 
-                    if self.debug:
+                    if self.debug and local_step_idx >= self.debug_batches:
                         avg_val_loss = self._evaluate(global_step_idx)
                         self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
                         break
@@ -195,8 +198,6 @@ class Trainer():
     def _evaluate(self, step_idx: int):
         self.model.eval()
         val_loss = 0
-
-        max_batches = 10
         counter = 0
 
         with torch.no_grad():
@@ -210,7 +211,7 @@ class Trainer():
                     self.logger.exception(e)
                     continue
             
-                if self.debug and counter >= max_batches:
+                if self.debug and counter >= self.debug_batches:
                     break
 
         avg_val_loss = val_loss / len(self.val_loader)

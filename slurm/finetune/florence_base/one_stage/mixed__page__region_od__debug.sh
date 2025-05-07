@@ -25,4 +25,5 @@ python pipelines/train/finetune_florence_od.py \
     --max-train-steps 10 \
     --batch-size 2 \
     --logging-interval 5 \
-    --detect-class region
+    --detect-class region \
+    --debug true
