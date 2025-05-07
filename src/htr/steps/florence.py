@@ -12,7 +12,7 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.florence import predict, FlorenceTask
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy
-from pipelines.steps.postprocess import sort_top_down_left_right, sort_bboxes
+from src.htr.steps.postprocess import sort_top_down_left_right, sort_bboxes
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
