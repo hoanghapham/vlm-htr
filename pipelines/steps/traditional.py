@@ -44,7 +44,7 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
 
     # Sort masks
     masks               = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
-    line_bboxes         = [Bbox(*polygon_to_bbox_xyxy(line)) for line in masks if len(line) > 0]
+    line_bboxes         = [Bbox(*polygon_to_bbox_xyxy(line)) for line in masks if len(line.boundary.coords) > 0]
     # sorted_indices      = sort_top_down_left_right(line_bboxes)
     sorted_indices      = sort_bboxes(region_img, line_bboxes)
     sorted_bboxes       = [line_bboxes[i] for i in sorted_indices]
