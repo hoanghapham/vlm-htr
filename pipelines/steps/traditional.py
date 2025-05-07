@@ -43,29 +43,23 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
         return ODOutput([], [])
 
     # Sort masks
-    masks               = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
-    line_bboxes         = [Bbox(*polygon_to_bbox_xyxy(line)) for line in masks if len(line.boundary.coords) > 0]
+    masks = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
+    
+    line_bboxes = []
+    for mask in masks:
+        try:
+            bbox = Bbox(*polygon_to_bbox_xyxy(mask))
+            line_bboxes.append(bbox)
+        except Exception as e:
+            print(e)
+            continue
+
     # sorted_indices      = sort_top_down_left_right(line_bboxes)
     sorted_indices      = sort_bboxes(region_img, line_bboxes)
     sorted_bboxes       = [line_bboxes[i] for i in sorted_indices]
     sorted_polygons     = [masks[i] for i in sorted_indices]
 
     return ODOutput(sorted_bboxes, sorted_polygons)
-
-
-# def line_od(line_od_model: YOLO, image: PILImage, device: str = "cpu") -> list[Bbox]:
-#     results_line_od = line_od_model.predict(image, verbose=False, device=device)
-#     line_bboxes_raw = results_line_od[0].boxes.xyxy
-#     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
-
-#     if len(line_bboxes) == 0:
-#         return ODOutput([], [])
-
-#     # Sort lines
-#     sorted_indices = sort_top_down_left_right(line_bboxes)
-#     sorted_line_bboxes = [line_bboxes[i] for i in sorted_indices]
-
-#     return sorted_line_bboxes
 
 
 def ocr(ocr_model: VisionEncoderDecoderModel, processor: TrOCRProcessor, line_images: list[PILImage], device: str = "cpu") -> list[str]:
