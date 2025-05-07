@@ -40,7 +40,8 @@ def region_od(region_od_model: AutoModelForCausalLM, processor: AutoProcessor, i
 
     # Sort regions
     bboxes           = [Bbox(*bbox) for bbox in bboxes_raw]
-    sorted_indices   = sort_top_down_left_right(bboxes)
+    # sorted_indices   = sort_top_down_left_right(bboxes)
+    sorted_indices   = sort_bboxes(image, bboxes)
     sorted_bboxes    = [bboxes[i] for i in sorted_indices]
     sorted_polygons  = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
 
@@ -64,7 +65,8 @@ def line_od(line_od_model: AutoModelForCausalLM, processor: AutoProcessor, image
 
     # Sort lines
     bboxes              = [Bbox(*bbox) for bbox in bboxes_raw]
-    sorted_indices      = sort_top_down_left_right(bboxes)
+    # sorted_indices      = sort_top_down_left_right(bboxes)
+    sorted_indices      = sort_bboxes(image, bboxes)
     sorted_bboxes       = [bboxes[i] for i in sorted_indices]
     sorted_polygons     = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
     return ODOutput(sorted_bboxes, sorted_polygons)

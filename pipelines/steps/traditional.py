@@ -29,8 +29,9 @@ def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> OD
         return ODOutput([], [])
 
     # Sort regions
-    sorted_region_indices = sort_top_down_left_right(bboxes)
-    sorted_bboxes   = [bboxes[i] for i in sorted_region_indices]
+    # sorted_indices  = sort_top_down_left_right(bboxes)
+    sorted_indices  = sort_bboxes(image, bboxes)
+    sorted_bboxes   = [bboxes[i] for i in sorted_indices]
     sorted_polygons = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
     return ODOutput(sorted_bboxes, sorted_polygons)
 
@@ -44,7 +45,8 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
     # Sort masks
     masks               = [Polygon([(int(point[0]), int(point[1])) for point in mask]) for mask in results_line_seg[0].masks.xy]
     line_bboxes         = [Bbox(*polygon_to_bbox_xyxy(line)) for line in masks if len(line) > 0]
-    sorted_indices      = sort_top_down_left_right(line_bboxes)
+    # sorted_indices      = sort_top_down_left_right(line_bboxes)
+    sorted_indices      = sort_bboxes(region_img, line_bboxes)
     sorted_bboxes       = [line_bboxes[i] for i in sorted_indices]
     sorted_polygons     = [masks[i] for i in sorted_indices]
 
