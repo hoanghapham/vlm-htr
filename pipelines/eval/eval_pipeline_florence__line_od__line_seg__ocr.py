@@ -23,14 +23,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--split-type", "mixed",
-    "--batch-size", "2",
-    "--device", "cpu",
-    "--debug", "true",
-])
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--batch-size", "2",
+#     "--device", "cpu",
+#     "--debug", "true",
+# ])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)

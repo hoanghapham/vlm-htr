@@ -4,20 +4,18 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-from tqdm import tqdm
 from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
-from pipelines.steps.florence import line_od, ocr
-from pipelines.steps.generic import read_img_metrics
+from src.htr.steps.generic import read_img_metrics
+from src.htr.pipelines.florence import FlorencePipeline
 
 
 # Setup
@@ -57,16 +55,15 @@ if args.device == "cuda":
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 else:
     DEVICE = args.device
-REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
-line_od_model   = AutoModelForCausalLM.from_pretrained(
-                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
-                    trust_remote_code=True).to(DEVICE)
-ocr_model       = AutoModelForCausalLM.from_pretrained(
-                    PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
-                    trust_remote_code=True).to(DEVICE)
-
-processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
+pipeline = FlorencePipeline(
+    pipeline_type="line_od__ocr",
+    line_od_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
+    ocr_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+    batch_size=BATCH_SIZE,
+    device=DEVICE,
+    logger=logger
+)
 
 #%%
 xml_parser = XMLParser()
@@ -93,41 +90,11 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     image = Image.open(img_path).convert("RGB")
     # images.append(image)
 
-    ## Line OD
-    logger.info("Line detection")
-    line_od_output = line_od(line_od_model, processor, image, DEVICE)
-    # results.append(line_od_output)
+    ## Run pipeline
+    page_output = pipeline.line_od__ocr(image)
 
-    if len(line_od_output.bboxes) == 0:
-        logger.warning("Can't detect lines on the page")
-        continue
-#%%
-    ## OCR
-    logger.info("Text recognition")
-
-    iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
-    page_trans = []
-
-    for i in tqdm(iterator, total=len(iterator), unit="batch"):
-
-        # Create a batch of cropped line images
-        batch = line_od_output.polygons[i:i+BATCH_SIZE]
-        cropped_line_imgs = []
-
-        # Cut line segs from region images
-        for bbox_coords in batch:
-            line_img = crop_image(image, bbox_coords)
-            cropped_line_imgs.append(line_img)
-
-        # Batch inference
-        line_trans = ocr(ocr_model, processor, cropped_line_imgs, DEVICE)
-        page_trans += line_trans
-
-
-    # Stitching. 
-    # Output in .hyp extension to be used with E2EHTREval
-    pred_text = " ".join(page_trans)
-    write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
+    # Write predicted text in .hyp extension to be used with E2EHTREval
+    write_text_file(page_output.text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Get lines from xml, sort by bbox
     # Write ground truth in .ref extension to be used with E2EHTREval
@@ -138,8 +105,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Evaluation
     try:
-        metrics_ratio   = compute_ocr_metrics(gt_text, pred_text, return_type="ratio")
-        metrics_str     = compute_ocr_metrics(gt_text, pred_text, return_type="str")
+        metrics_ratio   = compute_ocr_metrics(gt_text, page_output.text, return_type="ratio")
+        metrics_str     = compute_ocr_metrics(gt_text, page_output.text, return_type="str")
     except Exception as e:
         logger.exception(e)
         continue
@@ -153,8 +120,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     write_json_file(metrics_str, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
-    if DEBUG:
-        break
 
 # Averaging metrics across all pages
 avg_cer = sum(cer_list)

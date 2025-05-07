@@ -78,6 +78,10 @@ class FlorencePipeline():
         self.logger.info("Line detection")
         line_od_output = line_od(self.line_od_model, self.processor, image, self.device)
 
+        if len(line_od_output.bboxes) == 0:
+            self.logger.warning("Can't detect lines on the page")
+            return None
+
         ## Line seg then OCR
         self.logger.info("Line segmentation -> Text recognition")
         lines_text = []
@@ -103,6 +107,41 @@ class FlorencePipeline():
             
             # OCR
             batch_text = ocr(self.ocr_model, self.processor, batch_line_seg_imgs, self.device)
+            lines_text += batch_text
+
+        # Output
+        lines: list[Line] = [Line(*tup) for tup in zip(line_od_output.bboxes, line_od_output.polygons, lines_text)]
+        return Page(regions=[], lines=lines)
+    
+    def line_od__ocr(self, image: PILImage):
+
+        self.logger.info("Line detection")
+        line_od_output = line_od(self.line_od_model, self.processor, image, self.device)
+
+        if len(line_od_output.bboxes) == 0:
+            self.logger.warning("Can't detect lines on the page")
+            return None
+
+        ## Line seg then OCR
+        self.logger.info("Line segmentation -> Text recognition")
+        lines_text = []
+
+        # Iterate through detected lines
+        iterator = list(range(0, len(line_od_output.polygons), self.batch_size))
+
+        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+
+            # Create a batch of cropped line bboxes
+            batch = line_od_output.polygons[i:i+self.batch_size]
+            cropped_line_imgs = []
+
+            # Cut line segs from region images
+            for bbox_coords in batch:
+                line_img = crop_image(image, bbox_coords)
+                cropped_line_imgs.append(line_img)
+
+            # Batch inference
+            batch_text = ocr(self.ocr_model, self.processor, cropped_line_imgs, self.device)
             lines_text += batch_text
 
         # Output
