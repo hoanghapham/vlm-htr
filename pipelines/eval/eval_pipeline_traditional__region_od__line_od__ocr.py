@@ -94,7 +94,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         logger.warning(f"No regions detected in page")
         continue
 
-    ## Line seg
+    ## Line OD
     logger.info("Line detection")
     cropped_regions = []
     region_line_masks = []
@@ -166,7 +166,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Write ground truth in .ref extension to be used with E2EHTREval
     gt_text = " ".join([line["transcription"] for line in gt_lines])
-
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
     
     # Evaluation
