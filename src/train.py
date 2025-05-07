@@ -97,8 +97,7 @@ class Trainer():
             param.requires_grad = True
         
         # Train loop
-        train_losses = []
-        global_step_counter = self.start_step   # Keep track of how many steps was done across epochs / runs
+        global_step_idx = self.start_step   # Keep track of how many steps was done across epochs / runs
         
         for epoch_idx in range(self.num_train_epochs):
             torch.cuda.empty_cache()
@@ -118,35 +117,36 @@ class Trainer():
                     batch_data      = next(self.train_loader._get_iterator())
                     step_loss       = self._train_one_step(batch_data)
                     
-                    train_losses.append(step_loss)
-                    avg_train_loss  = sum(train_losses) / len(train_losses)
+                    self.train_losses.append(step_loss)
+                    avg_train_loss  = sum(self.train_losses) / len(self.train_losses)
                     iterator.set_postfix({"loss": avg_train_loss})
                     
-                    is_logging_point = (global_step_counter % self.logging_interval == 0) or global_step_counter == (self.max_train_steps)
+                    is_logging_point = (global_step_idx % self.logging_interval == 0) or global_step_idx == (self.max_train_steps)
                     
                     if is_logging_point:
-                        avg_val_loss = self._evaluate(global_step_counter)
-                        self._save_checkpoint(global_step_counter, avg_train_loss, avg_val_loss)
-                        self.logger.info(f"Saved checkpoint {global_step_counter}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
+                        avg_val_loss = self._evaluate(global_step_idx)
+                        self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
                         self.copy_last_checkpoint()
 
                         self.train_losses.append(avg_train_loss)
                         self.val_losses.append(avg_val_loss)
 
                         if self.tsb_logger is not None:
-                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_counter)
-                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_counter)
+                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_idx)
+                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_idx)
                     
-                    # Advance global_step_counter
-                    global_step_counter += 1
+                    # Advance global_step_idx
+                    global_step_idx += 1
                     
                     # Reset error count if success
                     error_count = 0
 
-                    if global_step_counter > self.max_train_steps:
+                    if global_step_idx > self.max_train_steps:
                         break
 
                     if self.debug:
+                        avg_val_loss = self._evaluate(global_step_idx)
+                        self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
                         break
 
                 except Exception as e:
@@ -155,14 +155,14 @@ class Trainer():
                     self.logger.exception(e)
                     continue
             
-            # If englobal_step_countering errors more than MAX_ERROR_RETRIES times, end training
+            # If global_step_idxing errors more than MAX_ERROR_RETRIES times, end training
             if error_count > MAX_ERROR_RETRIES:
-                self.logger.error(f"ERROR {MAX_ERROR_RETRIES} times, end training early")
-                self._save_checkpoint(global_step_counter, avg_train_loss, avg_val_loss)
-                self.logger.info(f"Saved checkpoint {global_step_counter}")
+                self.logger.error(f"ERROR {MAX_ERROR_RETRIES} times consecutively, end training early")
+                self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
+                self.copy_last_checkpoint()
                 break
 
-            if global_step_counter > self.max_train_steps:
+            if global_step_idx > self.max_train_steps:
                 break
         
         # Copy best checkpoints
@@ -196,17 +196,21 @@ class Trainer():
         self.model.eval()
         val_loss = 0
 
+        max_batches = 10
+        counter = 0
+
         with torch.no_grad():
             for batch_data in tqdm(self.val_loader, desc=f"Evaluate step {step_idx}/{self.max_train_steps}"):
                 try:
                     outputs = self.model(**batch_data)
                     loss = outputs.loss
                     val_loss += loss.item()
+                    counter += 1
                 except Exception as e:
                     self.logger.exception(e)
                     continue
             
-                if self.debug:
+                if self.debug and counter >= max_batches:
                     break
 
         avg_val_loss = val_loss / len(self.val_loader)
@@ -229,6 +233,7 @@ class Trainer():
             metrics=checkpoint_metrics, 
             out_dir=cp_out_dir
         )
+        self.logger.info(f"Saved checkpoint {step_idx}, avg. train loss: {avg_train_loss}, avg. val loss: {avg_val_loss}")
 
 
 # Helper functions
