@@ -7,7 +7,6 @@ import torch
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
-from htrflow.evaluate import CER, WER, BagOfWords
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
@@ -18,7 +17,8 @@ from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
 from pipelines.steps.florence import line_od, ocr
-from pipelines.steps.postprocess import read_img_metrics
+from pipelines.steps.generic import read_img_metrics
+
 
 # Setup
 parser = ArgumentParser()
@@ -29,7 +29,7 @@ parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--split-type", "mixed",
+#     "--split-type", "sbs",
 #     "--batch-size", "2",
 #     "--device", "cpu",
 #     "--debug", "true"
@@ -45,8 +45,8 @@ img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
 if DEBUG:
-    img_paths = [img_paths[0], img_paths[704]]
-    xml_paths = [xml_paths[0], xml_paths[704]]
+    img_paths = [img_paths[0], img_paths[136]]
+    xml_paths = [xml_paths[0], xml_paths[136]]
 
 #%%
 
@@ -70,14 +70,13 @@ processor       = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_
 
 #%%
 xml_parser = XMLParser()
-cer = CER()
-wer = WER()
-bow = BagOfWords()
-
 cer_list = []
 wer_list = []
 bow_hits_list = []
 bow_extras_list = []
+
+# images = []
+# results = []
 
 # Iterate through pages
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
@@ -91,19 +90,18 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
-
-    image       = Image.open(img_path).convert("RGB")
-    gt_lines    = xml_parser.get_lines(xml_path)
-
+    image = Image.open(img_path).convert("RGB")
+    # images.append(image)
 
     ## Line OD
     logger.info("Line detection")
     line_od_output = line_od(line_od_model, processor, image, DEVICE)
+    # results.append(line_od_output)
 
     if len(line_od_output.bboxes) == 0:
         logger.warning("Can't detect lines on the page")
         continue
-
+#%%
     ## OCR
     logger.info("Text recognition")
 
@@ -126,13 +124,15 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         page_trans += line_trans
 
 
-    # Stitching. Transcriptions are already in the right order
+    # Stitching. 
     # Output in .hyp extension to be used with E2EHTREval
     pred_text = " ".join(page_trans)
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
+    # Get lines from xml, sort by bbox
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = " ".join([line["transcription"] for line in gt_lines])
+    gt_lines    = xml_parser.get_lines(xml_path)
+    gt_text     = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
 
 
@@ -153,6 +153,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     write_json_file(metrics_str, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
 
+    if DEBUG:
+        break
 
 # Averaging metrics across all pages
 avg_cer = sum(cer_list)
@@ -171,3 +173,17 @@ avg_metrics = {
 
 write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
 # %%
+
+# from src.visualization import draw_bboxes_xyxy
+# idx = 1
+# draw_bboxes_xyxy(images[idx], results[idx].bboxes)
+# gt_lines = xml_parser.get_lines(xml_path=xml_paths[idx])
+# gt_regions = xml_parser.get_regions(xml_path=xml_paths[idx])
+# draw_bboxes_xyxy(images[idx], [data["bbox"] for data in gt_regions])
+# draw_bboxes_xyxy(images[idx], [data["bbox"] for data in gt_lines])
+
+#%%
+
+
+
+

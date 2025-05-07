@@ -18,7 +18,7 @@ from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.traditional import object_detection, ocr
 from src.logger import CustomLogger
-from pipelines.steps.postprocess import read_img_metrics
+from pipelines.steps.generic import read_img_metrics
 
 # Setup
 parser = ArgumentParser()
@@ -84,7 +84,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
 
     image = Image.open(img_path).convert("RGB")
-    gt_lines = xml_parser.get_lines(xml_path)
 
     ## Region OD
     logger.info("Region detection")
@@ -165,7 +164,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = " ".join([line["transcription"] for line in gt_lines])
+    gt_lines    = xml_parser.get_lines(xml_path)
+    gt_text     = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
     
     # Evaluation

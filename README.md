@@ -126,3 +126,10 @@ This invocation will do the following:
 - Input data will be rectangular crops of line images (using bounding boxes of lines)
 - Use `mixed` scheme
 - Maximum train steps: 220,000
+
+
+# Notes
+
+Not all annotations are correct. For example, 
+
+Frihetstidens_utskott_-_Riksens_ständers_stora_deputations_handlingar__volym_1__1765-1766__R0002405_00094.xml has no text annotation, has region bbox annotation, but only have line bbox of one region

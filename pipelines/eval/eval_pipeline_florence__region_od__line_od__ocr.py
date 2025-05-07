@@ -18,7 +18,7 @@ from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from pipelines.steps.florence import region_od, line_od, ocr
-from pipelines.steps.postprocess import read_img_metrics
+from pipelines.steps.generic import read_img_metrics
 
 
 # Setup
@@ -58,7 +58,6 @@ if args.device == "cuda":
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 else:
     DEVICE = args.device
-REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 
 region_od_model         = AutoModelForCausalLM.from_pretrained(
                           PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__region_od/best",
@@ -70,6 +69,7 @@ model_ocr               = AutoModelForCausalLM.from_pretrained(
                           PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
                           trust_remote_code=True).to(DEVICE)
 
+REMOTE_MODEL_PATH       = "microsoft/Florence-2-base-ft"
 processor               = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 #%%
@@ -96,10 +96,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
-
     image       = Image.open(img_path).convert("RGB")
-    gt_lines    = xml_parser.get_lines(xml_path)
-
 
     ## Region OD
     logger.info("Region detection")
@@ -155,6 +152,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
+    gt_lines    = xml_parser.get_lines(xml_path)
     gt_text = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
 

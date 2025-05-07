@@ -14,22 +14,6 @@ from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopag
 from src.file_tools import read_json_file
 
 
-def read_img_metrics(
-    img_metric_path: str | Path, 
-    cer_list: list, 
-    wer_list: list, 
-    bow_hits_list: list, 
-    bow_extras_list: list
-) -> tuple[list, list, list, list]:
-    img_metric = read_json_file(img_metric_path)
-    cer_list.append(Ratio(*img_metric["cer"]["str"].split("/")))
-    wer_list.append(Ratio(*img_metric["wer"]["str"].split("/")))
-    bow_hits_list.append(Ratio(*img_metric["bow_hits"]["str"].split("/")))
-    bow_extras_list.append(Ratio(*img_metric["bow_extras"]["str"].split("/")))
-
-    return cer_list, wer_list, bow_hits_list, bow_extras_list
-
-
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with slight modifications
 
 
@@ -57,17 +41,23 @@ def sort_bboxes(image: PILImage, bboxes: Sequence[Bbox]) -> list[int]:
     """
 
     printspace = estimate_printspace(np.array(image))
-    is_twopage = check_twopage(image)
+    is_twopage = check_twopage(np.array(image))
 
     def key(i: int):
         return (
             is_twopage and (bboxes[i].center.x > printspace.center.x),
-            # This causes a weird issue: the first two lines of a region are ordered last
+            # sometime causes a weird issue: the first two lines of a region are ordered last
             get_region_location(printspace, bboxes[i]).value,  
             bboxes[i].ymin,
         )
 
     return sorted(range(len(bboxes)), key=key)
+
+
+def sort_objects(images: PILImage, objects: list) -> list:
+    sorted_indices = sort_bboxes(images, objects)
+    return [objects[i] for i in sorted_indices]
+
 
 
 # Code from ChatGPT

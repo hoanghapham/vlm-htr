@@ -18,7 +18,8 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_
 from src.data_processing.utils import XMLParser
 from src.data_processing.florence import predict, FlorenceTask
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-from pipelines.steps.postprocess import read_img_metrics, sort_top_down_left_right
+from pipelines.steps.postprocess import sort_top_down_left_right
+from pipelines.steps.generic import read_img_metrics
 from src.logger import CustomLogger
 
 
@@ -89,10 +90,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
-
     image       = Image.open(img_path).convert("RGB")
-    gt_lines    = xml_parser.get_lines(xml_path)
-
 
     ## Line OD
     logger.info("Line detection")
@@ -155,7 +153,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = " ".join([line["transcription"] for line in gt_lines])
+    gt_lines    = xml_parser.get_lines(xml_path)
+    gt_text     = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
 
     try:

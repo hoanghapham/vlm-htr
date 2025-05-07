@@ -17,7 +17,7 @@ from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
 from pipelines.steps.florence import line_od, line_seg, ocr
-from pipelines.steps.postprocess import read_img_metrics
+from pipelines.steps.generic import read_img_metrics
 
 
 # Setup
@@ -26,14 +26,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-#     "--device", "cpu",
-#     "--debug", "true",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -92,7 +92,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
     image       = Image.open(img_path).convert("RGB")
-    gt_lines    = xml_parser.get_lines(xml_path)
 
 
     ## Line OD
@@ -132,8 +131,10 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     pred_text = " ".join(page_trans)
     write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
+    # Get lines from xml
     # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_text = " ".join([line["transcription"] for line in gt_lines])
+    gt_lines    = xml_parser.get_lines(xml_path)
+    gt_text     = " ".join([line["transcription"] for line in gt_lines])
     write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
 
     # Evaluation
