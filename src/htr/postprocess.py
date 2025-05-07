@@ -13,8 +13,8 @@ from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopag
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
 
-def sort_bboxes(image: PILImage, bboxes: Sequence[Bbox]) -> list[int]:
-    """Order bounding boxes with respect to printspace
+def sort_consider_margin(bboxes: Sequence[Bbox], image: PILImage) -> list[int]:
+    """Order bounding boxes with respect to printspace, and consider margin.
 
     This function estimates the reading order based on the following:
         1. Which page of the spread the bounding box belongs to (if `is_twopage` is True)
@@ -51,10 +51,6 @@ def sort_bboxes(image: PILImage, bboxes: Sequence[Bbox]) -> list[int]:
     return sorted(range(len(bboxes)), key=key)
 
 
-def sort_objects(images: PILImage, objects: list) -> list:
-    sorted_indices = sort_bboxes(images, objects)
-    return [objects[i] for i in sorted_indices]
-
 
 # Code from ChatGPT
 def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = None) -> list[int]:
@@ -62,7 +58,9 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
 
     Automatically splits bounding boxes into 'left' and 'right' groups based
     on a guessed `split_x` (center x of all boxes if not provided).
-    Within each group, boxes are ordered top-down (smallest y first), then left-right (smallest x).
+    Within each group, boxes are ordered top-down (smallest y first).
+
+    Drawback of this method is that lines on the margin may be merged into the adjacent lines
 
     Parameters
     ----------
@@ -76,6 +74,9 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
     list[int]
         list of indices of the original bboxes in the new order
     """
+
+    if len(bboxes) == 0:
+        return []
 
     if split_x is None:
         centers_x = [(bbox.xmin + bbox.xmax) / 2 for bbox in bboxes]

@@ -14,7 +14,7 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.htr.pipelines.florence import FlorencePipeline
-from src.htr.steps.generic import read_img_metrics
+from src.htr.utils import read_img_metrics
 from src.logger import CustomLogger
 
 # Setup

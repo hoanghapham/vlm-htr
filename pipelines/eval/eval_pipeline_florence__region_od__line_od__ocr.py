@@ -4,21 +4,18 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
-from tqdm import tqdm
 from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
-from htrflow.evaluate import CER, WER, BagOfWords
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files, write_json_file, write_text_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image
+from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.data_processing.utils import XMLParser
 from src.logger import CustomLogger
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-from pipelines.steps.florence import region_od, line_od, ocr
-from pipelines.steps.generic import read_img_metrics
+from src.htr.utils import read_img_metrics
+from src.htr.pipelines.florence import FlorencePipeline
 
 
 # Setup
@@ -27,14 +24,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--split-type", "mixed",
-#     "--batch-size", "2",
-#     "--device", "cpu",
-#     "--debug", "true",
-# ])
+args = parser.parse_args([
+    "--split-type", "mixed",
+    "--batch-size", "2",
+    "--device", "cpu",
+    "--debug", "true",
+])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -59,25 +56,19 @@ if args.device == "cuda":
 else:
     DEVICE = args.device
 
-region_od_model         = AutoModelForCausalLM.from_pretrained(
-                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__region_od/best",
-                          trust_remote_code=True).to(DEVICE)
-model_region_line_od    = AutoModelForCausalLM.from_pretrained(
-                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__region__line_od/best",
-                          trust_remote_code=True).to(DEVICE)
-model_ocr               = AutoModelForCausalLM.from_pretrained(
-                          PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
-                          trust_remote_code=True).to(DEVICE)
+pipeline = FlorencePipeline(
+    pipeline_type="region_od__line_od__ocr",
+    region_od_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__region_od/best",
+    line_od_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__region__line_od/best",
+    ocr_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+    batch_size=BATCH_SIZE,
+    device=DEVICE,
+    logger=logger
+)
 
-REMOTE_MODEL_PATH       = "microsoft/Florence-2-base-ft"
-processor               = AutoProcessor.from_pretrained(REMOTE_MODEL_PATH, trust_remote_code=True, device_map=DEVICE)
 
 #%%
 xml_parser = XMLParser()
-cer = CER()
-wer = WER()
-bow = BagOfWords()
-
 cer_list = []
 wer_list = []
 bow_hits_list = []
@@ -98,58 +89,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
     image       = Image.open(img_path).convert("RGB")
 
-    ## Region OD
-    logger.info("Region detection")
-    region_od_output = region_od(region_od_model, processor, image, DEVICE)
+    ## Run pipeline
     
-    if len(region_od_output.bboxes) == 0:
-        logger.warning("Can't detect regions on the page")
-        continue
-    
-    ## Line OD within region
-    logger.info("Line detection within region")
-    # cropped_region_imgs = []
+    page_output = pipeline.region_od__line_od__ocr(image, sort_mode="top_down_left_right")
 
-    page_trans = []
-
-    for region_polygon in region_od_output.polygons:
-        region_img  = crop_image(image, region_polygon)
-
-        ## Line OD
-        line_od_output = line_od(model_region_line_od, processor, region_img, DEVICE)
-        if len(line_od_output.bboxes) == 0:
-            logger.warning("Can't find lines on the region image")
-            continue
-
-        ## OCR
-        logger.info("Text recognition")
-        iterator = list(range(0, len(line_od_output.polygons), BATCH_SIZE))
-        
-        for i in tqdm(iterator, total=len(iterator), unit="batch"):
-
-            # Create a batch of cropped line bboxes
-            # Aggregate line images to do batch OCR
-            batch = line_od_output.polygons[i:i+BATCH_SIZE]
-            batch_cropped_lines = []
-
-            for mask in batch:
-                line_img = crop_image(image, mask)
-                batch_cropped_lines.append(line_img)
-
-            # OCR
-            try:
-                line_trans = ocr(model_ocr, processor, batch_cropped_lines, DEVICE)
-            except Exception as e:
-                logger.warning(f"Failed to OCR line images: {e}")
-                continue
-            
-            page_trans += line_trans
-
-
-    # Stitching. Transcriptions are already in the right order
-    # Output in .hyp extension to be used with E2EHTREval
-    pred_text = " ".join(page_trans)
-    write_text_file(pred_text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
+    # Write predicted text in .hyp extension to be used with E2EHTREval
+    write_text_file(page_output.text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
 
     # Write ground truth in .ref extension to be used with E2EHTREval
     gt_lines    = xml_parser.get_lines(xml_path)
@@ -158,8 +103,8 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Evaluation
     try:
-        metrics_ratio   = compute_ocr_metrics(gt_text, pred_text, return_type="ratio")
-        metrics_str     = compute_ocr_metrics(gt_text, pred_text, return_type="str")
+        metrics_ratio   = compute_ocr_metrics(gt_text, page_output.text, return_type="ratio")
+        metrics_str     = compute_ocr_metrics(gt_text, page_output.text, return_type="str")
     except Exception as e:
         logger.exception(e)
         continue

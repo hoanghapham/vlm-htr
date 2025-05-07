@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon
-from src.htr.steps.postprocess import sort_top_down_left_right, sort_bboxes
+from src.htr.postprocess import sort_top_down_left_right, sort_consider_margin
 
 
 class ODOutput():
@@ -30,7 +30,7 @@ def object_detection(od_model: YOLO, image: PILImage, device: str = "cpu") -> OD
 
     # Sort regions
     # sorted_indices  = sort_top_down_left_right(bboxes)
-    sorted_indices  = sort_bboxes(image, bboxes)
+    sorted_indices  = sort_consider_margin(image, bboxes)
     sorted_bboxes   = [bboxes[i] for i in sorted_indices]
     sorted_polygons = [bbox_xyxy_to_polygon(bbox) for bbox in sorted_bboxes]
     return ODOutput(sorted_bboxes, sorted_polygons)
@@ -55,7 +55,7 @@ def line_seg(line_seg_model: YOLO, region_img: PILImage, device: str = "cpu") ->
             continue
 
     # sorted_indices      = sort_top_down_left_right(line_bboxes)
-    sorted_indices      = sort_bboxes(region_img, line_bboxes)
+    sorted_indices      = sort_consider_margin(region_img, line_bboxes)
     sorted_bboxes       = [line_bboxes[i] for i in sorted_indices]
     sorted_polygons     = [masks[i] for i in sorted_indices]
 
