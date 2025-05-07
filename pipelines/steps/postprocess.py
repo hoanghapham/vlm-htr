@@ -8,14 +8,10 @@ import numpy as np
 from typing import Sequence
 from PIL.Image import Image as PILImage
 from htrflow.utils.geometry import Bbox
-from htrflow.evaluate import Ratio
 from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopage, get_region_location
 
-from src.file_tools import read_json_file
 
-
-# Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with slight modifications
-
+# Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
 
 def sort_bboxes(image: PILImage, bboxes: Sequence[Bbox]) -> list[int]:
     """Order bounding boxes with respect to printspace
@@ -39,14 +35,15 @@ def sort_bboxes(image: PILImage, bboxes: Sequence[Bbox]) -> list[int]:
     list[int]
         A list of integers `index` where `index[i]` is the suggested reading order of the i:th bounding box.
     """
-
+    # Estimate printspace of the image. Returns a bbox covering the main reading area
     printspace = estimate_printspace(np.array(image))
+
+    # Check if the image is two-page by finding a middle line represented by very dark pixels
     is_twopage = check_twopage(np.array(image))
 
     def key(i: int):
         return (
             is_twopage and (bboxes[i].center.x > printspace.center.x),
-            # sometime causes a weird issue: the first two lines of a region are ordered last
             get_region_location(printspace, bboxes[i]).value,  
             bboxes[i].ymin,
         )
@@ -59,10 +56,9 @@ def sort_objects(images: PILImage, objects: list) -> list:
     return [objects[i] for i in sorted_indices]
 
 
-
 # Code from ChatGPT
-def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = None):
-    """Order bounding boxes topdown-left right.
+def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = None) -> list[int]:
+    """Order bounding boxes using a simple heuristic.
 
     Automatically splits bounding boxes into 'left' and 'right' groups based
     on a guessed `split_x` (center x of all boxes if not provided).
@@ -77,8 +73,8 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
 
     Returns
     -------
-    _type_
-        _description_
+    list[int]
+        list of indices of the original bboxes in the new order
     """
 
     if split_x is None:

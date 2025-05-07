@@ -18,7 +18,7 @@ from src.data_processing.visual_tasks import IMAGE_EXTENSIONS, crop_image, bbox_
 from src.data_processing.utils import XMLParser
 from src.data_processing.florence import predict, FlorenceTask
 from src.evaluation.ocr_metrics import compute_ocr_metrics
-from pipelines.steps.postprocess import sort_top_down_left_right
+from pipelines.steps.postprocess import sort_bboxes
 from pipelines.steps.generic import read_img_metrics
 from src.logger import CustomLogger
 
@@ -113,7 +113,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     line_bboxes = [Bbox(*bbox) for bbox in line_bboxes_raw]
 
     # Sort lines
-    sorted_line_indices = sort_top_down_left_right(line_bboxes)
+    sorted_line_indices = sort_bboxes(line_bboxes)
     sorted_line_bboxes  = [line_bboxes[i] for i in sorted_line_indices]
     sorted_line_masks   = [bbox_xyxy_to_polygon(box) for box in sorted_line_bboxes]
 
