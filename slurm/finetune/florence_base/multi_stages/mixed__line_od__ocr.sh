@@ -22,6 +22,6 @@ python pipelines/train/finetune_florence_ocr.py \
     --data-dir $PROJECT_DIR/data/line_bbox/mixed/ \
     --model-name florence_base__mixed__line_od__ocr \
     --num-train-epochs 2 \
-    --max-train-steps 220000 \
+    --max-train-steps 260000 \
     --batch-size 2 \
     --logging-interval 20000 \
