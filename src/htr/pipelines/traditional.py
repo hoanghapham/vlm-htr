@@ -165,7 +165,7 @@ class TraditionalPipeline():
         logger: CustomLogger = None
     ):
         self.supported_pipelines = {
-            "region_od__line_seg__ocr": self.region_od__line_od__ocr,
+            "region_od__line_seg__ocr": self.region_od__line_seg__ocr,
             "region_od__line_od__ocr": self.region_od__line_od__ocr,
             "line_od__ocr": self.line_od__ocr
         }
