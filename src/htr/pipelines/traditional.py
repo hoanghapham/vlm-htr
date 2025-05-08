@@ -12,7 +12,6 @@ from tqdm import tqdm
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import suppress_stdout_stderr
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image
 from src.htr.utils import sort_top_down_left_right, sort_consider_margin
 from src.htr.data_types import Page, Region, Line, ODOutput
@@ -258,6 +257,7 @@ class TraditionalPipeline():
 
         return Page(regions=page_regions, lines=page_lines)
     
+
     def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
 
@@ -318,3 +318,37 @@ class TraditionalPipeline():
             page_lines += lines
 
         return Page(regions=page_regions, lines=page_lines)
+    
+
+    def line_od__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
+
+        assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
+
+        self.logger.info("Line detection")
+        line_od_output, line_bbox_imgs = self.line_od.run(image)
+
+        ## Line seg then OCR
+        self.logger.info("Batch text recognition")
+        iterator = list(range(0, len(line_od_output.polygons), self.batch_size))
+        page_line_texts = []
+
+        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+            batch_indices = slice(i, i+self.batch_size)
+            texts = self.ocr.run(line_bbox_imgs[batch_indices])
+            page_line_texts += texts
+
+        # Output
+        assert len(line_od_output.bboxes) == len(line_od_output.polygons) == len(page_line_texts), "Length mismatch"
+        
+        if sort_mode == "top_down_left_right":
+            sorted_line_indices = sort_top_down_left_right(line_od_output.bboxes)
+        elif sort_mode == "consider_margins":
+            sorted_line_indices = sort_consider_margin(line_od_output.bboxes, image)
+        
+        # Output bbox, seg polygon created from bboxe, and text
+        sorted_bboxes           = [line_od_output.bboxes[i] for i in sorted_line_indices]
+        sorted_polygons         = [line_od_output.polygons[i] for i in sorted_line_indices]
+        sorted_texts            = [page_line_texts[i] for i in sorted_line_indices]
+
+        lines: list[Line] = [Line(*tup) for tup in zip(sorted_bboxes, sorted_polygons, sorted_texts)]
+        return Page(regions=[], lines=lines)
