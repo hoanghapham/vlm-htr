@@ -36,6 +36,7 @@ SORT_FUNCS = {
 MODEL_REMOTH_PATH = "microsoft/Florence-2-base-ft"
 REVISION = 'refs/pr/6'
 
+
 # Steps
 class Step():
     def __init__(self, model_path: str | Path, device: str = "cuda", logger: CustomLogger = None):
@@ -58,16 +59,16 @@ class RegionDetection(Step):
     def preprocess(self):
         pass
 
-    def postprocess(self, image: PILImage, detected_objects: ODOutput) -> PILImage:
+    def postprocess(self, image: PILImage, detected_objs: ODOutput) -> PILImage:
         cropped_imgs = []
-        for polygon in detected_objects.polygons:
+        for polygon in detected_objs.polygons:
             cropped_imgs.append(crop_image(image, polygon))
         return cropped_imgs
 
     def run(self, image: PILImage) -> tuple[ODOutput, list[PILImage]]:
-        detected_objects    = self.detect(image)
-        cropped_imgs        = self.postprocess(image, detected_objects)
-        return detected_objects, cropped_imgs
+        detected_objs   = self.detect(image)
+        cropped_imgs    = self.postprocess(image, detected_objs)
+        return detected_objs, cropped_imgs
     
     def detect(self, image: PILImage) -> ODOutput:
         """Perform region object detection on the page image"""
@@ -101,16 +102,16 @@ class LineDetection(Step):
     def preprocess(self):
         pass
 
-    def postprocess(self, image: PILImage, detected_objects: ODOutput) -> PILImage:
+    def postprocess(self, image: PILImage, detected_objs: ODOutput) -> PILImage:
         cropped_imgs = []
-        for polygon in detected_objects.polygons:
+        for polygon in detected_objs.polygons:
             cropped_imgs.append(crop_image(image, polygon))
         return cropped_imgs
 
     def run(self, image: PILImage) -> tuple[ODOutput, list[PILImage]]:
-        detected_objects    = self.detect(image)
-        cropped_imgs        = self.postprocess(image, detected_objects)
-        return detected_objects, cropped_imgs
+        detected_objs   = self.detect(image)
+        cropped_imgs    = self.postprocess(image, detected_objs)
+        return detected_objs, cropped_imgs
 
     def detect(self, image: PILImage) -> ODOutput:
         """Perform line object detection on the page image"""
@@ -339,17 +340,17 @@ class FlorencePipeline():
         
         ## Line OD within region
         self.logger.info("Line detection within region")
-        regions_line_objects: list[(ODOutput, list[str])] = []
+        page_regions: list[tuple[ODOutput, list[str]]] = []
 
         for region_idx in range(len(region_od_output.bboxes)):
 
             ## Line OD
             self.logger.info("Line detection")
-            region_line_od_output, line_bbox_imgs = self.line_od.run(region_imgs[region_idx])
+            region_line_objs, line_bbox_imgs = self.line_od.run(region_imgs[region_idx])
 
             ## OCR
             self.logger.info("Text recognition")
-            iterator = list(range(0, len(region_line_od_output.polygons), self.batch_size))
+            iterator = list(range(0, len(region_line_objs.polygons), self.batch_size))
             region_line_texts = []
             
             for i in tqdm(iterator, total=len(iterator), unit="batch"):
@@ -359,12 +360,12 @@ class FlorencePipeline():
                 region_line_texts += texts
             
             # Gather data for one region
-            regions_line_objects.append((region_line_od_output, region_line_texts))
+            page_regions.append((region_line_objs, region_line_texts))
         
         # Final sorting step
         # Sort regions
-        assert len(regions_line_objects) == len(region_od_output), \
-            f"Length mismatch: {len(regions_line_objects)} - {len(region_od_output)}"
+        assert len(page_regions) == len(region_od_output), \
+            f"Length mismatch: {len(page_regions)} - {len(region_od_output)}"
         
         if sort_mode == "top_down_left_right":
             sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
@@ -377,8 +378,7 @@ class FlorencePipeline():
 
         # Get region lines
         for region_idx in sorted_region_indices:
-
-            region_line_objs, region_line_texts = regions_line_objects[region_idx]
+            region_line_objs, region_line_texts = page_regions[region_idx]
 
             if sort_mode == "top_down_left_right":
                 sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
