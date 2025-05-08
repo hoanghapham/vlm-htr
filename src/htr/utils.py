@@ -10,7 +10,7 @@ from PIL.Image import Image as PILImage
 from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
 from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopage, get_region_location
-
+from src.evaluation.visual_metrics import compute_bbox_iou
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
 
@@ -126,3 +126,53 @@ def correct_line_polygon_coords(region_bbox: Bbox, line_polygon: Polygon):
 
     correct_polygon = Polygon([(x + shift_x, y + shift_y) for (x, y) in line_polygon.boundary.coords])
     return correct_polygon
+
+
+def merge_bboxes(bbox1: Bbox, bbox2: Bbox):
+    """Merge two boxes into one."""
+    x_min = min(bbox1[0], bbox2[0])
+    y_min = min(bbox1[1], bbox2[1])
+    x_max = max(bbox1[2], bbox2[2])
+    y_max = max(bbox1[3], bbox2[3])
+    return (x_min, y_min, x_max, y_max)
+
+
+def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2) -> list[Bbox]:
+    """Merge overlapping or covering boxes."""
+    merged = []
+    boxes = boxes.copy()
+
+    while boxes:
+        box = boxes.pop(0)
+        has_merged = False
+
+        for i, mbox in enumerate(merged):
+            if compute_bbox_iou(box, mbox) > iou_threshold:
+                merged[i] = merge_bboxes(box, mbox)
+                has_merged = True
+                break
+
+        if not has_merged:
+            merged.append(box)
+
+    # Second pass: re-check merged boxes in case merging created new overlaps
+    changed = True
+    while changed:
+        changed = False
+        new_merged = []
+        while merged:
+            box = merged.pop(0)
+            has_merged = False
+            for i, mbox in enumerate(new_merged):
+                if compute_bbox_iou(box, mbox) > iou_threshold:
+                    new_merged[i] = merge_bboxes(box, mbox)
+                    has_merged = True
+                    changed = True
+                    break
+            if not has_merged:
+                new_merged.append(box)
+        merged = new_merged
+
+    merged_bboxes = [Bbox(*bbox) for bbox in merged]
+
+    return merged_bboxes

@@ -18,7 +18,8 @@ from src.htr.utils import (
     sort_top_down_left_right, 
     sort_consider_margin,
     correct_line_bbox_coords,
-    correct_line_polygon_coords
+    correct_line_polygon_coords,
+    merge_overlapping_bboxes
 )
 from src.logger import CustomLogger
 
@@ -92,9 +93,12 @@ class TextObjectDetection(Step):
         if len(bboxes) == 0:
             return ODOutput([], [])
 
+        # Merge overlapping boxes
+        merged_bboxes = merge_overlapping_bboxes(bboxes, iou_threshold=0.2)
+
         # Sort regions
-        polygons = [bbox_xyxy_to_polygon(bbox) for bbox in bboxes]
-        return ODOutput(bboxes, polygons)
+        polygons = [bbox_xyxy_to_polygon(bbox) for bbox in merged_bboxes]
+        return ODOutput(merged_bboxes, polygons)
 
 
 class RegionTextSegmentation(Step):

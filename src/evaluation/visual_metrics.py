@@ -7,17 +7,18 @@ from sklearn.metrics import precision_recall_fscore_support
 from skimage.segmentation import find_boundaries
 from scipy.optimize import linear_sum_assignment
 
-from shapely import Polygon, union_all
+from shapely import union_all
 from shapely.geometry import Polygon
 from htrflow.evaluate import Ratio
+from htrflow.utils.geometry import Bbox 
 from PIL import Image, ImageDraw
 
 from src.evaluation.utils import Ratio
 
 
-def compute_bbox_iou(box1, box2):
-    x1, y1, x2, y2 = box1
-    x1g, y1g, x2g, y2g = box2
+def compute_bbox_iou(bbox1: Bbox, bbox: Bbox):
+    x1, y1, x2, y2 = bbox1
+    x1g, y1g, x2g, y2g = bbox
 
     xi1 = max(x1, x1g)
     yi1 = max(y1, y1g)
@@ -25,9 +26,9 @@ def compute_bbox_iou(box1, box2):
     yi2 = min(y2, y2g)
     inter_area = max(0, xi2 - xi1) * max(0, yi2 - yi1)
 
-    box1_area = (x2 - x1) * (y2 - y1)
-    box2_area = (x2g - x1g) * (y2g - y1g)
-    union_area = box1_area + box2_area - inter_area
+    bbox1_area = (x2 - x1) * (y2 - y1)
+    bbox_area = (x2g - x1g) * (y2g - y1g)
+    union_area = bbox1_area + bbox_area - inter_area
 
     return inter_area * 1.0 / union_area
 

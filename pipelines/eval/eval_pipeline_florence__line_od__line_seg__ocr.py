@@ -12,7 +12,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.htr.pipelines.florence import FlorencePipeline
-from src.htr.pipelines.evaluation import evaluate_pipeline
+from src.htr.pipelines.evaluation import evaluate_multiple_pages, evaluate_one_page
 from src.logger import CustomLogger
 
 # Setup
@@ -83,9 +83,12 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     page_output = pipeline.run(image, sort_mode="consider_margins")
     pipeline_outputs.append(page_output)
 
+    # Evaluate
+    evaluate_one_page(page_output, xml_path, OUTPUT_DIR)    
+
 #%%
 # Evaluate:
-evaluate_pipeline(pipeline_outputs, xml_paths, OUTPUT_DIR)
+evaluate_multiple_pages(pipeline_outputs, xml_paths, OUTPUT_DIR)
 
 # %%
 ## Visual inspection

@@ -67,6 +67,13 @@ def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_r
                 linewidth=2, edgecolor='r', facecolor='none', label="Bounding Box"
             )
             ax.add_patch(rect)
+            plt.text(
+                x, y, 
+                idx, 
+                color = "black", 
+                fontsize = 8, 
+                bbox = dict(facecolor="lightcoral", alpha=1)
+            )
 
     # Color lines
     for idx, line in enumerate(lines_data):

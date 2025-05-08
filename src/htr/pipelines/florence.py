@@ -20,7 +20,8 @@ from src.htr.utils import (
     sort_top_down_left_right, 
     sort_consider_margin,
     correct_line_bbox_coords,
-    correct_line_polygon_coords
+    correct_line_polygon_coords,
+    merge_overlapping_bboxes
 )
 
 
@@ -91,9 +92,10 @@ class RegionDetection(Step):
         if len(bboxes_raw) == 0:
             return ODOutput(bboxes=[], polygons=[])
 
-        bboxes      = [Bbox(*bbox) for bbox in bboxes_raw]
-        polygons    = [bbox_xyxy_to_polygon(bbox) for bbox in bboxes]
-        return ODOutput(bboxes, polygons)
+        bboxes          = [Bbox(*bbox) for bbox in bboxes_raw]
+        merged_bboxes   = merge_overlapping_bboxes(bboxes, iou_threshold=0.2)
+        polygons        = [bbox_xyxy_to_polygon(bbox) for bbox in bboxes]
+        return ODOutput(merged_bboxes, polygons)
     
 
 class LineDetection(Step):
