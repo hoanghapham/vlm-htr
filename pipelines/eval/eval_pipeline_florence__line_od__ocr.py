@@ -9,13 +9,11 @@ from PIL import Image
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.file_tools import list_files, write_json_file, write_text_file
+from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
-from src.data_processing.utils import XMLParser
-from src.evaluation.ocr_metrics import compute_ocr_metrics
 from src.logger import CustomLogger
-from src.htr.utils import read_img_metrics
 from src.htr.pipelines.florence import FlorencePipeline
+from src.htr.pipelines.evaluation import evaluate_pipeline
 
 
 # Setup
@@ -45,6 +43,7 @@ xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 if DEBUG:
     img_paths = [img_paths[0], img_paths[136]]
     xml_paths = [xml_paths[0], xml_paths[136]]
+    OUTPUT_DIR = OUTPUT_DIR / "debug"
 
 #%%
 
@@ -58,22 +57,15 @@ else:
 
 pipeline = FlorencePipeline(
     pipeline_type="line_od__ocr",
-    line_od_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
-    ocr_model_path=PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
-    batch_size=BATCH_SIZE,
-    device=DEVICE,
-    logger=logger
+    line_od_model_path  = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__line_od/best",
+    ocr_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
+    batch_size          = BATCH_SIZE,
+    device              = DEVICE,
+    logger              = logger
 )
 
 #%%
-xml_parser = XMLParser()
-cer_list = []
-wer_list = []
-bow_hits_list = []
-bow_extras_list = []
-
-# images = []
-# results = []
+pipeline_outputs = []
 
 # Iterate through pages
 for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
@@ -82,61 +74,18 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
     if img_metric_path.exists() and not DEBUG:
         logger.info(f"Skip: {img_path.name}")
-        cerlist, werlist, bow_hits_list, bow_extras_list = read_img_metrics(
-            img_metric_path, cer_list, wer_list, bow_hits_list, bow_extras_list)
         continue
 
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
     image = Image.open(img_path).convert("RGB")
-    # images.append(image)
 
     ## Run pipeline
     page_output = pipeline.line_od__ocr(image)
-
-    # Write predicted text in .hyp extension to be used with E2EHTREval
-    write_text_file(page_output.text, OUTPUT_DIR / (Path(img_path).stem + ".hyp"))
-
-    # Get lines from xml, sort by bbox
-    # Write ground truth in .ref extension to be used with E2EHTREval
-    gt_lines    = xml_parser.get_lines(xml_path)
-    gt_text     = " ".join([line["transcription"] for line in gt_lines])
-    write_text_file(gt_text, OUTPUT_DIR / (Path(img_path).stem + ".ref"))
+    pipeline_outputs.append(page_output)
 
 
-    # Evaluation
-    try:
-        metrics_ratio   = compute_ocr_metrics(gt_text, page_output.text, return_type="ratio")
-        metrics_str     = compute_ocr_metrics(gt_text, page_output.text, return_type="str")
-    except Exception as e:
-        logger.exception(e)
-        continue
+evaluate_pipeline(pipeline_outputs, xml_paths, OUTPUT_DIR)
 
-    cer_list.append(metrics_ratio["cer"])
-    wer_list.append(metrics_ratio["wer"])
-    bow_hits_list.append(metrics_ratio["bow_hits"])
-    bow_extras_list.append(metrics_ratio["bow_extras"])
-
-    logger.info(f"CER: {float(metrics_ratio['cer']):.4f}, WER: {float(metrics_ratio['wer']):.4f}, BoW hits: {float(metrics_ratio['bow_hits']):.4f}, BoW extras: {float(metrics_ratio['bow_extras']):.4f}")
-
-    write_json_file(metrics_str, OUTPUT_DIR / (Path(img_path).stem + "__metrics.json"))
-
-
-# Averaging metrics across all pages
-avg_cer = sum(cer_list)
-avg_wer = sum(wer_list)
-avg_bow_hits = sum(bow_hits_list)
-avg_bow_extras = sum(bow_extras_list)
-
-logger.info(f"Avg. CER: {float(avg_cer):.4f}, Avg. WER: {float(avg_wer):.4f}, Avg. BoW hits: {float(avg_bow_hits):.4f}, Avg. BoW extras: {float(avg_bow_extras):.4f}")
-
-avg_metrics = {
-    "cer": {"str": str(avg_cer), "float": float(avg_cer)},
-    "wer": {"str": str(avg_wer), "float": float(avg_wer)},
-    "bow_hits": {"str": str(avg_bow_hits), "float": float(avg_bow_hits)},
-    "bow_extras": {"str": str(avg_bow_extras), "float": float(avg_bow_extras)}
-}
-
-write_json_file(avg_metrics, OUTPUT_DIR / "avg_metrics.json")
 # %%
 
 # from src.visualization import draw_bboxes_xyxy

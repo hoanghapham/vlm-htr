@@ -52,10 +52,10 @@ def evaluate_pipeline(
             print(e)
             continue
         
-        write_json_file(page_metrics.result_dict, output_dir / (Path(xml_path).stem + "__metrics.json"))
-        # print(f"Page metrics: {page_metrics.float_str}")
+        write_json_file(page_metrics.dict, output_dir / (Path(xml_path).stem + "__metrics.json"))
+        # print(f"Page metrics: {page_metrics.result_float}")
 
     # Averaging metrics across all pages
     avg_metrics: OCRMetrics = sum(metrics_list)
-    print(f"Avg. metrics: {avg_metrics.float_str}")
-    write_json_file(avg_metrics.result_dict, output_dir / "avg_metrics.json")
+    print(f"Avg. metrics: {avg_metrics.float}")
+    write_json_file(avg_metrics.dict, output_dir / "avg_metrics.json")
