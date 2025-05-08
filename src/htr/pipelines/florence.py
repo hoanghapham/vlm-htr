@@ -244,15 +244,19 @@ class FlorencePipeline():
             self.logger = logger
         
         if "region_od" in pipeline_type:
+            assert region_od_model_path is not None, "region_od_model_path must be provided if region_od is in pipeline_type"
             self.region_od = RegionDetection(model_path=region_od_model_path, device=self.device, logger=self.logger)
 
         if "line_od" in pipeline_type:
+            assert line_od_model_path is not None, "line_od_model_path must be provided if line_od is in pipeline_type"
             self.line_od = LineDetection(model_path=line_od_model_path, device=self.device, logger=self.logger)
 
         if "line_seg" in pipeline_type:
+            assert line_seg_model_path is not None, "line_seg_model_path must be provided if line_seg is in pipeline_type"
             self.line_seg = SingleLineTextSegmentation(model_path=line_seg_model_path, device=self.device, logger=self.logger)
 
         if "ocr" in pipeline_type:
+            assert ocr_model_path is not None, "ocr_model_path must be provided if ocr is in pipeline_type"
             self.ocr = SingleLineTextRecognition(model_path=ocr_model_path, device=self.device, logger=self.logger)
 
 
