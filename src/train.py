@@ -123,23 +123,6 @@ class Trainer():
                     avg_train_loss  = sum(self.train_losses) / len(self.train_losses)
                     iterator.set_postfix({"loss": avg_train_loss})
                     
-                    is_logging_point = (global_step_idx % self.logging_interval == 0) or global_step_idx == (self.max_train_steps)
-                    
-                    if is_logging_point:
-                        avg_val_loss = self._evaluate(global_step_idx)
-                        self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
-                        self.copy_last_checkpoint()
-
-                        self.train_losses.append(avg_train_loss)
-                        self.val_losses.append(avg_val_loss)
-
-                        if self.tsb_logger is not None:
-                            self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_idx)
-                            self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_idx)
-                    
-                    # Advance counters
-                    global_step_idx += 1
-                    local_step_idx += 1
                     
                     # Reset error count if success
                     error_count = 0
@@ -157,6 +140,26 @@ class Trainer():
                     total_error_count += 1
                     self.logger.exception(e)
                     continue
+                
+                # Logging
+                is_logging_point = (global_step_idx % self.logging_interval == 0) or global_step_idx == (self.max_train_steps)
+                    
+                if is_logging_point:
+                    avg_val_loss = self._evaluate(global_step_idx)
+                    self._save_checkpoint(global_step_idx, avg_train_loss, avg_val_loss)
+                    self.copy_last_checkpoint()
+
+                    self.train_losses.append(avg_train_loss)
+                    self.val_losses.append(avg_val_loss)
+
+                    if self.tsb_logger is not None:
+                        self.tsb_logger.add_scalar("Avg. train loss", avg_train_loss, global_step_idx)
+                        self.tsb_logger.add_scalar("Avg. validation loss", avg_val_loss, global_step_idx)
+                
+                # Advance counters after everything
+                global_step_idx += 1
+                local_step_idx += 1
+                    
             
             # If global_step_idxing errors more than MAX_ERROR_RETRIES times, end training
             if error_count > MAX_ERROR_RETRIES:
