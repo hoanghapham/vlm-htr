@@ -8,6 +8,7 @@ import numpy as np
 from typing import Sequence
 from PIL.Image import Image as PILImage
 from htrflow.utils.geometry import Bbox
+from shapely.geometry import Polygon
 from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopage, get_region_location
 
 
@@ -52,7 +53,6 @@ def sort_consider_margin(bboxes: Sequence[Bbox], image: PILImage) -> list[int]:
         )
 
     return sorted(range(len(bboxes)), key=key)
-
 
 
 # Code from ChatGPT
@@ -104,3 +104,25 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
     right_sorted = sorted(right_indices, key=lambda i: (bboxes[i].ymin, bboxes[i].xmin))
 
     return left_sorted + right_sorted
+
+
+# Shift line bbox and polygon detected in cropped image to match larger image
+def correct_line_bbox_coords(region_bbox: Bbox, line_bbox: Bbox):
+    shift_x = region_bbox[0]
+    shift_y = region_bbox[1]
+
+    correct_bbox = Bbox(
+        line_bbox[0] + shift_x,
+        line_bbox[1] + shift_y,
+        line_bbox[2] + shift_x,
+        line_bbox[3] + shift_y
+    )
+    return correct_bbox
+
+
+def correct_line_polygon_coords(region_bbox: Bbox, line_polygon: Polygon):
+    shift_x = region_bbox[0]
+    shift_y = region_bbox[1]
+
+    correct_polygon = Polygon([(x + shift_x, y + shift_y) for (x, y) in line_polygon.boundary.coords])
+    return correct_polygon

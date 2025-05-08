@@ -1,12 +1,24 @@
 from shapely.geometry import Polygon
 from htrflow.utils.geometry import Bbox
 from typing import Self
+
+
 class Line():
     def __init__(self, bbox: Bbox = None, polygon: Polygon = None, text: str = None):
         self.bbox = bbox
         self.polygon = polygon
         self.text = text
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    @property
+    def dict(self):
+        return dict(
+            bbox=[*self.bbox],
+            polygon=[(x, y) for x, y in self.polygon.boundary.coords], 
+            text=self.text
+        )
 
 class Region():
     def __init__(self, bbox: Bbox = None, polygon: Polygon = None, lines: list[Line] = None):
@@ -14,6 +26,18 @@ class Region():
         self.polygon = polygon
         self.lines = lines
         self.text = " ".join([line.text for line in lines])
+    
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    @property
+    def dict(self):
+        return dict(
+            bbox=[*self.bbox],
+            polygon=[(x, y) for x, y in self.polygon.boundary.coords], 
+            lines=[line.dict for line in self.lines],
+            text=self.text
+        )
 
 
 class Page():
@@ -21,6 +45,17 @@ class Page():
         self.regions = regions
         self.lines = lines
         self.text = " ".join([line.text for line in lines])
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+    
+    @property
+    def dict(self):
+        return dict(
+            regions=[region.dict for region in self.regions],
+            lines=[line.dict for line in self.lines],
+            text=self.text
+        )
 
 
 class ODOutput():

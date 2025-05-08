@@ -24,25 +24,33 @@ def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:
 def evaluate_pipeline(
     pipeline_outputs: list, 
     gt_xml_paths: list, 
-    output_dir: Path,
+    output_dir: Path = None,
 ):
     xml_parser = XMLParser()
     metrics_list = []
 
+    if output_dir is not None:
+        output_dir.mkdir(exist_ok=True)
+
     for pred, xml_path in zip(pipeline_outputs, gt_xml_paths):
         # Write predicted text in .hyp extension to be used with E2EHTREval
-        img_metric_path = output_dir / (Path(xml_path).stem + "__metrics.json")
-        if img_metric_path.exists():
-            page_metrics = read_metric_dict(img_metric_path)
-            metrics_list.append(page_metrics)
+        if output_dir is not None:
+            img_metric_path = output_dir / (Path(xml_path).stem + "__metrics.json")
+            if img_metric_path.exists():
+                page_metrics = read_metric_dict(img_metric_path)
+                metrics_list.append(page_metrics)
+                continue
 
-        write_text_file(pred.text, output_dir / (Path(xml_path).stem + ".hyp"))
+        if output_dir is not None:
+            write_text_file(pred.text, output_dir / (Path(xml_path).stem + ".hyp"))
 
         # Get lines from xml
         # Write ground truth in .ref extension to be used with E2EHTREval
         gt_lines    = xml_parser.get_lines(xml_path)
         gt_text     = " ".join([line["transcription"] for line in gt_lines])
-        write_text_file(gt_text, output_dir / (Path(xml_path).stem + ".ref"))
+
+        if output_dir is not None:
+            write_text_file(gt_text, output_dir / (Path(xml_path).stem + ".ref"))
 
         # Evaluation
         try:
@@ -52,10 +60,18 @@ def evaluate_pipeline(
             print(e)
             continue
         
-        write_json_file(page_metrics.dict, output_dir / (Path(xml_path).stem + "__metrics.json"))
+        if output_dir is not None:
+            write_json_file(page_metrics.dict, output_dir / (Path(xml_path).stem + "__metrics.json"))
         # print(f"Page metrics: {page_metrics.result_float}")
 
     # Averaging metrics across all pages
+    if metrics_list == []:
+        print("No metrics found")
+        return None
+    
     avg_metrics: OCRMetrics = sum(metrics_list)
     print(f"Avg. metrics: {avg_metrics.float}")
-    write_json_file(avg_metrics.dict, output_dir / "avg_metrics.json")
+    if output_dir is not None:
+        write_json_file(avg_metrics.dict, output_dir / "avg_metrics.json")
+
+    return metrics_list

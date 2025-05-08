@@ -22,14 +22,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--split-type", "mixed",
-    "--batch-size", "2",
-    "--device", "cpu",
-    "--debug", "true",
-])
+# args = parser.parse_args([
+#     "--split-type", "mixed",
+#     "--batch-size", "2",
+#     "--device", "cpu",
+#     "--debug", "true",
+# ])
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
@@ -82,7 +82,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     image       = Image.open(img_path).convert("RGB")
 
     ## Run pipeline
-    page_output = pipeline.region_od__line_od__ocr(image)
+    page_output = pipeline.run(image, sort_mode="consider_margins")
     pipeline_outputs.append(page_output)
 
 #%%

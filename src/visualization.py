@@ -42,7 +42,7 @@ def draw_bboxes_xyxy(
     plt.show()
 
 
-def draw_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_bbox=False, fig_size=15):
+def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_bbox=False, fig_size=15):
 
     # Show image
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))

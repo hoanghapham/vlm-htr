@@ -15,18 +15,18 @@ from shapely.geometry import Polygon
 from src.logger import CustomLogger
 from src.data_processing.florence import predict, FlorenceTask
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy, crop_image
-from htr.utils import sort_top_down_left_right, sort_consider_margin
 from src.htr.data_types import Page, Region, Line, ODOutput
+from src.htr.utils import (
+    sort_top_down_left_right, 
+    sort_consider_margin,
+    correct_line_bbox_coords,
+    correct_line_polygon_coords
+)
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-SUPPORTED_PIPELINES = [
-    "region_od__line_od__ocr",
-    "line_od__line_seg__ocr",
-    "line_od__ocr"
-]
 
 SORT_FUNCS = {
     "top_down_left_right": sort_top_down_left_right,
@@ -35,6 +35,7 @@ SORT_FUNCS = {
 
 MODEL_REMOTH_PATH = "microsoft/Florence-2-base-ft"
 REVISION = 'refs/pr/6'
+
 
 
 # Steps
@@ -227,7 +228,14 @@ class FlorencePipeline():
         logger: CustomLogger = None,
     ):
         
-        assert pipeline_type in SUPPORTED_PIPELINES, f"pipeline_type must be one of {SUPPORTED_PIPELINES}"
+        self.supported_pipelines = {
+            "region_od__line_od__ocr": self.region_od__line_od__ocr,
+            "line_od__line_seg__ocr": self.line_od__line_seg__ocr,
+            "line_od__ocr": self.line_od__ocr
+        }
+
+        assert pipeline_type in self.supported_pipelines, \
+            f"pipeline_type must be one of {list(self.supported_pipelines.keys())}"
 
         self.pipeline_type           = pipeline_type
         self._region_od_model_path   = region_od_model_path
@@ -260,8 +268,10 @@ class FlorencePipeline():
             assert ocr_model_path is not None, "ocr_model_path must be provided if ocr is in pipeline_type"
             self.ocr = SingleLineTextRecognition(model_path=ocr_model_path, device=self.device, logger=self.logger)
 
+    def run(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
+        return self.supported_pipelines[self.pipeline_type](image, sort_mode)
 
-    def line_od__line_seg__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
+    def line_od__line_seg__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
 
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
 
@@ -297,7 +307,7 @@ class FlorencePipeline():
         return Page(regions=[], lines=lines)
 
 
-    def line_od__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
+    def line_od__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
 
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
 
@@ -331,7 +341,7 @@ class FlorencePipeline():
         return Page(regions=[], lines=lines)
     
 
-    def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
+    def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
         
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
         
@@ -353,7 +363,7 @@ class FlorencePipeline():
             iterator = list(range(0, len(region_line_objs.polygons), self.batch_size))
             region_line_texts = []
             
-            for i in tqdm(iterator, total=len(iterator), unit="batch"):
+            for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"OCR for region {region_idx + 1}/{len(region_od_output)}"):
 
                 batch_indices = slice(i, i+self.batch_size)
                 texts = self.ocr.run(line_bbox_imgs[batch_indices])
@@ -385,8 +395,24 @@ class FlorencePipeline():
             elif sort_mode == "consider_margins":
                 sorted_line_indices = sort_consider_margin(region_line_objs.bboxes, image)
 
-            sorted_line_bboxes      = [region_line_objs.bboxes[i] for i in sorted_line_indices]
-            sorted_line_polygons    = [region_line_objs.polygons[i] for i in sorted_line_indices]
+            corrected_line_bboxes = []
+            for bbox in region_line_objs.bboxes:
+                corrected_bbox = correct_line_bbox_coords(
+                    region_od_output.bboxes[region_idx], 
+                    bbox
+                )
+                corrected_line_bboxes.append(corrected_bbox)
+            
+            corrected_line_polygons = []
+            for polygon in region_line_objs.polygons:
+                corrected_polygon = correct_line_polygon_coords(
+                    region_od_output.bboxes[region_idx], 
+                    polygon
+                )
+                corrected_line_polygons.append(corrected_polygon)
+
+            sorted_line_bboxes      = [corrected_line_bboxes[i] for i in sorted_line_indices]
+            sorted_line_polygons    = [corrected_line_polygons[i] for i in sorted_line_indices]
             sorted_line_texts       = [region_line_texts[i] for i in sorted_line_indices]
 
             region_lines = [Line(*tup) for tup in zip(sorted_line_bboxes, sorted_line_polygons, sorted_line_texts)]
