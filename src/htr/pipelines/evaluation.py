@@ -43,7 +43,7 @@ def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None
         write_text_file(gt_text, output_dir / (name + ".ref"))
         write_json_file(page_metrics.dict, output_dir / (name + "__metrics.json"))
 
-    print(f"Metrics: {page_metrics.dict}")
+    print(f"Metrics: {page_metrics.float}")
     return page_metrics
 
 

@@ -54,7 +54,6 @@ class Step(ABC):
     def load_processor(self, processor_path: str | Path) -> TrOCRProcessor:
         return TrOCRProcessor.from_pretrained(processor_path)
 
-
     @abstractmethod
     def postprocess(self, image: PILImage, detected_objects: ODOutput) -> PILImage:
         pass

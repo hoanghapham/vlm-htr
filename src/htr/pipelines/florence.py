@@ -38,7 +38,6 @@ MODEL_REMOTH_PATH = "microsoft/Florence-2-base-ft"
 REVISION = 'refs/pr/6'
 
 
-
 # Steps
 class Step():
     def __init__(self, model_path: str | Path, device: str = "cuda", logger: CustomLogger = None):
