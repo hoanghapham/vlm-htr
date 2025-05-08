@@ -12,6 +12,7 @@ from tqdm import tqdm
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from src.file_tools import suppress_stdout_stderr
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image
 from src.htr.utils import sort_top_down_left_right, sort_consider_margin
 from src.htr.data_types import Page, Region, Line, ODOutput
@@ -207,6 +208,67 @@ class TraditionalPipeline():
         for region_idx in range(len(region_od_output)):
             self.logger.info(f"Line segmentation for region {region_idx}")
             region_line_objs, region_line_imgs = self.line_seg.run(region_imgs[region_idx])
+            
+            iterator = list(range(0, len(region_line_objs), self.batch_size))
+
+            region_line_texts = []
+            for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"OCR for region {region_idx}/{len(region_od_output)}"):
+                batch_indices = slice(i, i+self.batch_size)
+                batch_texts = self.ocr.run(region_line_imgs[batch_indices])
+                region_line_texts += batch_texts
+
+            # Collect data for one region
+            page_regions.append((region_line_objs, region_line_texts))
+
+        # Final sorting step
+        # Sort regions
+        assert len(page_regions) == len(region_od_output), \
+            f"Length mismatch: {len(page_regions)} - {len(region_od_output)}"
+        
+        if sort_mode == "top_down_left_right":
+            sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
+        elif sort_mode == "consider_margins":
+            sorted_region_indices = sort_consider_margin(region_od_output.bboxes, image)
+
+        sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
+        sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
+        sorted_region_lines     = []
+
+        # Get region lines
+        for region_idx in sorted_region_indices:
+            region_line_objs, region_line_texts = page_regions[region_idx]
+
+            if sort_mode == "top_down_left_right":
+                sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
+            elif sort_mode == "consider_margins":
+                sorted_line_indices = sort_consider_margin(region_line_objs.bboxes, image)
+
+            sorted_line_bboxes      = [region_line_objs.bboxes[i] for i in sorted_line_indices]
+            sorted_line_polygons    = [region_line_objs.polygons[i] for i in sorted_line_indices]
+            sorted_line_texts       = [region_line_texts[i] for i in sorted_line_indices]
+
+            region_lines = [Line(*tup) for tup in zip(sorted_line_bboxes, sorted_line_polygons, sorted_line_texts)]
+            sorted_region_lines.append(region_lines)
+        
+        page_regions = [Region(*tup) for tup in zip(sorted_region_bboxes, sorted_region_polygons, sorted_region_lines)]
+
+        page_lines = []
+        for lines in sorted_region_lines:
+            page_lines += lines
+
+        return Page(regions=page_regions, lines=page_lines)
+    
+    def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "top_down_left_right") -> Page:
+        assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
+
+        self.logger.info("Region detection")
+        region_od_output, region_imgs = self.region_od.run(image)
+
+        page_regions: list[tuple[ODOutput, list[str]]] = []
+
+        for region_idx in range(len(region_od_output)):
+            self.logger.info(f"Line detection for region {region_idx}")
+            region_line_objs, region_line_imgs = self.line_od.run(region_imgs[region_idx])
             
             iterator = list(range(0, len(region_line_objs), self.batch_size))
 

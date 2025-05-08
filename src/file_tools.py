@@ -1,10 +1,8 @@
-from string import punctuation
 from pathlib import Path
 import os
 import sys
 import json
 import unicodedata
-import pandas as pd
 
 
 def list_files(input_path: Path | str, extensions) -> list[Path]:
@@ -15,6 +13,7 @@ def list_files(input_path: Path | str, extensions) -> list[Path]:
     files = [
         file for file in sorted(list(input_path.glob("**/*"))) 
         if file.suffix in extensions
+        and file.is_file()
     ]
         
     return files
