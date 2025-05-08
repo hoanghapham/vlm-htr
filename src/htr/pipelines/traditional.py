@@ -144,8 +144,8 @@ class SingleLineTextRecognition(Step):
     def run(self, images: list[PILImage]) -> list[str]:
         return self.ocr(images)
 
-    def ocr(self, line_images: list[PILImage], device: str = "cpu") -> list[str]:
-        pixel_values    = self.processor(images=line_images, return_tensors="pt").pixel_values.to(device)
+    def ocr(self, line_images: list[PILImage]) -> list[str]:
+        pixel_values    = self.processor(images=line_images, return_tensors="pt").pixel_values.to(self.device)
         generated_ids   = self.model.generate(inputs=pixel_values)
         batch_texts     = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
         return batch_texts
