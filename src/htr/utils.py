@@ -14,7 +14,7 @@ from src.evaluation.visual_metrics import compute_bbox_iou
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
 
-def sort_consider_margin(bboxes: Sequence[Bbox], image: PILImage) -> list[int]:
+def sort_consider_margins(bboxes: Sequence[Bbox], image: PILImage) -> list[int]:
     """Order bounding boxes with respect to printspace, and consider margin.
 
     This function estimates the reading order based on the following:

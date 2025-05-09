@@ -16,7 +16,7 @@ from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_
 from src.data_types import Page, Region, Line, ODOutput
 from src.htr.utils import (
     sort_top_down_left_right, 
-    sort_consider_margin,
+    sort_consider_margins,
     correct_line_bbox_coords,
     correct_line_polygon_coords,
     merge_overlapping_bboxes
@@ -26,7 +26,7 @@ from src.logger import CustomLogger
 
 SORT_FUNCS = {
     "top_down_left_right": sort_top_down_left_right,
-    "consider_margins": sort_consider_margin
+    "consider_margins": sort_consider_margins
 }
 
 REMOTE_TROCR_MODEL_PATH   = "microsoft/trocr-base-handwritten"
@@ -242,7 +242,7 @@ class TraditionalPipeline():
         if sort_mode == "top_down_left_right":
             sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_region_indices = sort_consider_margin(region_od_output.bboxes, image)
+            sorted_region_indices = sort_consider_margins(region_od_output.bboxes, image)
 
         sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
         sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
@@ -255,7 +255,7 @@ class TraditionalPipeline():
             if sort_mode == "top_down_left_right":
                 sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
             elif sort_mode == "consider_margins":
-                sorted_line_indices = sort_consider_margin(region_line_objs.bboxes, image)
+                sorted_line_indices = sort_consider_margins(region_line_objs.bboxes, image)
             # sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
 
             corrected_line_bboxes = []
@@ -321,7 +321,7 @@ class TraditionalPipeline():
         if sort_mode == "top_down_left_right":
             sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_region_indices = sort_consider_margin(region_od_output.bboxes, image)
+            sorted_region_indices = sort_consider_margins(region_od_output.bboxes, image)
 
         sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
         sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
@@ -334,7 +334,7 @@ class TraditionalPipeline():
             if sort_mode == "top_down_left_right":
                 sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
             elif sort_mode == "consider_margins":
-                sorted_line_indices = sort_consider_margin(region_line_objs.bboxes, image)
+                sorted_line_indices = sort_consider_margins(region_line_objs.bboxes, image)
 
             corrected_line_bboxes = []
             for bbox in region_line_objs.bboxes:
@@ -391,7 +391,7 @@ class TraditionalPipeline():
         if sort_mode == "top_down_left_right":
             sorted_line_indices = sort_top_down_left_right(line_od_output.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_line_indices = sort_consider_margin(line_od_output.bboxes, image)
+            sorted_line_indices = sort_consider_margins(line_od_output.bboxes, image)
         
         # Output bbox, seg polygon created from bboxe, and text
         sorted_bboxes           = [line_od_output.bboxes[i] for i in sorted_line_indices]

@@ -18,7 +18,7 @@ from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bb
 from src.data_types import Page, Region, Line, ODOutput
 from src.htr.utils import (
     sort_top_down_left_right, 
-    sort_consider_margin,
+    sort_consider_margins,
     correct_line_bbox_coords,
     correct_line_polygon_coords,
     merge_overlapping_bboxes
@@ -31,7 +31,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 SORT_FUNCS = {
     "top_down_left_right": sort_top_down_left_right,
-    "consider_margins": sort_consider_margin
+    "consider_margins": sort_consider_margins
 }
 
 MODEL_REMOTH_PATH = "microsoft/Florence-2-base-ft"
@@ -297,7 +297,7 @@ class FlorencePipeline():
         if sort_mode == "top_down_left_right":
             sorted_line_indices = sort_top_down_left_right(page_line_objs.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_line_indices = sort_consider_margin(page_line_objs.bboxes, image)
+            sorted_line_indices = sort_consider_margins(page_line_objs.bboxes, image)
 
         # Output bbox, seg polygon, and texts
         sorted_bboxes           = [page_line_objs.bboxes[i] for i in sorted_line_indices]
@@ -331,7 +331,7 @@ class FlorencePipeline():
         if sort_mode == "top_down_left_right":
             sorted_line_indices = sort_top_down_left_right(line_od_output.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_line_indices = sort_consider_margin(line_od_output.bboxes, image)
+            sorted_line_indices = sort_consider_margins(line_od_output.bboxes, image)
         
         # Output bbox, seg polygon created from bboxe, and text
         sorted_bboxes           = [line_od_output.bboxes[i] for i in sorted_line_indices]
@@ -381,7 +381,7 @@ class FlorencePipeline():
         if sort_mode == "top_down_left_right":
             sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
         elif sort_mode == "consider_margins":
-            sorted_region_indices = sort_consider_margin(region_od_output.bboxes, image)
+            sorted_region_indices = sort_consider_margins(region_od_output.bboxes, image)
 
         sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
         sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
@@ -394,7 +394,7 @@ class FlorencePipeline():
             if sort_mode == "top_down_left_right":
                 sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
             elif sort_mode == "consider_margins":
-                sorted_line_indices = sort_consider_margin(region_line_objs.bboxes, image)
+                sorted_line_indices = sort_consider_margins(region_line_objs.bboxes, image)
 
             corrected_line_bboxes = []
             for bbox in region_line_objs.bboxes:
