@@ -37,7 +37,7 @@ SORT_MODE       = args.sort_mode
 MERGE           = args.merge == "true"
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / f"merge_{MERGE}"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / f"merge_{MERGE}" / SORT_MODE
 
 # Get test data
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
