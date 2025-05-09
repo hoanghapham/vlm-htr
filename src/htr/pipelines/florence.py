@@ -93,7 +93,7 @@ class RegionDetection(Step):
 
         bboxes          = [Bbox(*bbox) for bbox in bboxes_raw]
         merged_bboxes   = merge_overlapping_bboxes(bboxes, iou_threshold=0.2)
-        polygons        = [bbox_xyxy_to_polygon(bbox) for bbox in bboxes]
+        polygons        = [bbox_xyxy_to_polygon(bbox) for bbox in merged_bboxes]
         return ODOutput(merged_bboxes, polygons)
     
 
