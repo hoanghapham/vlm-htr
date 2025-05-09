@@ -1,5 +1,4 @@
 import sys
-import json
 from pathlib import Path
 from typing import Self
 
@@ -8,7 +7,8 @@ from htrflow.evaluate import CER, WER, BagOfWords
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.evaluation.utils import Ratio
+from src.data_types import Ratio
+
 
 class OCRMetrics():
     def __init__(self, cer: Ratio, wer: Ratio, bow_hits: Ratio, bow_extras: Ratio):
@@ -16,6 +16,9 @@ class OCRMetrics():
         self.wer = wer
         self.bow_hits = bow_hits
         self.bow_extras = bow_extras
+
+    def __repr__(self):
+        return str(self.dict)
 
     def __str__(self):
         return str(self.dict)

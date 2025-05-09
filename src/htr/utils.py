@@ -137,7 +137,22 @@ def merge_bboxes(bbox1: Bbox, bbox2: Bbox):
     return (x_min, y_min, x_max, y_max)
 
 
-def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2) -> list[Bbox]:
+def coverage_ratio(box_small: Bbox, box_large: Bbox):
+    """Compute how much of box_small is covered by box_large."""
+    x1 = max(box_small[0], box_large[0])
+    y1 = max(box_small[1], box_large[1])
+    x2 = min(box_small[2], box_large[2])
+    y2 = min(box_small[3], box_large[3])
+
+    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
+    area_small = (box_small[2] - box_small[0]) * (box_small[3] - box_small[1])
+
+    if area_small == 0:
+        return 0.0
+    return inter_area / area_small
+
+
+def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2, coverage_threshold=0.5) -> list[Bbox]:
     """Merge overlapping or covering boxes."""
     merged = []
     boxes = boxes.copy()
@@ -147,7 +162,18 @@ def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2) -> list[Bbox]
         has_merged = False
 
         for i, mbox in enumerate(merged):
-            if compute_bbox_iou(box, mbox) > iou_threshold:
+            area_box = (box[2] - box[0]) * (box[3] - box[1])
+            area_mbox = (mbox[2] - mbox[0]) * (mbox[3] - mbox[1])
+
+            # Determine which box is smaller/larger
+            if area_box < area_mbox:
+                small, large = box, mbox
+            else:
+                small, large = mbox, box
+
+            cov_ratio = coverage_ratio(small, large)
+
+            if (compute_bbox_iou(box, mbox) > iou_threshold or cov_ratio >= coverage_threshold):
                 merged[i] = merge_bboxes(box, mbox)
                 has_merged = True
                 break
@@ -155,7 +181,7 @@ def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2) -> list[Bbox]
         if not has_merged:
             merged.append(box)
 
-    # Second pass: re-check merged boxes in case merging created new overlaps
+    # Second pass to clean up new overlaps
     changed = True
     while changed:
         changed = False
@@ -164,7 +190,17 @@ def merge_overlapping_bboxes(boxes: list[Bbox], iou_threshold=0.2) -> list[Bbox]
             box = merged.pop(0)
             has_merged = False
             for i, mbox in enumerate(new_merged):
-                if compute_bbox_iou(box, mbox) > iou_threshold:
+                area_box = (box[2] - box[0]) * (box[3] - box[1])
+                area_mbox = (mbox[2] - mbox[0]) * (mbox[3] - mbox[1])
+
+                if area_box < area_mbox:
+                    small, large = box, mbox
+                else:
+                    small, large = mbox, box
+
+                cov_ratio = coverage_ratio(small, large)
+
+                if (compute_bbox_iou(box, mbox) > iou_threshold or cov_ratio >= coverage_threshold):
                     new_merged[i] = merge_bboxes(box, mbox)
                     has_merged = True
                     changed = True
