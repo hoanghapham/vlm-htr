@@ -23,14 +23,14 @@ parser.add_argument("--split-type", required=True, default="mixed", choices=["mi
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--split-type", "sbs",
-    "--batch-size", "2",
-    "--device", "cpu",
-    "--debug", "true"
-])
+# args = parser.parse_args([
+#     "--split-type", "sbs",
+#     "--batch-size", "2",
+#     "--device", "cpu",
+#     "--debug", "true"
+# ])
 
 
 SPLIT_TYPE      = args.split_type
@@ -60,8 +60,8 @@ else:
 # Load two instances of the same model
 pipeline = FlorencePipeline(
     pipeline_type       = "line_od__ocr",
-    line_od_model_path  = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/checkpoint_step_0000160000",
-    ocr_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/checkpoint_step_0000160000",
+    line_od_model_path  = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/best",
+    ocr_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/best",
     batch_size          = BATCH_SIZE,
     device              = DEVICE,
     logger              = logger
