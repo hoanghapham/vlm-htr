@@ -32,16 +32,12 @@ args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
-TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
 SORT_MODE       = args.sort_mode
 DEBUG           = args.debug == "true"
+TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / SORT_MODE
 
-if SORT_MODE == "top_down_left_right":
-    OUTPUT_DIR = OUTPUT_DIR / "top_down_left_right"
-elif SORT_MODE == "consider_margins":
-    OUTPUT_DIR = OUTPUT_DIR / "consider_margins"
-
+# Get test data
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
 
