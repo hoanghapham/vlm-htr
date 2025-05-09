@@ -13,7 +13,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
 from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image
-from src.htr.data_types import Page, Region, Line, ODOutput
+from src.data_types import Page, Region, Line, ODOutput
 from src.htr.utils import (
     sort_top_down_left_right, 
     sort_consider_margin,

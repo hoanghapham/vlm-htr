@@ -13,7 +13,7 @@ from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.logger import CustomLogger
 from src.htr.pipelines.traditional import TraditionalPipeline
-from src.htr.pipelines.evaluation import evaluate_multiple_pages, evaluate_one_page
+from src.evaluation.utils import evaluate_multiple_pages, evaluate_one_page
 
 
 # Setup
@@ -85,4 +85,5 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
 #%%
 # Average across all images:
-evaluate_multiple_pages(pipeline_outputs, xml_paths, OUTPUT_DIR)
+avg_metrics = evaluate_multiple_pages(pipeline_outputs, xml_paths, OUTPUT_DIR)
+logger.info(f"Average metrics: {avg_metrics.float_str}")

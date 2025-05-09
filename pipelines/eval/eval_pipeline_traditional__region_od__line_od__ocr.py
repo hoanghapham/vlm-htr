@@ -13,7 +13,7 @@ from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.logger import CustomLogger
 from src.htr.pipelines.traditional import TraditionalPipeline
-from src.htr.pipelines.evaluation import evaluate_multiple_pages, evaluate_one_page
+from src.evaluation.utils import evaluate_multiple_pages, evaluate_one_page
 
 
 # Setup

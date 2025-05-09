@@ -15,7 +15,7 @@ from shapely.geometry import Polygon
 from src.logger import CustomLogger
 from src.data_processing.florence import predict, FlorenceTask
 from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy, crop_image
-from src.htr.data_types import Page, Region, Line, ODOutput
+from src.data_types import Page, Region, Line, ODOutput
 from src.htr.utils import (
     sort_top_down_left_right, 
     sort_consider_margin,

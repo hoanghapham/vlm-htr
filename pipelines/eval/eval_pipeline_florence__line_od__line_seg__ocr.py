@@ -12,7 +12,7 @@ sys.path.append(str(PROJECT_DIR))
 from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
 from src.htr.pipelines.florence import FlorencePipeline
-from src.htr.pipelines.evaluation import evaluate_multiple_pages, evaluate_one_page
+from src.evaluation.utils import evaluate_multiple_pages, evaluate_one_page
 from src.logger import CustomLogger
 
 # Setup
