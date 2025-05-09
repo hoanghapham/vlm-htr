@@ -204,14 +204,16 @@ class Trainer():
         counter = 0
 
         with torch.no_grad():
-            for batch_data in tqdm(self.val_loader, desc=f"Evaluate step {step_idx}/{self.max_train_steps}"):
+            iterator = tqdm(range(len(self.val_loader)), desc=f"Evaluate step {step_idx}/{self.max_train_steps}")
+
+            for batch_idx in iterator:
                 try:
+                    batch_data = next(self.val_loader._get_iterator())
                     outputs = self.model(**batch_data)
                     loss = outputs.loss
                     val_loss += loss.item()
                     counter += 1
-                except Exception as e:
-                    self.logger.exception(e)
+                except Exception:
                     continue
             
                 if self.debug and counter >= self.debug_batches:
