@@ -20,6 +20,7 @@ from src.htr.pipelines.evaluation import evaluate_multiple_pages, evaluate_one_p
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--batch-size", default=6)
+parser.add_argument("--sort-mode", default="consider_margins", choices=["consider_margins", "top_down_left_right"])
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
@@ -33,7 +34,13 @@ SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
 OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
+SORT_MODE       = args.sort_mode
 DEBUG           = args.debug == "true"
+
+if SORT_MODE == "top_down_left_right":
+    OUTPUT_DIR = OUTPUT_DIR / "top_down_left_right"
+elif SORT_MODE == "consider_margins":
+    OUTPUT_DIR = OUTPUT_DIR / "consider_margins"
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
@@ -77,7 +84,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     image = Image.open(img_path).convert("RGB")
 
     ## Run pipeline
-    page_output = pipeline.run(image, sort_mode="consider_margins")
+    page_output = pipeline.run(image, sort_mode=SORT_MODE)
     pipeline_outputs.append(page_output)
 
     # Evaluate
