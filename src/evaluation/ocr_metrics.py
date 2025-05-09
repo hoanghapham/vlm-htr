@@ -18,7 +18,7 @@ class OCRMetrics():
         self.bow_extras = bow_extras
 
     def __str__(self):
-        return str(self.result_dict)
+        return str(self.dict)
     
     def __add__(self, other: Self):
         return OCRMetrics(
@@ -45,7 +45,7 @@ class OCRMetrics():
         return result
 
     @property
-    def float(self):
+    def float_str(self):
         result = dict(
             cer = f"{float(self.cer):.4f}",
             wer = f"{float(self.wer):.4f}",
@@ -55,7 +55,7 @@ class OCRMetrics():
         return result
     
     @property
-    def fraction(self):
+    def fraction_str(self):
         result = dict(
             cer = str(self.cer),
             wer = str(self.wer),

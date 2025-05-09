@@ -80,8 +80,9 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     pipeline_outputs.append(page_output)
     
     # Evaluate
-    evaluate_one_page(page_output, xml_path, OUTPUT_DIR)    
+    page_metrics = evaluate_one_page(page_output, xml_path, OUTPUT_DIR)
+    logger.info(f"Metrics: {page_metrics.float_str}")
 
 #%%
-# Evaluate:
+# Average across all images:
 evaluate_multiple_pages(pipeline_outputs, xml_paths, OUTPUT_DIR)

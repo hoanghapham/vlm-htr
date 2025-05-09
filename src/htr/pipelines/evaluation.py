@@ -12,7 +12,6 @@ from src.evaluation.ocr_metrics import compute_ocr_metrics, OCRMetrics
 from src.file_tools import write_text_file, write_json_file
 from src.htr.data_types import Page
 
-
 def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:
     metric_dict  = read_json_file(metric_dict_path)
     cer         = Ratio(*metric_dict["cer"]["str"].split("/"))
@@ -42,8 +41,7 @@ def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None
     if output_dir is not None:
         write_text_file(gt_text, output_dir / (name + ".ref"))
         write_json_file(page_metrics.dict, output_dir / (name + "__metrics.json"))
-
-    print(f"Metrics: {page_metrics.float}")
+    
     return page_metrics
 
 
@@ -67,6 +65,7 @@ def evaluate_multiple_pages(
                 continue
         
         page_metrics = evaluate_one_page(pred, xml_path)
+        # print(f"Metrics: {page_metrics.float}")
         if page_metrics is not None:
             metrics_list.append(page_metrics)
         else:
@@ -82,4 +81,4 @@ def evaluate_multiple_pages(
     if output_dir is not None:
         write_json_file(avg_metrics.dict, output_dir / "avg_metrics.json")
 
-    return metrics_list
+    return avg_metrics
