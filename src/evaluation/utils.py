@@ -1,4 +1,4 @@
-# From Riksarkivet
+# From Riksarkivet with slight modifications
 class Ratio:
     """
     An unormalized `fraction.Fraction`

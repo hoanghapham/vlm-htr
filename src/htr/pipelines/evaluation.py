@@ -5,12 +5,13 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from htrflow.evaluate import Ratio
+from src.evaluation.utils import Ratio
 from src.file_tools import read_json_file
 from src.data_processing.utils import XMLParser
 from src.evaluation.ocr_metrics import compute_ocr_metrics, OCRMetrics
 from src.file_tools import write_text_file, write_json_file
 from src.htr.data_types import Page
+
 
 def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:
     metric_dict  = read_json_file(metric_dict_path)
@@ -36,7 +37,7 @@ def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None
         page_metrics = compute_ocr_metrics(page_obj.text, gt_text)
     except Exception as e:
         print(e)
-        return None
+        return OCRMetrics(Ratio(0, 0), Ratio(0, 0), Ratio(0, 0), Ratio(0, 0))
 
     if output_dir is not None:
         write_text_file(gt_text, output_dir / (name + ".ref"))
