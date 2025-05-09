@@ -28,7 +28,6 @@ from src.htr.utils import (
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-
 SORT_FUNCS = {
     "top_down_left_right": sort_top_down_left_right,
     "consider_margins": sort_consider_margins
