@@ -270,15 +270,18 @@ class FlorencePipeline():
             self.ocr = SingleLineTextRecognition(model_path=ocr_model_path, device=self.device, logger=self.logger)
 
     def run(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
+        image = image.convert("RGB")
         return self.supported_pipelines[self.pipeline_type](image, sort_mode)
 
     def line_od__line_seg__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
 
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
 
+        ## Line OD
         self.logger.info("Line detection")
         page_line_objs, line_bbox_imgs = self.line_od.run(image)
 
+        ## Line segmentation then OCR
         self.logger.info("Batch line segmentation -> Text recognition")
         page_line_texts = []
         page_line_segs = ODOutput(bboxes=[], polygons=[])
@@ -286,6 +289,8 @@ class FlorencePipeline():
 
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
             batch_indices = slice(i, i+self.batch_size)
+
+            # Text esegmentation within line image
             batch_seg_objs, batch_seg_imgs = self.line_seg.run(line_bbox_imgs[batch_indices])
             texts = self.ocr.run(batch_seg_imgs)
             
@@ -312,10 +317,11 @@ class FlorencePipeline():
 
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
 
+        ## Line OD
         self.logger.info("Line detection")
         line_od_output, line_bbox_imgs = self.line_od.run(image)
 
-        ## Line seg then OCR
+        ## OCR
         self.logger.info("Batch text recognition")
         iterator = list(range(0, len(line_od_output.polygons), self.batch_size))
         page_line_texts = []
@@ -343,19 +349,18 @@ class FlorencePipeline():
     
 
     def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
-        
         assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
         
+        ## Region OD
         self.logger.info("Region detection")
         region_od_output, region_imgs = self.region_od.run(image)
         
-        ## Line OD within region
         self.logger.info("Line detection within region")
         page_regions: list[tuple[ODOutput, list[str]]] = []
 
         for region_idx in range(len(region_od_output.bboxes)):
 
-            ## Line OD
+            ## Line OD within region
             self.logger.info("Line detection")
             region_line_objs, line_bbox_imgs = self.line_od.run(region_imgs[region_idx])
 
