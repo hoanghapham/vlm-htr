@@ -355,21 +355,20 @@ class FlorencePipeline():
         self.logger.info("Region detection")
         region_od_output, region_imgs = self.region_od.run(image)
         
-        self.logger.info("Line detection within region")
         page_regions: list[tuple[ODOutput, list[str]]] = []
 
         for region_idx in range(len(region_od_output.bboxes)):
 
             ## Line OD within region
-            self.logger.info("Line detection")
+            self.logger.info(f"Line detection in region {region_idx}/{len(region_od_output)}")
             region_line_objs, line_bbox_imgs = self.line_od.run(region_imgs[region_idx])
 
             ## OCR
-            self.logger.info("Text recognition")
+            self.logger.info(f"Text recognition in region {region_idx}/{len(region_od_output)}")
             iterator = list(range(0, len(region_line_objs.polygons), self.batch_size))
             region_line_texts = []
             
-            for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"OCR for region {region_idx + 1}/{len(region_od_output)}"):
+            for i in tqdm(iterator, total=len(iterator), unit="batch"):
 
                 batch_indices = slice(i, i+self.batch_size)
                 texts = self.ocr.run(line_bbox_imgs[batch_indices])

@@ -42,7 +42,7 @@ def draw_bboxes_xyxy(
     plt.show()
 
 
-def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_bbox=False, fig_size=15):
+def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_mask=True, show_line_bbox=False, fig_size=15):
 
     # Show image
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
@@ -76,16 +76,17 @@ def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_r
             )
 
     # Color lines
-    for idx, line in enumerate(lines_data):
-        seg_x = [x for (x, y) in line["polygon"]]
-        seg_y = [y for (x, y) in line["polygon"]]
-        ax.fill(
-            seg_x, seg_y, 
-            facecolor=line_colors[idx], 
-            alpha=0.5, 
-            edgecolor=line_colors[idx], 
-            linewidth=2, label="Segmentation"
-        )
+    if show_line_mask:
+        for idx, line in enumerate(lines_data):
+            seg_x = [x for (x, y) in line["polygon"]]
+            seg_y = [y for (x, y) in line["polygon"]]
+            ax.fill(
+                seg_x, seg_y, 
+                facecolor=line_colors[idx], 
+                alpha=0.5, 
+                edgecolor=line_colors[idx], 
+                linewidth=2, label="Segmentation"
+            )
 
     if show_line_bbox:
         # Construct bbox for each line

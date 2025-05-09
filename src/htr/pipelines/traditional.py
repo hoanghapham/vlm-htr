@@ -224,13 +224,14 @@ class TraditionalPipeline():
         for region_idx in range(len(region_od_output)):
 
             ## Line seg within region
-            self.logger.info(f"Line segmentation for region {region_idx}")
+            self.logger.info(f"Line segmentation for region {region_idx}/{len(region_od_output)}")
             region_line_objs, region_line_imgs = self.line_seg.run(region_imgs[region_idx])
             
             iterator = list(range(0, len(region_line_objs), self.batch_size))
 
+            self.logger.info(f"Text recognition for region {region_idx}/{len(region_od_output)}")
             region_line_texts = []
-            for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"OCR for region {region_idx + 1}/{len(region_od_output)}"):
+            for i in tqdm(iterator, total=len(iterator), unit="batch"):
                 batch_indices = slice(i, i+self.batch_size)
 
                 # OCR
@@ -308,13 +309,14 @@ class TraditionalPipeline():
         for region_idx in range(len(region_od_output)):
 
             ## Line OD within region
-            self.logger.info(f"Line detection for region {region_idx}")
+            self.logger.info(f"Line detection for region {region_idx}/{len(region_od_output)}")
             region_line_objs, region_line_imgs = self.line_od.run(region_imgs[region_idx])
             
             iterator = list(range(0, len(region_line_objs), self.batch_size))
             region_line_texts = []
 
-            for i in tqdm(iterator, total=len(iterator), unit="batch", desc=f"OCR for region {region_idx + 1}/{len(region_od_output)}"):
+            self.logger.info(f"Text recognition for region {region_idx}/{len(region_od_output)}")
+            for i in tqdm(iterator, total=len(iterator), unit="batch"):
                 batch_indices = slice(i, i+self.batch_size)
 
                 # OCR
