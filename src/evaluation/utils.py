@@ -23,7 +23,7 @@ def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:
 def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None):
     xml_parser = XMLParser()
     if output_dir is not None:
-        output_dir.mkdir(exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     name = Path(gt_xml_path).stem
 
@@ -52,7 +52,7 @@ def evaluate_multiple_pages(
     metrics_list = []
 
     if output_dir is not None:
-        output_dir.mkdir(exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     for pred, xml_path in zip(pipeline_outputs, gt_xml_paths):
         # Write predicted text in .hyp extension to be used with E2EHTREval
