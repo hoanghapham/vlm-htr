@@ -21,6 +21,7 @@ parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--sort-mode", default="consider_margins", choices=["consider_margins", "top_down_left_right"])
+parser.add_argument("--merge", required=False, default="true", choices=["true", "false"])
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
@@ -33,9 +34,10 @@ args = parser.parse_args()
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
 SORT_MODE       = args.sort_mode
+MERGE           = args.merge == "true"
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / f"merge_{MERGE}"
 
 # Get test data
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
@@ -59,7 +61,8 @@ pipeline = TraditionalPipeline(
     ocr_model_path          = PROJECT_DIR / f"models/trained/trocr_base__{SPLIT_TYPE}__line_seg__ocr/best",
     batch_size              = BATCH_SIZE,
     device                  = DEVICE,
-    logger                  = logger
+    logger                  = logger,
+    merge                   = MERGE
 )
 
 

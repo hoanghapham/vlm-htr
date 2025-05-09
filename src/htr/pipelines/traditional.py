@@ -74,12 +74,12 @@ class TextObjectDetection(Step):
             cropped_imgs.append(crop_image(image, polygon))
         return cropped_imgs 
     
-    def run(self, image: PILImage) -> tuple[ODOutput, list[PILImage]]:
-        detected_objects    = self.detect(image)
+    def run(self, image: PILImage, merge: bool = True) -> tuple[ODOutput, list[PILImage]]:
+        detected_objects    = self.detect(image, merge=merge)
         cropped_imgs        = self.postprocess(image, detected_objects)
         return detected_objects, cropped_imgs
     
-    def detect(self, image: PILImage) -> ODOutput:
+    def detect(self, image: PILImage, merge: bool = True) -> ODOutput:
         try:
             result_od = self.model.predict(image, verbose=False, device=self.device)
         except Exception as e:
@@ -93,7 +93,10 @@ class TextObjectDetection(Step):
             return ODOutput([], [])
 
         # Merge overlapping boxes
-        merged_bboxes = merge_overlapping_bboxes(bboxes, iou_threshold=0.2)
+        if merge:
+            merged_bboxes = merge_overlapping_bboxes(bboxes, iou_threshold=0.2, coverage_threshold=0.5)
+        else:
+            merged_bboxes = bboxes
 
         # Sort regions
         polygons = [bbox_xyxy_to_polygon(bbox) for bbox in merged_bboxes]
@@ -165,7 +168,8 @@ class TraditionalPipeline():
         ocr_model_path: str | Path = None, 
         batch_size: str = 2,
         device: str = "cuda",
-        logger: CustomLogger = None
+        logger: CustomLogger = None,
+        merge: bool = True
     ):
         self.supported_pipelines = {
             "region_od__line_seg__ocr": self.region_od__line_seg__ocr,
@@ -181,6 +185,7 @@ class TraditionalPipeline():
         self._line_od_model_path    = line_od_model_path
         self._line_seg_model_path    = line_seg_model_path
         self._ocr_model_path         = ocr_model_path
+        self.merge                   = merge
 
         self.device          = device
         self.batch_size      = batch_size
@@ -217,7 +222,7 @@ class TraditionalPipeline():
 
         ## Region detection
         self.logger.info("Region detection")
-        region_od_output, region_imgs = self.region_od.run(image)
+        region_od_output, region_imgs = self.region_od.run(image, merge=self.merge)
 
         page_regions: list[tuple[ODOutput, list[str]]] = []
 
@@ -302,7 +307,7 @@ class TraditionalPipeline():
 
         ## Region detection
         self.logger.info("Region detection")
-        region_od_output, region_imgs = self.region_od.run(image)
+        region_od_output, region_imgs = self.region_od.run(image, merge=self.merge)
 
         page_regions: list[tuple[ODOutput, list[str]]] = []
 

@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval/pipeline/mixed__traditional__region_od__line_seg__ocr
-#SBATCH -o logs_uppmax/eval/pipeline/mixed__traditional__region_od__line_seg__ocr.out
-#SBATCH -e logs_uppmax/eval/pipeline/mixed__traditional__region_od__line_seg__ocr.out
+#SBATCH -J eval/pipeline/mixed__traditional__region_od__line_seg__ocr__merge_false
+#SBATCH -o logs_uppmax/eval/pipeline/mixed__traditional__region_od__line_seg__ocr__merge_false.out
+#SBATCH -e logs_uppmax/eval/pipeline/mixed__traditional__region_od__line_seg__ocr__merge_false.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
@@ -20,4 +20,5 @@ cd $PROJECT_DIR
 python pipelines/eval/eval_pipeline_traditional__region_od__line_seg__ocr.py \
     --split-type mixed \
     --sort-mode consider_margins \
-    --batch-size 6
+    --batch-size 6 \
+    --merge false
