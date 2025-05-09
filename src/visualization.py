@@ -18,6 +18,7 @@ def draw_bboxes_xyxy(
     label_facecolor: str = "lightcoral",
     label_color: str = "black",
 ):
+    image = image.convert("RGB")
 
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
     ax.imshow(image)
@@ -43,7 +44,8 @@ def draw_bboxes_xyxy(
 
 
 def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_mask=True, show_line_bbox=False, fig_size=15):
-
+    
+    image = image.convert("RGB")
     # Show image
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
     ax.imshow(image)
@@ -111,6 +113,7 @@ def draw_segment_masks(image: Image, masks: list[list[tuple | list]], fig_size=1
         List of masks, each mask is a list of (x, y) coordinates
     fig_size : int, optional
     """
+    image = image.convert("RGB")
     # Show image
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
     ax.imshow(image)
@@ -144,7 +147,7 @@ def draw_object_bbox_segment(image: Image, bbox: tuple, mask: list[tuple], fig_s
     figsize : int, optional
         Size of the figure, by default 15
     """
-
+    image = image.convert("RGB")
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
     ax.imshow(image)
 

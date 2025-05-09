@@ -38,6 +38,7 @@ def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None
         return OCRMetrics(Ratio(0, 0), Ratio(0, 0), Ratio(0, 0), Ratio(0, 0))
 
     if output_dir is not None:
+        write_text_file(page_obj.text, output_dir / (name + ".hyp"))
         write_text_file(gt_text, output_dir / (name + ".ref"))
         write_json_file(page_metrics.dict, output_dir / (name + "__metrics.json"))
     
@@ -55,7 +56,6 @@ def evaluate_multiple_pages(
         output_dir.mkdir(parents=True, exist_ok=True)
 
     for pred, xml_path in zip(pipeline_outputs, gt_xml_paths):
-        # Write predicted text in .hyp extension to be used with E2EHTREval
         if output_dir is not None:
             img_metric_path = output_dir / (Path(xml_path).stem + "__metrics.json")
             if img_metric_path.exists():
