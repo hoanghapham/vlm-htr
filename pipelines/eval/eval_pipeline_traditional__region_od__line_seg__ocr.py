@@ -35,7 +35,7 @@ BATCH_SIZE      = int(args.batch_size)
 SORT_MODE       = args.sort_mode
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / SORT_MODE
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
 
 # Get test data
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
