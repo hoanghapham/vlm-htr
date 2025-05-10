@@ -270,32 +270,34 @@ class FlorencePipeline():
 
         ## Line OD
         self.logger.info("Line detection")
-        page_line_objs, line_bbox_imgs = self.line_od.run(image)
+        page_line_od_output, page_line_imgs = self.line_od.run(image)
 
         ## Line segmentation then OCR
         self.logger.info("Batch line segmentation -> Text recognition")
         page_line_texts = []
         page_line_segs = ODOutput(bboxes=[], polygons=[])
-        iterator = list(range(0, len(page_line_objs), self.batch_size))
+        iterator = list(range(0, len(page_line_od_output), self.batch_size))
 
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
             batch_indices = slice(i, i+self.batch_size)
 
             # Text esegmentation within line image
-            batch_seg_objs, batch_seg_imgs = self.line_seg.run(line_bbox_imgs[batch_indices])
+            batch_seg_objs, batch_seg_imgs = self.line_seg.run(page_line_imgs[batch_indices])
             texts = self.ocr.run(batch_seg_imgs)
             
             page_line_segs += batch_seg_objs
             page_line_texts += texts
 
-        # Sort output
-        assert len(page_line_objs) == len(page_line_segs) == len(page_line_texts), "Length mismatch"
+        # Output
+        if page_line_od_output.bboxes == []:
+            return Page(regions=[], lines=[])
 
-        # Output bbox, seg polygon, and texts
-        lines: list[Line] = [Line(*tup) for tup in zip(page_line_objs.bboxes, page_line_segs.polygons, page_line_texts)]
+        assert len(page_line_od_output) == len(page_line_segs) == len(page_line_texts), "Length mismatch"
+
+        lines: list[Line] = [Line(*tup) for tup in zip(page_line_od_output.bboxes, page_line_segs.polygons, page_line_texts)]
 
         # Get covering region. In line OD, there's only one region covering all line bboxes
-        region_bbox = get_cover_bbox(page_line_objs.bboxes)
+        region_bbox = get_cover_bbox(page_line_od_output.bboxes)
         region_polygon = bbox_xyxy_to_polygon(region_bbox)
         region = Region(region_bbox, region_polygon)
 
@@ -307,25 +309,29 @@ class FlorencePipeline():
 
         ## Line OD
         self.logger.info("Line detection")
-        line_od_output, line_bbox_imgs = self.line_od.run(image)
+        page_line_od_output, page_line_imgs = self.line_od.run(image)
 
         ## OCR
         self.logger.info("Batch text recognition")
-        iterator = list(range(0, len(line_od_output.polygons), self.batch_size))
+        iterator = list(range(0, len(page_line_od_output.polygons), self.batch_size))
         page_line_texts = []
 
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
             batch_indices = slice(i, i+self.batch_size)
-            texts = self.ocr.run(line_bbox_imgs[batch_indices])
+            texts = self.ocr.run(page_line_imgs[batch_indices])
             page_line_texts += texts
 
         # Output
-        assert len(line_od_output.bboxes) == len(line_od_output.polygons) == len(page_line_texts), "Length mismatch"
-        
-        # Assemble lines
-        lines: list[Line] = [Line(*tup) for tup in zip(line_od_output.bboxes, line_od_output.polygons, page_line_texts)]
 
-        region_bbox = get_cover_bbox(line_od_output.bboxes)
+        if page_line_od_output.bboxes == []:
+            return Page(regions=[], lines=[])
+
+        assert len(page_line_od_output.bboxes) == len(page_line_od_output.polygons) == len(page_line_texts), "Length mismatch"
+
+        # Assemble lines
+        lines: list[Line] = [Line(*tup) for tup in zip(page_line_od_output.bboxes, page_line_od_output.polygons, page_line_texts)]
+
+        region_bbox = get_cover_bbox(page_line_od_output.bboxes)
         region_polygon = bbox_xyxy_to_polygon(region_bbox)
         region = Region(region_bbox, region_polygon, lines)
 

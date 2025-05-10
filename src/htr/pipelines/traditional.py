@@ -282,26 +282,29 @@ class TraditionalPipeline():
 
         ## Line detection
         self.logger.info("Line detection")
-        line_od_output, line_bbox_imgs = self.line_od.run(image)
+        page_line_od_output, page_line_imags = self.line_od.run(image)
 
         ## OCR
         self.logger.info("Batch text recognition")
-        iterator = list(range(0, len(line_od_output.polygons), self.batch_size))
+        iterator = list(range(0, len(page_line_od_output.polygons), self.batch_size))
         page_line_texts = []
 
         for i in tqdm(iterator, total=len(iterator), unit="batch"):
             batch_indices = slice(i, i+self.batch_size)
-            texts = self.ocr.run(line_bbox_imgs[batch_indices])
+            texts = self.ocr.run(page_line_imags[batch_indices])
             page_line_texts += texts
 
         # Output
-        assert len(line_od_output.bboxes) == len(line_od_output.polygons) == len(page_line_texts), "Length mismatch"
+        if page_line_od_output.bboxes == []:
+            return Page(regions=[], lines=[])
+
+        assert len(page_line_od_output.bboxes) == len(page_line_od_output.polygons) == len(page_line_texts), "Length mismatch"
         
-        sorted_line_indices = sort_consider_margins(line_od_output.bboxes, image)
+        sorted_line_indices = sort_consider_margins(page_line_od_output.bboxes, image)
         
         # Output bbox, seg polygon created from bboxe, and text
-        sorted_bboxes           = [line_od_output.bboxes[i] for i in sorted_line_indices]
-        sorted_polygons         = [line_od_output.polygons[i] for i in sorted_line_indices]
+        sorted_bboxes           = [page_line_od_output.bboxes[i] for i in sorted_line_indices]
+        sorted_polygons         = [page_line_od_output.polygons[i] for i in sorted_line_indices]
         sorted_texts            = [page_line_texts[i] for i in sorted_line_indices]
 
         lines: list[Line] = [Line(*tup) for tup in zip(sorted_bboxes, sorted_polygons, sorted_texts)]
