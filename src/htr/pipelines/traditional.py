@@ -226,11 +226,11 @@ class TraditionalPipeline():
         for region_idx in range(len(page_region_od_output)):
 
             ## Line seg within region
-            self.logger.info(f"Line detection for region {region_idx}/{len(page_region_od_output)}")
+            self.logger.info(f"Line detection for region {region_idx + 1}/{len(page_region_od_output)}")
             region_line_det_output, region_line_imgs = line_det_step.run(page_region_imgs[region_idx])
             
             ## OCR for lines within region
-            self.logger.info(f"Text recognition for region {region_idx}/{len(page_region_od_output)}")
+            self.logger.info(f"Text recognition for region {region_idx + 1}/{len(page_region_od_output)}")
             region_line_texts = []
             iterator = list(range(0, len(region_line_det_output), self.batch_size))
 
