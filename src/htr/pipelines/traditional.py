@@ -12,22 +12,17 @@ from tqdm import tqdm
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
-from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image
+from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image, get_cover_bbox
 from src.data_types import Page, Region, Line, ODOutput
 from src.htr.utils import (
-    sort_top_down_left_right, 
     sort_consider_margins,
     correct_line_bbox_coords,
     correct_line_polygon_coords,
-    merge_overlapping_bboxes
+    merge_overlapping_bboxes,
+    sort_page
 )
 from src.logger import CustomLogger
 
-
-SORT_FUNCS = {
-    "top_down_left_right": sort_top_down_left_right,
-    "consider_margins": sort_consider_margins
-}
 
 REMOTE_TROCR_MODEL_PATH   = "microsoft/trocr-base-handwritten"
 
@@ -74,12 +69,12 @@ class TextObjectDetection(Step):
             cropped_imgs.append(crop_image(image, polygon))
         return cropped_imgs 
     
-    def run(self, image: PILImage, merge: bool = True) -> tuple[ODOutput, list[PILImage]]:
-        detected_objects    = self.detect(image, merge=merge)
+    def run(self, image: PILImage) -> tuple[ODOutput, list[PILImage]]:
+        detected_objects    = self.detect(image)
         cropped_imgs        = self.postprocess(image, detected_objects)
         return detected_objects, cropped_imgs
     
-    def detect(self, image: PILImage, merge: bool = True) -> ODOutput:
+    def detect(self, image: PILImage) -> ODOutput:
         try:
             result_od = self.model.predict(image, verbose=False, device=self.device)
         except Exception as e:
@@ -93,12 +88,7 @@ class TextObjectDetection(Step):
             return ODOutput([], [])
 
         # Merge overlapping boxes
-        if merge:
-            merged_bboxes = merge_overlapping_bboxes(bboxes, iou_threshold=0.2, coverage_threshold=0.5)
-        else:
-            merged_bboxes = bboxes
-
-        # Sort regions
+        merged_bboxes = merge_overlapping_bboxes(bboxes, iou_threshold=0.2, coverage_threshold=0.5)
         polygons = [bbox_xyxy_to_polygon(bbox) for bbox in merged_bboxes]
         return ODOutput(merged_bboxes, polygons)
 
@@ -157,7 +147,6 @@ class SingleLineTextRecognition(Step):
         return batch_texts
 
 
-
 class TraditionalPipeline():
     def __init__(
         self,
@@ -169,7 +158,6 @@ class TraditionalPipeline():
         batch_size: str = 2,
         device: str = "cuda",
         logger: CustomLogger = None,
-        merge: bool = True
     ):
         self.supported_pipelines = {
             "region_od__line_seg__ocr": self.region_od__line_seg__ocr,
@@ -185,7 +173,6 @@ class TraditionalPipeline():
         self._line_od_model_path    = line_od_model_path
         self._line_seg_model_path    = line_seg_model_path
         self._ocr_model_path         = ocr_model_path
-        self.merge                   = merge
 
         self.device          = device
         self.batch_size      = batch_size
@@ -212,183 +199,86 @@ class TraditionalPipeline():
             self.ocr = SingleLineTextRecognition(self._ocr_model_path, self.device, self.logger)
 
 
-    def run(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
+    def run(self, image: PILImage) -> Page:
         image = image.convert("RGB")
-        return self.supported_pipelines[self.pipeline_type](image, sort_mode)
+        return self.supported_pipelines[self.pipeline_type](image)
 
     
-    def region_od__line_seg__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
-        assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
+    def _region_od__line_det__ocr(self, image: PILImage, line_det_step: Step) -> Page:
+        """Generic 3-step pipeline: region detection -> line detection -> ocr
+
+        Parameters
+        ----------
+        image : PILImage
+        line_det_step : Step
+            pass in `self.line_od` or `self.line_seg` here
+
+        Returns
+        -------
+        Page
+        """
 
         ## Region detection
         self.logger.info("Region detection")
-        region_od_output, region_imgs = self.region_od.run(image, merge=self.merge)
+        page_region_od_output, page_region_imgs = self.region_od.run(image)
+        page_region_lines = []
 
-        page_regions: list[tuple[ODOutput, list[str]]] = []
-
-        for region_idx in range(len(region_od_output)):
+        for region_idx in range(len(page_region_od_output)):
 
             ## Line seg within region
-            self.logger.info(f"Line segmentation for region {region_idx}/{len(region_od_output)}")
-            region_line_objs, region_line_imgs = self.line_seg.run(region_imgs[region_idx])
+            self.logger.info(f"Line detection for region {region_idx}/{len(page_region_od_output)}")
+            region_line_det_output, region_line_imgs = line_det_step.run(page_region_imgs[region_idx])
             
-            iterator = list(range(0, len(region_line_objs), self.batch_size))
-
-            self.logger.info(f"Text recognition for region {region_idx}/{len(region_od_output)}")
+            ## OCR for lines within region
+            self.logger.info(f"Text recognition for region {region_idx}/{len(page_region_od_output)}")
             region_line_texts = []
+            iterator = list(range(0, len(region_line_det_output), self.batch_size))
+
             for i in tqdm(iterator, total=len(iterator), unit="batch"):
                 batch_indices = slice(i, i+self.batch_size)
 
-                # OCR
                 batch_texts = self.ocr.run(region_line_imgs[batch_indices])
                 region_line_texts += batch_texts
 
-            # Collect data for one region
-            page_regions.append((region_line_objs, region_line_texts))
+            # Collect lines within regions
+            assert len(region_line_det_output) == len(region_line_texts), "Length mismatch"
 
-        # Final sorting step
-        # Sort regions
-        assert len(page_regions) == len(region_od_output), \
-            f"Length mismatch: {len(page_regions)} - {len(region_od_output)}"
-        
-        if sort_mode == "top_down_left_right":
-            sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
-        elif sort_mode == "consider_margins":
-            sorted_region_indices = sort_consider_margins(region_od_output.bboxes, image)
+            # Shift line coords to match the larger page
+            corrected_line_bboxes = [
+                correct_line_bbox_coords(page_region_od_output.bboxes[region_idx], bbox)
+                for bbox in region_line_det_output.bboxes
+            ]
 
-        sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
-        sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
-        sorted_region_lines     = []
-
-        # Get region lines
-        for region_idx in sorted_region_indices:
-            region_line_objs, region_line_texts = page_regions[region_idx]
-
-            if sort_mode == "top_down_left_right":
-                sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
-            elif sort_mode == "consider_margins":
-                sorted_line_indices = sort_consider_margins(region_line_objs.bboxes, image)
-            # sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
-
-            corrected_line_bboxes = []
-            for bbox in region_line_objs.bboxes:
-                corrected_bbox = correct_line_bbox_coords(
-                    region_od_output.bboxes[region_idx], 
-                    bbox
-                )
-                corrected_line_bboxes.append(corrected_bbox)
+            corrected_line_polygons = [
+                correct_line_polygon_coords(page_region_od_output.bboxes[region_idx], polygon)
+                for polygon in region_line_det_output.polygons
+            ]
             
-            corrected_line_polygons = []
-            for polygon in region_line_objs.polygons:
-                corrected_polygon = correct_line_polygon_coords(
-                    region_od_output.bboxes[region_idx], 
-                    polygon
-                )
-                corrected_line_polygons.append(corrected_polygon)
+            region_lines = [Line(*tup) for tup in zip(corrected_line_bboxes, corrected_line_polygons, region_line_texts)]
+            page_region_lines.append(region_lines)
 
-            sorted_line_bboxes      = [corrected_line_bboxes[i] for i in sorted_line_indices]
-            sorted_line_polygons    = [corrected_line_polygons[i] for i in sorted_line_indices]
-            sorted_line_texts       = [region_line_texts[i] for i in sorted_line_indices]
+        # Collect regions within page
+        page_regions = [Region(*tup) for tup in zip(page_region_od_output.bboxes, page_region_od_output.polygons, page_region_lines)]
 
-            region_lines = [Line(*tup) for tup in zip(sorted_line_bboxes, sorted_line_polygons, sorted_line_texts)]
-            sorted_region_lines.append(region_lines)
-        
-        page_regions = [Region(*tup) for tup in zip(sorted_region_bboxes, sorted_region_polygons, sorted_region_lines)]
-
+        # Unnest region - lines
         page_lines = []
-        for lines in sorted_region_lines:
-            page_lines += lines
+        for region_lines in page_region_lines:
+            page_lines += region_lines
 
-        return Page(regions=page_regions, lines=page_lines)
+        # Final sorting
+        page = sort_page(Page(regions=page_regions, lines=page_lines), image)
+        return page
     
 
-    def region_od__line_od__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
-        assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
-
-        ## Region detection
-        self.logger.info("Region detection")
-        region_od_output, region_imgs = self.region_od.run(image, merge=self.merge)
-
-        page_regions: list[tuple[ODOutput, list[str]]] = []
-
-        for region_idx in range(len(region_od_output)):
-
-            ## Line OD within region
-            self.logger.info(f"Line detection for region {region_idx}/{len(region_od_output)}")
-            region_line_objs, region_line_imgs = self.line_od.run(region_imgs[region_idx])
-            
-            iterator = list(range(0, len(region_line_objs), self.batch_size))
-            region_line_texts = []
-
-            self.logger.info(f"Text recognition for region {region_idx}/{len(region_od_output)}")
-            for i in tqdm(iterator, total=len(iterator), unit="batch"):
-                batch_indices = slice(i, i+self.batch_size)
-
-                # OCR
-                batch_texts = self.ocr.run(region_line_imgs[batch_indices])
-                region_line_texts += batch_texts
-
-            # Collect data for one region
-            page_regions.append((region_line_objs, region_line_texts))
-
-        # Final sorting step
-        # Sort regions
-        assert len(page_regions) == len(region_od_output), \
-            f"Length mismatch: {len(page_regions)} - {len(region_od_output)}"
-        
-        if sort_mode == "top_down_left_right":
-            sorted_region_indices = sort_top_down_left_right(region_od_output.bboxes)
-        elif sort_mode == "consider_margins":
-            sorted_region_indices = sort_consider_margins(region_od_output.bboxes, image)
-
-        sorted_region_bboxes    = [region_od_output.bboxes[i] for i in sorted_region_indices]
-        sorted_region_polygons  = [region_od_output.polygons[i] for i in sorted_region_indices]
-        sorted_region_lines     = []
-
-        # Get region lines
-        for region_idx in sorted_region_indices:
-            region_line_objs, region_line_texts = page_regions[region_idx]
-
-            if sort_mode == "top_down_left_right":
-                sorted_line_indices = sort_top_down_left_right(region_line_objs.bboxes)
-            elif sort_mode == "consider_margins":
-                sorted_line_indices = sort_consider_margins(region_line_objs.bboxes, image)
-
-            corrected_line_bboxes = []
-            for bbox in region_line_objs.bboxes:
-                corrected_bbox = correct_line_bbox_coords(
-                    region_od_output.bboxes[region_idx], 
-                    bbox
-                )
-                corrected_line_bboxes.append(corrected_bbox)
-            
-            corrected_line_polygons = []
-            for polygon in region_line_objs.polygons:
-                corrected_polygon = correct_line_polygon_coords(
-                    region_od_output.bboxes[region_idx], 
-                    polygon
-                )
-                corrected_line_polygons.append(corrected_polygon)
-
-            sorted_line_bboxes      = [corrected_line_bboxes[i] for i in sorted_line_indices]
-            sorted_line_polygons    = [corrected_line_polygons[i] for i in sorted_line_indices]
-            sorted_line_texts       = [region_line_texts[i] for i in sorted_line_indices]
-
-            region_lines = [Line(*tup) for tup in zip(sorted_line_bboxes, sorted_line_polygons, sorted_line_texts)]
-            sorted_region_lines.append(region_lines)
-        
-        page_regions = [Region(*tup) for tup in zip(sorted_region_bboxes, sorted_region_polygons, sorted_region_lines)]
-
-        page_lines = []
-        for lines in sorted_region_lines:
-            page_lines += lines
-
-        return Page(regions=page_regions, lines=page_lines)
+    def region_od__line_od__ocr(self, image: PILImage) -> Page:
+        return self._region_od__line_det__ocr(image, line_det_step=self.line_od)
     
 
-    def line_od__ocr(self, image: PILImage, sort_mode: str = "consider_margins") -> Page:
+    def region_od__line_seg__ocr(self, image: PILImage) -> Page:
+        return self._region_od__line_det__ocr(image, line_det_step=self.line_seg)
 
-        assert sort_mode in SORT_FUNCS.keys(), f"sort_mode must be one of {list(SORT_FUNCS.keys())}"
+
+    def line_od__ocr(self, image: PILImage) -> Page:
 
         ## Line detection
         self.logger.info("Line detection")
@@ -407,10 +297,7 @@ class TraditionalPipeline():
         # Output
         assert len(line_od_output.bboxes) == len(line_od_output.polygons) == len(page_line_texts), "Length mismatch"
         
-        if sort_mode == "top_down_left_right":
-            sorted_line_indices = sort_top_down_left_right(line_od_output.bboxes)
-        elif sort_mode == "consider_margins":
-            sorted_line_indices = sort_consider_margins(line_od_output.bboxes, image)
+        sorted_line_indices = sort_consider_margins(line_od_output.bboxes, image)
         
         # Output bbox, seg polygon created from bboxe, and text
         sorted_bboxes           = [line_od_output.bboxes[i] for i in sorted_line_indices]
@@ -418,4 +305,11 @@ class TraditionalPipeline():
         sorted_texts            = [page_line_texts[i] for i in sorted_line_indices]
 
         lines: list[Line] = [Line(*tup) for tup in zip(sorted_bboxes, sorted_polygons, sorted_texts)]
-        return Page(regions=[], lines=lines)
+
+        # Get covering region. In line OD, there's only one region covering all line bboxes
+        region_bbox = get_cover_bbox(sorted_bboxes)
+        region_polygon = bbox_xyxy_to_polygon(region_bbox)
+        region = Region(region_bbox, region_polygon, lines)
+
+        page = sort_page(Page(regions=[region], lines=lines), image)
+        return page

@@ -20,8 +20,6 @@ from src.evaluation.utils import evaluate_multiple_pages, evaluate_one_page
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
 parser.add_argument("--batch-size", default=6)
-parser.add_argument("--sort-mode", default="consider_margins", choices=["consider_margins", "top_down_left_right"])
-parser.add_argument("--merge", required=False, default="true", choices=["true", "false"])
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
@@ -33,11 +31,9 @@ args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
-SORT_MODE       = args.sort_mode
-MERGE           = args.merge == "true"
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr" / f"merge_{MERGE}" / SORT_MODE
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
 
 # Get test data
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
@@ -62,7 +58,6 @@ pipeline = TraditionalPipeline(
     batch_size              = BATCH_SIZE,
     device                  = DEVICE,
     logger                  = logger,
-    merge                   = MERGE
 )
 
 
@@ -83,7 +78,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     image = Image.open(img_path).convert("RGB")
 
     ## Run pipeline
-    page_output = pipeline.run(image, sort_mode=SORT_MODE)
+    page_output = pipeline.run(image)
     pipeline_outputs.append(page_output)
 
     # Evaluate

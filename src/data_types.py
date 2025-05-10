@@ -20,12 +20,16 @@ class Line():
             text=self.text
         )
 
+
 class Region():
     def __init__(self, bbox: Bbox = None, polygon: Polygon = None, lines: list[Line] = None):
         self.bbox = bbox
         self.polygon = polygon
         self.lines = lines
-        self.text = " ".join([line.text for line in lines])
+        if lines is not None:
+            self.text = " ".join([line.text for line in lines])
+        else:
+            self.text = ""
     
     def __getitem__(self, key):
         return getattr(self, key)
@@ -64,9 +68,14 @@ class ODOutput():
 
         self.bboxes = bboxes
         self.polygons = polygons
+        self._objects_count = len(bboxes)
+
+    def __iter__(self):
+        for idx in range(len(self._objects_count)):
+            yield self.__getitem__(idx)
 
     def __len__(self):
-        return len(self.bboxes)
+        return self._objects_count
     
     def _get_one(self, idx):
         return dict(bbox=self.bboxes[idx], polygon=self.polygons[idx])

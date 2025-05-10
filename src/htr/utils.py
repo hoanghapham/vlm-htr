@@ -11,6 +11,8 @@ from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
 from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopage, get_region_location
 from src.evaluation.visual_metrics import compute_bbox_iou
+from src.data_types import Page, Region, Line
+
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
 
@@ -23,9 +25,6 @@ def sort_consider_margins(bboxes: Sequence[Bbox], image: PILImage) -> list[int]:
             top margin, printspace, bottom margin, left margin, right margin. 
             See `htrflow.utils.layout.RegionLocation` for more details.
         3. The y-coordinate of the bounding box's top-left corner.
-
-    TODO: This causes poor performance in traditional region_od__line_seg__ocr pipeline. 
-    Investigate when have more time.
 
     Parameters
     ----------
@@ -104,6 +103,42 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
     right_sorted = sorted(right_indices, key=lambda i: (bboxes[i].ymin, bboxes[i].xmin))
 
     return left_sorted + right_sorted
+
+
+def sort_page(page: Page, image: PILImage):
+    region_bboxes = [region["bbox"] for region in page.regions]
+    region_polygons = [region["polygon"] for region in page.regions]
+
+    sorted_region_indices = sort_consider_margins(region_bboxes, image)
+
+    page_region_bboxes    = [region_bboxes[i] for i in sorted_region_indices]
+    page_region_polygons  = [region_polygons[i] for i in sorted_region_indices]
+    page_region_lines     = []
+
+    # Get region lines
+    for region_idx in sorted_region_indices:
+        region_line_objs = page.regions[region_idx]["lines"]
+
+        region_line_bboxes = [line["bbox"] for line in region_line_objs]
+        region_line_polygons = [line["polygon"] for line in region_line_objs]
+        region_line_texts = [line["text"] for line in page.regions[region_idx]["lines"]]
+
+        sorted_line_indices = sort_consider_margins(region_line_bboxes, image)
+
+        region_line_bboxes      = [region_line_bboxes[i] for i in sorted_line_indices]
+        region_line_polygons    = [region_line_polygons[i] for i in sorted_line_indices]
+        region_line_texts       = [region_line_texts[i] for i in sorted_line_indices]
+
+        region_lines = [Line(*tup) for tup in zip(region_line_bboxes, region_line_polygons, region_line_texts)]
+        page_region_lines.append(region_lines)
+
+    page_regions = [Region(*tup) for tup in zip(page_region_bboxes, page_region_polygons, page_region_lines)]
+
+    page_lines = []
+    for lines in page_region_lines:
+        page_lines += lines
+
+    return Page(regions=page_regions, lines=page_lines)
 
 
 # Shift line bbox and polygon detected in cropped image to match larger image

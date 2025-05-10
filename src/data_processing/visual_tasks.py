@@ -17,6 +17,7 @@ from datasets import (
     Value,
 )
 from PIL import Image as PILImage
+from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
 import xml.etree.ElementTree as ET
 
@@ -85,6 +86,24 @@ def polygon_to_bbox_xyxy(polygon: Polygon | list[tuple[int, int]]):
     return x1, y1, x2, y2
 
 
+def get_cover_bbox(bboxes: list[Bbox]) -> Bbox:
+    """Compute the minimum bounding box that covers all input boxes.
+
+    Args:
+        boxes: List of bounding boxes (xmin, ymin, xmax, ymax)
+
+    Returns:
+        A tuple (xmin, ymin, xmax, ymax) of the minimal covering box.
+    """
+    if not bboxes:
+        raise ValueError("Input list of boxes is empty.")
+
+    xmin = min(box[0] for box in bboxes)
+    ymin = min(box[1] for box in bboxes)
+    xmax = max(box[2] for box in bboxes)
+    ymax = max(box[3] for box in bboxes)
+
+    return Bbox(xmin, ymin, xmax, ymax)
 
 
 def sort_polygons(polygons, y_threshold=10):

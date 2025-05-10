@@ -19,5 +19,4 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_pipeline_traditional__region_od__line_seg__ocr.py \
     --split-type mixed \
-    --sort-mode consider_margins \
     --batch-size 6

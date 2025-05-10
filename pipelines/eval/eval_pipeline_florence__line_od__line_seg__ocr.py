@@ -80,7 +80,7 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
     image = Image.open(img_path).convert("RGB")
 
     # Run pipeline
-    page_output = pipeline.run(image, sort_mode="consider_margins")
+    page_output = pipeline.run(image)
     pipeline_outputs.append(page_output)
 
     # Evaluate
