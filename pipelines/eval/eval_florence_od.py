@@ -27,15 +27,15 @@ parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--debug", required=False, default="false")
-# args = parser.parse_args()
+args = parser.parse_args()
 
-args = parser.parse_args([
-    "--model-name", "florence_base__sbs__page__region_od",
-    "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/sbs",
-    "--task", "region__line_od",
-    "--checkpoint", "best",
-    "--debug", "true"
-])
+# args = parser.parse_args([
+#     "--model-name", "florence_base__sbs__page__region_od",
+#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/sbs",
+#     "--task", "region__line_od",
+#     "--checkpoint", "best",
+#     "--debug", "true"
+# ])
 
 # Setup paths
 MODEL_NAME          = args.model_name
