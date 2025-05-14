@@ -56,7 +56,7 @@ else:
     DEVICE = args.device
 
 pipeline = FlorencePipeline(
-    pipeline_type="region_od__line_od__ocr",
+    pipeline_type           = "region_od__line_od__ocr",
     region_od_model_path    = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__page__region_od/best",
     line_od_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__region__line_od/best",
     ocr_model_path          = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_bbox__ocr/best",
