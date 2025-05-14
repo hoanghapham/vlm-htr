@@ -31,7 +31,7 @@ args = parser.parse_args()
 
 # args = parser.parse_args([
 #     "--model-name", "florence_base__sbs__page__region_od",
-#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/sbs",
+#     "--data-dir", str(PROJECT_DIR / "data/page/sbs"),
 #     "--task", "region__line_od",
 #     "--checkpoint", "best",
 #     "--debug", "true"
