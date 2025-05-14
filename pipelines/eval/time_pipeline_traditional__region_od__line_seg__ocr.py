@@ -32,7 +32,6 @@ args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
-DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
 OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_traditional__{SPLIT_TYPE}__region_od__line_seg__ocr"
 
