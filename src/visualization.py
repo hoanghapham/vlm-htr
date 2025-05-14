@@ -43,7 +43,15 @@ def draw_bboxes_xyxy(
     plt.show()
 
 
-def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_region_bbox=True, show_line_mask=True, show_line_bbox=False, fig_size=15):
+def draw_page_line_segments(
+        image: Image, 
+        regions_with_lines: list[dict], 
+        show_region_bbox=True, 
+        show_line_mask=True, 
+        show_line_bbox=False, 
+        show_polygon_idx=False,
+        fig_size=15
+    ):
     
     image = image.convert("RGB")
     # Show image
@@ -89,6 +97,16 @@ def draw_page_line_segments(image: Image, regions_with_lines: list[dict], show_r
                 edgecolor=line_colors[idx], 
                 linewidth=2, label="Segmentation"
             )
+            if show_polygon_idx:
+                x = min(seg_x)
+                y = min(seg_y)
+                plt.text(
+                    x, y, 
+                    idx, 
+                    color = "black", 
+                    fontsize = 8, 
+                    bbox = dict(facecolor="lightcoral", alpha=1)
+                )
 
     if show_line_bbox:
         # Construct bbox for each line

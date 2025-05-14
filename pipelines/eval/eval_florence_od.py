@@ -27,14 +27,15 @@ parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--task", required=True, choices=["page__region_od", "page__line_od", "region__line_od"])
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--debug", required=False, default="false")
-args = parser.parse_args()
+# args = parser.parse_args()
 
-# args = parser.parse_args([
-#     "--model-name", "florence_base__mixed__page__region_od",
-#     "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/mixed",
-#     "--checkpoint", "best",
-#     "--debug", "true"
-# ])
+args = parser.parse_args([
+    "--model-name", "florence_base__sbs__page__region_od",
+    "--data-dir", "/Users/hoanghapham/Projects/vlm/data/page/sbs",
+    "--task", "region__line_od",
+    "--checkpoint", "best",
+    "--debug", "true"
+])
 
 # Setup paths
 MODEL_NAME          = args.model_name
@@ -104,8 +105,9 @@ coverages = []
 counter = 0
 
 iterator = list(range(0, len(test_dataset), BATCH_SIZE))
-
 logger.info(f"Total test samples: {len(test_dataset)}, batches: {len(iterator)}")
+
+#%%
 
 for start_idx in tqdm(iterator, desc="Evaluate"):
 
@@ -140,7 +142,7 @@ for start_idx in tqdm(iterator, desc="Evaluate"):
 
         full_results.append(
             dict(
-                img_name        = Path(in_data["image_path"]).name,
+                img_name        = in_data["unique_key"],
                 gt_bboxes       = gt_bboxes,
                 pred_bboxes     = pred_bboxes,
                 coverage_str    = str(coverage),
