@@ -66,10 +66,6 @@ for img_idx, (img_path, xml_path) in enumerate(zip(img_paths, xml_paths)):
 
     # Skip if the file is already processed
     img_metric_path = OUTPUT_DIR / (Path(img_path).stem + "__metrics.json")
-    if img_metric_path.exists() and not DEBUG:
-        logger.info(f"Skip: {img_path.name}")
-        continue
-
     logger.info(f"Image {img_idx}/{len(img_paths)}: {img_path.name}")
     image = Image.open(img_path).convert("RGB")
 
