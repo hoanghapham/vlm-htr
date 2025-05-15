@@ -11,7 +11,6 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
-from src.data_processing.florence import predict
 from src.evaluation.utils import evaluate_one_page, evaluate_multiple_pages
 from src.htr.pipelines.florence import FlorencePipeline
 
@@ -21,6 +20,7 @@ from src.logger import CustomLogger
 # Setup
 parser = ArgumentParser()
 parser.add_argument("--split-type", required=True, default="mixed", choices=["mixed", "sbs"])
+parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--batch-size", default=6)
 parser.add_argument("--device", default="cuda", choices="cpu")
 parser.add_argument("--debug", required=False, default="false")
@@ -35,10 +35,11 @@ args = parser.parse_args()
 
 
 SPLIT_TYPE      = args.split_type
+CHECKPOINT      = args.checkpoint
 BATCH_SIZE      = int(args.batch_size)
 DEBUG           = args.debug == "true"
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
-OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__single_model"
+OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__single_model" / CHECKPOINT
 
 img_paths = list_files(TEST_DATA_DIR, IMAGE_EXTENSIONS)
 xml_paths = list_files(TEST_DATA_DIR, [".xml"])
@@ -61,8 +62,8 @@ else:
 # Load two instances of the same model
 pipeline = FlorencePipeline(
     pipeline_type       = "line_od__ocr",
-    line_od_model_path  = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/best",
-    ocr_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr/best",
+    line_od_model_path  = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr" / CHECKPOINT,
+    ocr_model_path      = PROJECT_DIR / f"models/trained/florence_base__{SPLIT_TYPE}__line_od__ocr" / CHECKPOINT,
     batch_size          = BATCH_SIZE,
     device              = DEVICE,
     logger              = logger
