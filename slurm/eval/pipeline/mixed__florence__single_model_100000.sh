@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 24:00:00
-#SBATCH -J eval/pipeline/mixed__florence__single_model
-#SBATCH -o logs_uppmax/eval/pipeline/mixed__florence__single_model.out
-#SBATCH -e logs_uppmax/eval/pipeline/mixed__florence__single_model.out
+#SBATCH -J eval/pipeline/mixed__florence__single_model_100000
+#SBATCH -o logs_uppmax/eval/pipeline/mixed__florence__single_model_100000.out
+#SBATCH -e logs_uppmax/eval/pipeline/mixed__florence__single_model_100000.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se

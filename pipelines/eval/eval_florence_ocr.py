@@ -21,6 +21,7 @@ from src.file_tools import write_json_file, write_list_to_text_file
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
+parser.add_argument("--output-dir", required=False)
 parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--batch-size", default=2)
@@ -45,7 +46,7 @@ MAX_ITERS           = 2
 BATCH_SIZE          = int(args.batch_size)
 
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
-OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
+OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME if args.output_dir is None else Path(args.output_dir)
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"
 REVISION            = 'refs/pr/6'
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
