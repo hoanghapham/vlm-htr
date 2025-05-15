@@ -11,6 +11,7 @@ sys.path.append(str(PROJECT_DIR))
 
 from src.file_tools import list_files
 from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
+from src.data_processing.florence import predict
 from src.evaluation.utils import evaluate_one_page, evaluate_multiple_pages
 from src.htr.pipelines.florence import FlorencePipeline
 
@@ -26,7 +27,7 @@ parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--split-type", "sbs",
+#     "--split-type", "mixed",
 #     "--batch-size", "2",
 #     "--device", "cpu",
 #     "--debug", "true"
