@@ -20,7 +20,7 @@ cd $PROJECT_DIR
 
 python pipelines/eval/eval_florence_ocr.py \
     --model-name florence_base__sbs__line_od__ocr \
-    --data-dir $PROJECT_DIR/data/page/sbs/test/ \
+    --data-dir $PROJECT_DIR/data/line_bbox/sbs/test/ \
     --output-dir $PROJECT_DIR/evaluations/florence_base__sbs__line_od__ocr__ocr/checkpoint_step_0000100000/ \
     --checkpoint checkpoint_step_0000100000 \
     --batch-size 4
