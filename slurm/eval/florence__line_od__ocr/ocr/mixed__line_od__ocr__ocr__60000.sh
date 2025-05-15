@@ -5,9 +5,9 @@
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
-#SBATCH -J eval/florence_base/mixed__line_od__ocr__ocr
-#SBATCH -o logs_uppmax/eval/florence_base/mixed__line_od__ocr__ocr.out
-#SBATCH -e logs_uppmax/eval/florence_base/mixed__line_od__ocr__ocr.out
+#SBATCH -J eval/florence_base/mixed__line_od__ocr__ocr_60000
+#SBATCH -o logs_uppmax/eval/florence_base/mixed__line_od__ocr__ocr_60000.out
+#SBATCH -e logs_uppmax/eval/florence_base/mixed__line_od__ocr__ocr_60000.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
