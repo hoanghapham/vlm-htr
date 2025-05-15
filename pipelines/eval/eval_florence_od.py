@@ -30,9 +30,9 @@ parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--model-name", "florence_base__sbs__page__region_od",
-#     "--data-dir", str(PROJECT_DIR / "data/page/sbs"),
-#     "--task", "region__line_od",
+#     "--model-name", "florence_base__mixed__line_od__ocr",
+#     "--data-dir", str(PROJECT_DIR / "data/page/mixed"),
+#     "--task", "page__line_od",
 #     "--checkpoint", "best",
 #     "--debug", "true"
 # ])
@@ -73,11 +73,6 @@ cp_train_metrics = {}
 if CHECKPOINT == "vanilla":
     logger.info(f"Evaluate vanilla model: {REMOTE_MODEL_PATH}")
 else:
-    if CHECKPOINT in ["last", "best"]:
-        cp_path = LOCAL_MODEL_PATH / CHECKPOINT
-    elif CHECKPOINT == "specific":
-        cp_path = CHECKPOINT_PATH
-
     model, _, _, cp_train_metrics = load_checkpoint(model=model, cp_path=LOCAL_MODEL_PATH / CHECKPOINT, device=DEVICE)
     logger.info(f"Evaluate checkpoint: {cp_train_metrics}")
 
