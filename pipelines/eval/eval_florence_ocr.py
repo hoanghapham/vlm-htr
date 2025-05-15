@@ -21,7 +21,7 @@ from src.file_tools import write_json_file, write_list_to_text_file
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
-parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla", "specific"])
+parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--checkpoint-path", required=False)
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--user-prompt", required=False)

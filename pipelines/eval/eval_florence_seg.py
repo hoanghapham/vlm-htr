@@ -22,7 +22,7 @@ from src.evaluation.visual_metrics import polygon_to_binary_mask, compute_seg_me
 parser = ArgumentParser()
 parser.add_argument("--model-name", required=True)
 parser.add_argument("--data-dir", required=True)
-parser.add_argument("--checkpoint", default="best", choices=["last", "best", "vanilla"])
+parser.add_argument("--checkpoint", default="best")
 parser.add_argument("--batch-size", default=2)
 parser.add_argument("--debug", required=False, default="false")
 args = parser.parse_args()
