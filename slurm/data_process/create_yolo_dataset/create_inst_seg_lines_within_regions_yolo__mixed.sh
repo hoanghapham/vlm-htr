@@ -18,5 +18,5 @@ PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
 
 cd $PROJECT_DIR
 
-python pipelines/data_process/create_yolo_dataset__inst_seg_lines_within_regions.py \
+python pipelines/data_process/create_yolo_data/create_inst_seg_lines_within_regions.py \
     --split-type mixed
