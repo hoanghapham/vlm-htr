@@ -19,7 +19,7 @@ train_dataset   = FlorenceOCRDataset(DATA_DIR / "train")
 val_dataset     = FlorenceOCRDataset(DATA_DIR / "val")
 test_dataset    = FlorenceOCRDataset(DATA_DIR / "test")
 
-logger = CustomLogger(f"count_line_images__{DATA_DIR}", log_to_local=True)
+logger = CustomLogger(f"count_line_images", log_to_local=True)
 logger.info(f"Number of train images: {len(train_dataset)}")
 logger.info(f"Number of val images: {len(val_dataset)}")
 logger.info(f"Number of test images: {len(test_dataset)}")
