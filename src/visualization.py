@@ -50,7 +50,8 @@ def draw_page_line_segments(
         show_line_mask=True, 
         show_line_bbox=False, 
         show_polygon_idx=False,
-        fig_size=15
+        fig_size=15,
+        number_size=8
     ):
     
     image = image.convert("RGB")
@@ -81,7 +82,7 @@ def draw_page_line_segments(
                 x, y, 
                 idx, 
                 color = "black", 
-                fontsize = 8, 
+                fontsize = number_size, 
                 bbox = dict(facecolor="lightcoral", alpha=1)
             )
 
@@ -104,7 +105,7 @@ def draw_page_line_segments(
                     x, y, 
                     idx, 
                     color = "black", 
-                    fontsize = 8, 
+                    fontsize = number_size, 
                     bbox = dict(facecolor="lightcoral", alpha=1)
                 )
 
