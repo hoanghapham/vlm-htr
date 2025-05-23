@@ -7,6 +7,7 @@ from typing import Sequence
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
+from PIL.Image import Image as PILImage
 
 from src.data_processing.utils import load_arrow_datasets
 from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_polygon
@@ -499,7 +500,7 @@ def create_collate_fn(processor, device):
 def predict(
     model, 
     processor, 
-    images: Sequence[Image], 
+    images: Sequence[PILImage], 
     task_prompt: FlorenceTask = None, 
     user_prompt: str = None, 
     device: str = "cpu", 
