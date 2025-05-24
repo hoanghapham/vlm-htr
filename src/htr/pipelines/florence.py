@@ -311,11 +311,11 @@ class FlorencePipeline():
         page_line_od_output, page_line_imgs = self.line_od.run(image)
 
         ## OCR
-        self.logger.info("Batch text recognition")
+        self.logger.info("Text recognition")
         iterator = list(range(0, len(page_line_od_output.polygons), self.batch_size))
         page_line_texts = []
 
-        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+        for i in tqdm(iterator, total=len(iterator), unit="batch", desc="Text recognition"):
             batch_indices = slice(i, i+self.batch_size)
             texts = self.ocr.run(page_line_imgs[batch_indices])
             page_line_texts += texts

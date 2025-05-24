@@ -1,6 +1,15 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
+from typing import Dict, Any
+from pathlib import Path
 from shapely.geometry import Polygon
 from htrflow.utils.geometry import Bbox
-from typing import Self
+
+from src.file_tools import read_json_file, write_json_file
+from src.data_processing.utils import XMLParser
+
 
 
 class Line():
@@ -11,6 +20,10 @@ class Line():
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+    @classmethod
+    def from_dict(cls, data: Dict):
+        return Line(bbox=Bbox(*data["bbox"]), polygon=Polygon(data["polygon"]), text=data["text"])
 
     @property
     def dict(self):
@@ -26,13 +39,15 @@ class Region():
         self.bbox = bbox
         self.polygon = polygon
         self.lines = lines
-        if lines is not None:
-            self.text = " ".join([line.text for line in lines])
-        else:
-            self.text = ""
+        self.text = " ".join([line.text for line in lines]) if lines is not None else ""
     
     def __getitem__(self, key):
         return getattr(self, key)
+    
+    @classmethod
+    def from_dict(cls, data: Dict):
+        lines = [Line.from_dict(line) for line in data["lines"]]
+        return Region(bbox=Bbox(*data["bbox"]), polygon=Polygon(data["polygon"]), lines=lines)
 
     @property
     def dict(self):
@@ -45,20 +60,33 @@ class Region():
 
 
 class Page():
-    def __init__(self, regions: list[Region] = None, lines: list[Line] = None):
+    def __init__(self, regions: list[Region] = None, lines: list[Line] = None, path: str = None):
         self.regions = regions
         self.lines = lines
-        self.text = " ".join([line.text for line in lines])
+        self.text = " ".join([line.text for line in lines]) if lines is not None else ""
+        self.path = path
 
     def __getitem__(self, key):
         return getattr(self, key)
     
+    @classmethod
+    def from_json(cls, json_path):
+        data = read_json_file(json_path)
+        regions = [Region.from_dict(region) for region in data["regions"]]
+        lines = [Line.from_dict(line) for line in data["lines"]]
+        path = data["path"]
+        return Page(regions=regions, lines=lines, path=path)
+
+    def to_json(self, json_path):
+        write_json_file(self.dict, json_path)
+
     @property
     def dict(self):
         return dict(
             regions=[region.dict for region in self.regions],
             lines=[line.dict for line in self.lines],
-            text=self.text
+            text=self.text,
+            path=self.path,
         )
 
 
@@ -80,7 +108,7 @@ class ODOutput():
     def _get_one(self, idx):
         return dict(bbox=self.bboxes[idx], polygon=self.polygons[idx])
     
-    def __add__(self, other: Self):
+    def __add__(self, other):
         return ODOutput(bboxes=self.bboxes + other.bboxes, polygons=self.polygons + other.polygons)
         
     def __getitem__(self, idx: int | slice):
@@ -135,3 +163,23 @@ class Ratio:
 
     def __str__(self):
         return f"{self.a}/{self.b}"
+
+
+def xml_to_page(xml_file: Any) -> Page:
+    parser = XMLParser()
+    root = parser._parse_xml(xml_file)
+    xml_regions = parser.get_regions(root)
+    xml_lines = parser.get_lines(root)
+
+    page_lines = [Line(bbox=data["bbox"], polygon=data["polygon"], text=data["transcription"]) for data in xml_lines]
+
+    regions = []
+    for xml_region in xml_regions:
+        region_line = xml_region["lines"]
+        lines = [Line(bbox=data["bbox"], polygon=data["polygon"], text=data["transcription"]) for data in region_line]
+        regions.append(Region(bbox=xml_region["bbox"], polygon=xml_region["polygon"], lines=lines))
+    
+    img_path = Path(__file__).parent / "assets" / "examples" / (Path(xml_file.name).stem + ".jpg")
+    page_path = str(img_path.relative_to(Path(__file__).parent.parent))
+    page = Page(regions=regions, lines=page_lines, path=page_path)
+    return page

@@ -4,6 +4,7 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_DIR))
 
+from copy import deepcopy
 import numpy as np
 from typing import Sequence
 from PIL.Image import Image as PILImage
@@ -138,7 +139,11 @@ def sort_page(page: Page, image: PILImage):
     for lines in page_region_lines:
         page_lines += lines
 
-    return Page(regions=page_regions, lines=page_lines)
+    new_page = deepcopy(page)
+    new_page.regions = page_regions
+    new_page.lines = page_lines
+
+    return new_page
 
 
 # Shift line bbox and polygon detected in cropped image to match larger image
