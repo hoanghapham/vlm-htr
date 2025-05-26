@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from typing import Sequence
 import torch

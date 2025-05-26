@@ -11,7 +11,6 @@ from src.file_tools import read_json_file, write_json_file
 from src.data_processing.utils import XMLParser
 
 
-
 class Line():
     def __init__(self, bbox: Bbox = None, polygon: Polygon = None, text: str = None):
         self.bbox = bbox
