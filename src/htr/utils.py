@@ -106,7 +106,19 @@ def sort_top_down_left_right(bboxes: Sequence[Bbox], split_x: float | None = Non
     return left_sorted + right_sorted
 
 
-def sort_page(page: Page, image: PILImage):
+def sort_page(page: Page, image: PILImage) -> Page:
+    """Sort the regions and lines in the Page object using heuristics.
+
+    Parameters
+    ----------
+    page : Page
+    image : PILImage
+
+    Returns
+    -------
+    Page
+        New Page object with sorted regions and lines
+    """
     region_bboxes = [region["bbox"] for region in page.regions]
     region_polygons = [region["polygon"] for region in page.regions]
 
