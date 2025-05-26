@@ -271,15 +271,29 @@ class TraditionalPipeline():
     
 
     def region_od__line_od__ocr(self, image: PILImage) -> Page:
+        """Steps:
+        1. Region OD on page image, then crop the regions using suggested bounding boxes
+        2. Line OD on region image, then also crop line image using the suggested bounding boxes
+        3. OCR on line image
+        """
         return self._region_od__line_det__ocr(image, line_det_step=self.line_od)
     
 
     def region_od__line_seg__ocr(self, image: PILImage) -> Page:
+        """Steps:
+        1. Region OD on page image, then crop the regions using suggested bounding boxes
+        2. Line seg on region image. Crop line image using the suggested bounding boxes, 
+            and apply segmentation mask on top
+        3. OCR on line image
+        """
         return self._region_od__line_det__ocr(image, line_det_step=self.line_seg)
 
 
     def line_od__ocr(self, image: PILImage) -> Page:
-
+        """Steps:
+        1. Line OD on page image, then crop line image using the suggested bounding boxes
+        2. OCR on line image
+        """
         ## Line detection
         self.logger.info("Line detection")
         page_line_od_output, page_line_imags = self.line_od.run(image)
