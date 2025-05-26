@@ -1,3 +1,4 @@
+# Train Florence-2 for the object detection tasks (including text region detection and line detection)
 #%%
 import sys
 from pathlib import Path

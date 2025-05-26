@@ -1,3 +1,4 @@
+# Train Florence-2 for the OCR task
 #%%
 import sys
 from pathlib import Path

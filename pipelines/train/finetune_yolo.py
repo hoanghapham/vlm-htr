@@ -1,3 +1,4 @@
+# Train YOLO for both object detection and segmentation tasks.
 import sys
 from pathlib import Path
 from argparse import ArgumentParser
