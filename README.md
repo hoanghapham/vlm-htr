@@ -1,7 +1,6 @@
 # Swedish Historical Handwritten Text Recognition with VLM
 
-The aim of this project is to compare a pipeline consists of Visual Language Models (VLMs) fine-tuned for HTR tasks against a "traditional" HTR pipeline with dedicated models.
-(Document in construction)
+The aim of this project is to compare a pipeline consists of Visual Language Models (VLMs) fine-tuned for HTR tasks against a classical HTR pipeline using computer vision models dedicated models.
 
 ## Comparison method
 
@@ -11,21 +10,24 @@ The possible tasks involved in the HTR problem are:
 - Line segmentation
 - Text recognition
 
-We compare two pipelines with slightly different tasks, but the final outputs are still text transcription of images:
+I compare two scripts with slightly different tasks, but the final outputs are still text transcription of images:
 - Traditional pipeline: Text region detection -> Line segmentation within region -> Text recognition
-- VLM pipeline: (Optional: Text region detection) -> Text line detection -> Text recognition
+- VLM pipeline: Text line detection -> Text recognition
+
+Other variant scripts are also compared. The full specifications can be found in the thesis paper (TODO: update link).
+
 
 ## Models used
 - Traditional pipeline:
     - Text region detection: [yolo11m](https://docs.ultralytics.com/models/yolo11)
     - Line segmentation: [yolo11m-seg](https://docs.ultralytics.com/models/yolo11)
     - Text recognition: [TrOCR](https://huggingface.co/microsoft/trocr-base-handwritten)
-- VLM Pipeline: All steps are performed with [Florence-2](https://huggingface.co/microsoft/Florence-2-base-ft) fine-tuned for different tasks
+- VLM Pipeline: [Florence-2](https://huggingface.co/microsoft/Florence-2-base-ft) fine-tuned for text line detection, and OCR.
 
 
 ## Datasets:
 
-All datasets come from Riksarkivet's HuggingFace page:
+All datasets come from [Riksarkivet's HuggingFace page](https://huggingface.co/Riksarkivet):
 
 
 | **Index** | **Dataset name**                                           | **Background** | **Images** |
@@ -68,32 +70,29 @@ In this scheme, we take some datasets as test, then mix the rest to create train
 
 ## Folder structure:
 
-Some of the most important folders:
+Some of the most important folders and files:
 
+- `configs/split_info`: contains the names of the images divided into train-val-test splits in the two mentioned schemes.
 - `src`: contains class and function definitions
     - `data_processing`: classes and functions to give models the correct data format
     - `evaluation`: classes and functions to calculate custom metrics
     - `train.py`: functions to run the train loop
     - `visualization.py`: functions to visualize results
-- `pipelines`: contains Python scripts that perform tasks:
-    - `data_process`: scripts to create datasets in the format required for each model
+- `scripts`: contains Python scripts that perform tasks:
+    - `create_data`: scripts to create datasets in the format required for models
     - `train`: scripts to train models
-        - `finetune_florence_ocr.py`: script to train Florence-2 for the OCR task
-        - `finetune_florence_od.py`: script to train Florence-2 for the object detection tasks (including text region detection and line detection)
-        - `finetune_florence_single_line_seg.py`: script to train Florence-2 to perform segmentation on a single-line image.
-        - `finetune_trocr_ocr.py`: script to train TrOCR
-        - `finetune_yolo.py`: script to train YOLO for both object detection and segmentation tasks.
     - `eval`: scripts to evaluate models
 - `slurm`: Slurm scripts to train models using Uppsala University's UPPMAX clusters.
 
+
 ## Training 
 
-The models are mostly trained using Uppsala University's UPPMAX clusters. The scripts in the `slurm` folder will invoke the Python scripts in `pipelines/train/` with appropriate arguments to train the models for each tasks.
+The models are mostly trained using Uppsala University's UPPMAX clusters. The scripts in the `slurm` folder will invoke the Python scripts in `scripts/train/` with appropriate arguments to train the models for each tasks.
 
 For example:
 
 ```bash
-python pipelines/train/finetune_florence_od.py \
+python scripts/train/finetune_florence_od.py \
     --data-dir $PROJECT_DIR/data/page/mixed \
     --model-name florence_base__mixed__page__line_od \
     --num-train-epochs 10 \
@@ -112,7 +111,7 @@ This invocation will do the following:
 Another example:
 
 ```bash
-python pipelines/train/finetune_florence_ocr.py \
+python scripts/train/finetune_florence_ocr.py \
     --data-dir $PROJECT_DIR/data/line_bbox/mixed/ \
     --model-name florence_base__mixed__line_bbox__ocr \
     --num-train-epochs 2 \
@@ -130,6 +129,4 @@ This invocation will do the following:
 
 # Notes
 
-Not all annotations are correct. For example, 
-
-Frihetstidens_utskott_-_Riksens_ständers_stora_deputations_handlingar__volym_1__1765-1766__R0002405_00094.xml has no text annotation, has region bbox annotation, but only have line bbox of one region
+Annotations in the [datasets](#datasets) are actually created with Transkribus, so not all of them are legit.For example, Frihetstidens_utskott_-_Riksens_ständers_stora_deputations_handlingar__volym_1__1765-1766__R0002405_00094.xml: no text annotation, has region bbox annotation, but only has line bbox of one region.
