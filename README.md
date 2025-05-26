@@ -2,6 +2,15 @@
 
 The aim of this project is to compare a pipeline consists of Visual Language Models (VLMs) fine-tuned for HTR tasks against a classical HTR pipeline using computer vision models dedicated models.
 
+## Demo
+- [Hugging Face Space](https://huggingface.co/spaces/nazounoryuu/vlm-htr) (Currently no access to GPU, and can be turned off)
+- [Local app](https://github.com/hoanghapham/vlm-htr-app): Built with Gradio, and powered the Hugging Face Space.
+
+## Requirements
+
+- Python version: 3.11.5
+- All requirements can be found in the `requirements.txt` file.
+
 ## Comparison method
 
 The possible tasks involved in the HTR problem are:
