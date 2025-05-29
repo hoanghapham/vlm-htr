@@ -1,6 +1,6 @@
 # Swedish Historical Handwritten Text Recognition with VLM
 
-The aim of this project is to compare a pipeline consists of Visual Language Models (VLMs) fine-tuned for HTR tasks against a classical HTR pipeline using computer vision models dedicated models.
+This project aims to compare a pipeline of Visual Language Models (VLMs) fine-tuned for HTR tasks against a classical pipeline using dedicated computer vision models. The project was done in collaboration with the Swedish National Archives - [Riksarkivet](https://huggingface.co/Riksarkivet).
 
 ## Demo
 - [Hugging Face Space](https://huggingface.co/spaces/nazounoryuu/vlm-htr) (Currently no access to GPU, and can be turned off)
@@ -19,11 +19,11 @@ The possible tasks involved in the HTR problem are:
 - Line segmentation
 - Text recognition
 
-I compare two scripts with slightly different tasks, but the final outputs are still text transcription of images:
+I compare two pipelines with slightly different tasks, but the final outputs are still text transcription of images:
 - Traditional pipeline: Text region detection -> Line segmentation within region -> Text recognition
 - VLM pipeline: Text line detection -> Text recognition
 
-Other variant scripts are also compared. The full specifications can be found in the thesis paper (TODO: update link).
+Other variant pipelines are also compared. The full specifications can be found in the [thesis report](./report/thesis-report.pdf).
 
 
 ## Models used
@@ -33,6 +33,17 @@ Other variant scripts are also compared. The full specifications can be found in
     - Text recognition: [TrOCR](https://huggingface.co/microsoft/trocr-base-handwritten)
 - VLM Pipeline: [Florence-2](https://huggingface.co/microsoft/Florence-2-base-ft) fine-tuned for text line detection, and OCR.
 
+## Result
+
+The full results and discussions can be found in the [thesis report](./report/thesis-report.pdf), Chapter 4.
+
+In terms of raw evaluation metrics (CER, WER, Bag-of-Word Hits, Bag-of-Word Extras), a Florence-based pipeline matches or even surpasses the classical pipeline. 
+
+![](./report/compare_florence_traditional.png)
+
+However, Florence requires several times more computational power to train, and even a two-step pipeline is still slower than the traditional three-step pipeline:
+
+![](./report/inf_time_hist.png)
 
 ## Datasets:
 
@@ -56,7 +67,7 @@ All datasets come from [Riksarkivet's HuggingFace page](https://huggingface.co/R
 ## Train - Validation - test split
 
 ### "Mix then split" (**mixed** scheme)
-In this scheme, we mix all datasets and then split.
+In this scheme, I mix all datasets and then split.
 
 | **Split**    | **Images** | **Percentage** |
 |--------------|------------|----------------|
@@ -64,10 +75,12 @@ In this scheme, we mix all datasets and then split.
 | Validation   | 868        | 9%             |
 | Test         | 965        | 10%            |
 
----
+
 
 ### "Split by source" (**sbs** scheme)
-In this scheme, we take some datasets as test, then mix the rest to create train - validation splits
+In this scheme, I take some datasets as tests, then mix the rest to create train-validation splits. This is to mimic a real-life scenario where we train models with as much data as possible, and then run inference on new data that may be very different from training data.
+
+In general, performance metrics of the HTR pipelines will be lower when testing on the `sbs` scheme compared to the `mixed` scheme.
 
 | **Split**    | **Images** | **Percentage** | **Datasets**     |
 |--------------|------------|----------------|------------------|
@@ -96,7 +109,7 @@ Some of the most important folders and files:
 
 ## Training 
 
-The models are mostly trained using Uppsala University's UPPMAX clusters. The scripts in the `slurm` folder will invoke the Python scripts in `scripts/train/` with appropriate arguments to train the models for each tasks.
+The models are mostly trained using Uppsala University's UPPMAX clusters. The scripts in the `slurm` folder will invoke the Python scripts in `scripts/train/` with appropriate arguments to train the models for each task.
 
 For example:
 
@@ -134,8 +147,3 @@ This invocation will do the following:
 - Input data will be rectangular crops of line images (using bounding boxes of lines)
 - Use `mixed` scheme
 - Maximum train steps: 220,000
-
-
-# Notes
-
-Annotations in the [datasets](#datasets) are actually created with Transkribus, so not all of them are legit.For example, Frihetstidens_utskott_-_Riksens_ständers_stora_deputations_handlingar__volym_1__1765-1766__R0002405_00094.xml: no text annotation, has region bbox annotation, but only has line bbox of one region.
