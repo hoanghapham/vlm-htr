@@ -1,3 +1,4 @@
+# Script to run the HTRFlow pipeline
 #%%
 import sys
 import yaml

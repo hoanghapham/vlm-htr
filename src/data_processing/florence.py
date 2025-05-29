@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from typing import Sequence
 import torch
@@ -31,6 +30,7 @@ class FlorenceTask():
 
 
 def extract_florence_seg_polygon(task, parsed_result):
+    """Extract polygon from florence's parsed output"""
     segm = parsed_result[task]["polygons"][0][0]
     seg_x = segm[0::2]
     seg_y = segm[1::2]
@@ -39,12 +39,14 @@ def extract_florence_seg_polygon(task, parsed_result):
 
 
 def bbox_xyxy_to_florence(bbox, box_quantizer, image):
+    """Convert one bbox in xyxy format to florence text format"""
     quantized_bbox = box_quantizer.quantize(torch.Tensor(bbox), size=image.size)
     text = "".join([f"<loc_{val}>" for val in quantized_bbox])
     return text
 
 
 def bboxes_xyxy_to_florence(bbox, box_quantizer, image):
+    """Convert multiple bboxes in xyxy format to florence text format"""
     quantized_bboxes = box_quantizer.quantize(torch.Tensor([bbox]), size=image.size)
     bbox_texts = []
     for bbox in quantized_bboxes:
@@ -72,9 +74,7 @@ def polygons_to_florence(polygons: list[list[tuple]], coords_quantizer, image):
 
 
 class FlorenceOCRDataset(Dataset):
-    """
-    Load locally cached .arrow dataset containing cropped lines/regions
-    """
+    """Load locally cached .arrow dataset containing cropped lines/regions"""
 
     def __init__(self, dir_path: str | Path, custom_question: str = None):
         self.data = load_arrow_datasets(dir_path)
@@ -120,7 +120,7 @@ class FlorenceSingleLineSegDataset(BaseImgXMLDataset):
         self.xml_paths = []
         self.img_paths, self.xml_paths = self.validate_and_load(self._all_img_paths, self._all_xml_paths)
 
-    def validate_and_load(self, img_paths, xml_paths):
+    def validate_and_load(self, img_paths, xml_paths) -> tuple[list[Path], list[Path]]:
         valid_img_paths = []
         valid_xml_paths = []
 
@@ -271,6 +271,9 @@ class FlorenceRegionLineODDataset(BaseImgXMLDataset):
     
 
 class FlorencePageTextODDataset(BaseImgXMLDataset):
+    """Dataset that returns a page image, and a Florence-formatted question and answer
+    containing bounding boxes of lines or regions
+    """
 
     def __init__(
         self, 
@@ -353,6 +356,7 @@ class FlorencePageTextODDataset(BaseImgXMLDataset):
 
 # From https://huggingface.co/microsoft/Florence-2-large-ft/blob/main/processing_florence2.py
 class BoxQuantizer(object):
+    """Quantize bounding boxes to coordinates relative to 1000 bins"""
     def __init__(self, mode, bins):
         self.mode = mode
         self.bins = bins
@@ -415,9 +419,7 @@ class BoxQuantizer(object):
 
 
 class CoordinatesQuantizer(object):
-    """
-    Quantize coornidates (Nx2)
-    """
+    """Quantize coornidates (Nx2)"""
 
     def __init__(self, mode, bins):
         self.mode = mode
@@ -505,6 +507,7 @@ def predict(
     user_prompt: str = None, 
     device: str = "cpu", 
 ) -> tuple[list, list]:
+    """Generate prediction from a Florence model."""
     
     # if task involve regions, need to concat task name and user prompt
     if task_prompt is not None:

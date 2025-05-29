@@ -266,6 +266,11 @@ class FlorencePipeline():
         return self.supported_pipelines[self.pipeline_type](image)
 
     def line_od__line_seg__ocr(self, image: PILImage) -> Page:
+        """Steps:
+        1. Line OD on page image
+        2. Text area segmentation on line image, producing segmentation mask
+        3. OCR on line image with segmentation mask
+        """
 
         ## Line OD
         self.logger.info("Line detection")
@@ -305,17 +310,21 @@ class FlorencePipeline():
 
 
     def line_od__ocr(self, image: PILImage) -> Page:
+        """Steps:
+        1. Line OD on page image, then crop line image using the suggested bounding boxes
+        2. OCR on line image
+        """
 
         ## Line OD
         self.logger.info("Line detection")
         page_line_od_output, page_line_imgs = self.line_od.run(image)
 
         ## OCR
-        self.logger.info("Batch text recognition")
+        self.logger.info("Text recognition")
         iterator = list(range(0, len(page_line_od_output.polygons), self.batch_size))
         page_line_texts = []
 
-        for i in tqdm(iterator, total=len(iterator), unit="batch"):
+        for i in tqdm(iterator, total=len(iterator), unit="batch", desc="Text recognition"):
             batch_indices = slice(i, i+self.batch_size)
             texts = self.ocr.run(page_line_imgs[batch_indices])
             page_line_texts += texts
@@ -338,6 +347,11 @@ class FlorencePipeline():
         return page
 
     def region_od__line_od__ocr(self, image: PILImage) -> Page:
+        """Steps:
+        1. Region OD on page image, then crop the regions using suggested bounding boxes
+        2. Line OD on region image, then also crop line image using the suggested bounding boxes
+        3. OCR on line image
+        """
         ## Region detection
         self.logger.info("Region detection")
         page_region_od_output, page_region_imgs = self.region_od.run(image)

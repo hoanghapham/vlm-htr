@@ -1,3 +1,4 @@
+# Script to create the mixed split
 #%%
 import sys
 from pathlib import Path

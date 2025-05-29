@@ -40,6 +40,7 @@ IMAGE_EXTENSIONS = [
 
 
 def bbox_xyxy_to_polygon(bbox: list[tuple]) -> Polygon:
+    """Convert bbox in xyxy format to polygon in counter-clockwise order"""
     x1, y1, width, height = bbox_xyxy_to_xywh(bbox)
 
     # Order polygon points counter-clockwise
@@ -56,6 +57,7 @@ def bbox_xyxy_to_polygon(bbox: list[tuple]) -> Polygon:
 
 
 def bbox_xyxy_to_xywh(bbox):
+    """Convert bbox in xyxy format to xywh format"""
     x1, y1, x2, y2 = bbox
     w = x2 - x1
     h = y2 - y1
@@ -63,6 +65,7 @@ def bbox_xyxy_to_xywh(bbox):
 
 
 def bbox_xywh_to_xyxy(bbox):
+    """Convert bbox in xywh format to xyxy format"""
     x1, y1, width, height = bbox
     x2 = x1 + width
     y2 = y1 + height
@@ -70,7 +73,7 @@ def bbox_xywh_to_xyxy(bbox):
 
 
 def polygon_to_bbox_xyxy(polygon: Polygon | list[tuple[int, int]]):
-
+    """Generate bbox in xyxy format from provided polygon"""
     if isinstance(polygon, Polygon):
         boundary = polygon.boundary.coords
     else:
@@ -107,8 +110,7 @@ def get_cover_bbox(bboxes: list[Bbox]) -> Bbox:
 
 
 def sort_polygons(polygons, y_threshold=10):
-    """
-    Sort polygons top-to-bottom, left-to-right within horizontal bands.
+    """Sort polygons top-to-bottom, left-to-right within horizontal bands.
     
     Args:
         polygons: list of list of (x, y) tuples
@@ -152,7 +154,8 @@ def sort_polygons(polygons, y_threshold=10):
 
 def crop_image(img, polygon: Polygon | list[tuple[int, int]]):
     """Crops an image based on the provided polygon coordinates. 
-    Apply a white background for areas outside of the polygon"""
+    Apply a white background for areas outside of the polygon.
+    """
     image_array = np.array(img)
     # point_list = [(point[0], point[1]) for point in polygon]
 

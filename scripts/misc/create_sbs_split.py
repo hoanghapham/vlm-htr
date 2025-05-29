@@ -1,3 +1,4 @@
+# Script to create the "split by source" (sbs) splilt
 #%%
 import sys
 from pathlib import Path

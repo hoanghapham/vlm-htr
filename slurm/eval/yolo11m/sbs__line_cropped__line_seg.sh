@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#SBATCH -A uppmax2020-2-2
-#SBATCH -M snowy
+#SBATCH -A project-name
+#SBATCH -M cluster-name
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 12:00:00
@@ -10,15 +10,15 @@
 #SBATCH -e logs_uppmax/eval/yolo11m_seg/sbs__line_cropped__line_seg.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
+#SBATCH --mail-user=your-name@email.com
 
 
-source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
+source activate /crex/proj/project-name/user-name/envs/vlm
+PROJECT_DIR=/proj/uppmax2024-2-24/user-name/vlm
 cd $PROJECT_DIR
 
 python pipelines/eval/eval_yolo_seg.py \
-    --data-dir /proj/uppmax2020-2-2/hapham/vlm/data/yolo/mixed/line_cropped__line_seg/test \
+    --data-dir /proj/project-name/hapham/vlm/data/yolo/mixed/line_cropped__line_seg/test \
     --model-name yolo11m_seg__sbs__line_cropped__line_seg \
     --checkpoint best \
     --batch-size 6 \

@@ -7,6 +7,7 @@ from datasets import load_from_disk, concatenate_datasets
 
 
 class XMLParser():
+    """Class for parsing PAGE XML files."""
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.namespaces = {"ns": "http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15"}
@@ -163,7 +164,8 @@ def gen_split_indices(
     train_ratio: float = 0.7, 
     val_ratio: float = 0.15, 
     test_ratio: float = 0.15
-) -> tuple[list[int], list[int], list[int]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generate indices for train, val, and test sets."""
     np.random.seed(seed)
     all_indices = range(total_samples)
 

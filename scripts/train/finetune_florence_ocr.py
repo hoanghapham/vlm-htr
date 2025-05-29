@@ -1,3 +1,4 @@
+# Train Florence-2 for the OCR task
 #%%
 import sys
 from pathlib import Path
@@ -12,10 +13,9 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.data_processing.florence import FlorencePageTextODDataset, create_collate_fn
+from src.data_processing.florence import FlorenceOCRDataset, create_collate_fn
 from src.train import Trainer
 from src.logger import CustomLogger
-
 
 
 #%%
@@ -26,18 +26,17 @@ parser.add_argument("--num-train-epochs", default=5)
 parser.add_argument("--max-train-steps", default=2000)
 parser.add_argument("--logging-interval", default=100)
 parser.add_argument("--batch-size", default=2)
-parser.add_argument("--detect-class", default="region", choices=["region", "line"])
+parser.add_argument("--user-prompt", required=False)
 parser.add_argument("--debug", default=False)
 args = parser.parse_args()
 
 # args = parser.parse_args([
-#     "--data-dir", str(PROJECT_DIR / "data/page/sbs"),
+#     "--data-dir", str(PROJECT_DIR / "data/line_seg/mixed"),
 #     "--model-name", "demo",
 #     "--num-train-epochs", "1",
 #     "--max-train-steps", "1",
 #     "--batch-size", "2",
 #     "--logging-interval", "1",
-#     "--detect-class", "region",
 #     "--debug", "true"
 # ])
 
@@ -49,16 +48,17 @@ NUM_TRAIN_EPOCHS    = int(args.num_train_epochs)
 MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
-DETECT_CLASS        = args.detect_class
+USER_PROMPT         = args.user_prompt  # Can be used as the custom question
 DEBUG               = args.debug == "true"
+
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
     MODEL_OUT_DIR.mkdir(parents=True)
 
 # Setup loggers
-logger      = CustomLogger(MODEL_NAME, log_to_local=True)
-tsb_logger  = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
+logger = CustomLogger(MODEL_NAME, log_to_local=True)
+tsb_logger = SummaryWriter(log_dir = PROJECT_DIR / "logs_tensorboard" / MODEL_NAME)
 
 #%%
 # Load model
@@ -89,20 +89,18 @@ processor = AutoProcessor.from_pretrained(
 # Load data
 logger.info("Load data")
 
-train_dataset   = FlorencePageTextODDataset(DATA_DIR / "train", object_class=DETECT_CLASS)
-val_dataset     = FlorencePageTextODDataset(DATA_DIR / "val", object_class=DETECT_CLASS)
+# custom_question can be None
+train_dataset   = FlorenceOCRDataset(DATA_DIR / "train", custom_question=USER_PROMPT)
+val_dataset     = FlorenceOCRDataset(DATA_DIR / "val", custom_question=USER_PROMPT)
 
 # Create data loader
-
 collate_fn      = create_collate_fn(processor, DEVICE)
+train_loader    = DataLoader(train_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn, shuffle=True)
+val_loader      = DataLoader(val_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn)
 
-train_loader    = DataLoader(train_dataset, batch_size=BATCH_SIZE,
-                            collate_fn=collate_fn, num_workers=0, shuffle=True)
+logger.info(f"Total train samples: {len(train_dataset):,}, batch size: {BATCH_SIZE}, total batches: {len(train_loader):,}, max train steps: {MAX_TRAIN_STEPS:,}")
 
-val_loader      = DataLoader(val_dataset, batch_size=BATCH_SIZE,
-                            collate_fn=collate_fn, num_workers=0)
 
-logger.info(f"Total samples: {len(train_dataset):,}. Batch size: {BATCH_SIZE}. Total batches: {len(train_loader):,}. Max train steps: {MAX_TRAIN_STEPS:,}")
 #%%
 # Setup training
 TOTAL_TRAIN_STEPS = NUM_TRAIN_EPOCHS * len(train_loader)
@@ -118,9 +116,6 @@ lr_scheduler = get_scheduler(
 # Load state
 #%%
 # Train
-
-logger.info(f"Start training")
-
 
 trainer = Trainer(
     model                = model,

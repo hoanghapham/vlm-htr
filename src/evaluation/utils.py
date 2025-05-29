@@ -21,6 +21,7 @@ def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:
 
 
 def evaluate_one_page(page_obj: Page, gt_xml_path: Path, output_dir: Path = None):
+    """Evaluate transcription output of one image"""
     xml_parser = XMLParser()
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -50,6 +51,7 @@ def evaluate_multiple_pages(
     gt_xml_paths: list, 
     output_dir: Path = None,
 ):
+    """Evaluate transcription output of multiple images"""
     metrics_list = []
 
     if output_dir is not None:

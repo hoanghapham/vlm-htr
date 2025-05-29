@@ -121,6 +121,8 @@ def yolo_seg_to_polygon(yolo_annotation: str, image_width: int, image_height: in
 
     
 class YOLOPageRegionODDataset(BaseImgXMLDataset):
+    """Dataset for YOLO. Return an image of the page, with annotations of text regions
+    """
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
@@ -175,7 +177,8 @@ class YOLOPageRegionODDataset(BaseImgXMLDataset):
 
 
 class YOLORegionLineODDataset(BaseImgXMLDataset):
-
+    """Dataset for YOLO. Return an image of a cropped region of a page, and annotations of lines within that region
+    """
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
 
@@ -257,7 +260,8 @@ class YOLORegionLineODDataset(BaseImgXMLDataset):
 
 
 class YOLOPageLineODDataset(BaseImgXMLDataset):
-
+    """Dataset for YOLO. Return an image of a page, and annotations of lines within that page
+    """
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir=data_dir)
 
@@ -310,16 +314,8 @@ class YOLOPageLineODDataset(BaseImgXMLDataset):
         )
 
 
-class YOLORegionLineSegDataset():
-    """Line instance segmentation dataset for YOLO is created using this script:
-    pipelines/data_process/create_yolo_data/create_inst_seg_lines_within_regions.py
-    """
-    def __init__(self, data_dir: str | Path):
-        pass
-
-
 class YOLOSingleLineSegDataset(BaseImgXMLDataset):
-    """Dataset that returns one rectangular crop of a line, with polygon seg mask"""
+    """Dataset for YOLO that returns one rectangular crop of a line, with polygon seg mask"""
 
     def __init__(self, data_dir: str | Path):
         super().__init__(data_dir)

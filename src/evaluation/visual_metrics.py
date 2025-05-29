@@ -17,6 +17,7 @@ from src.evaluation.utils import Ratio
 
 
 def compute_bbox_iou(bbox1: Bbox, bbox: Bbox):
+    """Compute the Intersection over Union (IoU) of two bounding boxes."""
     x1, y1, x2, y2 = bbox1
     x1g, y1g, x2g, y2g = bbox
 
@@ -34,6 +35,11 @@ def compute_bbox_iou(bbox1: Bbox, bbox: Bbox):
 
 
 def compute_bbox_precision_recall_fscore(detections: list[list], annotations: list[list], iou_threshold=0.5):
+    """Compute precision, recall and f1 score for object detection task.
+    A correct bbox prediction is defined as a bbox with IoU >= iou_threshold for one of the annotated bboxes.
+    Precision = Number of correct bbox predictions / Total predicted bboxes
+    Recall = Number of correct bbox predictions / Total annotated bboxes
+    """
     assert len(detections) == len(annotations), "detections & annotations length mismatch"
     y_true = []
     y_pred = []

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#SBATCH -A uppmax2020-2-2
-#SBATCH -M snowy
+#SBATCH -A project-name
+#SBATCH -M cluster-name
 #SBATCH -p node
 #SBATCH -N 1
 #SBATCH -t 3-00:00
@@ -10,11 +10,11 @@
 #SBATCH -e logs_uppmax/finetune/trocr_base/sbs__line_bbox__ocr.out
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --mail-user=hoang-ha.pham.1833@student.uu.se
+#SBATCH --mail-user=your-name@email.com
 
 
-source activate /crex/proj/uppmax2024-2-24/hapham/envs/vlm
-PROJECT_DIR=/proj/uppmax2024-2-24/hapham/vlm
+source activate /crex/proj/project-name/user-name/envs/vlm
+PROJECT_DIR=/proj/uppmax2024-2-24/user-name/vlm
 
 cd $PROJECT_DIR
 
