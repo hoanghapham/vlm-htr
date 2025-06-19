@@ -2,6 +2,11 @@
 
 This project aims to compare a pipeline of Visual Language Models (VLMs) fine-tuned for HTR tasks against a classical pipeline using dedicated computer vision models. The project was done in collaboration with the Swedish National Archives - [Riksarkivet](https://huggingface.co/Riksarkivet).
 
+The full thesis report can be accessed here:
+- [DiVA publication link](https://uu.diva-portal.org/smash/record.jsf?pid=diva2%3A1969262&dswid=-2039)
+- [PDF file](./report/thesis-report.pdf)
+
+
 ## Demo
 - [Hugging Face Space](https://huggingface.co/spaces/nazounoryuu/vlm-htr) (Currently no access to GPU, and can be turned off)
 - [Local app](https://github.com/hoanghapham/vlm-htr-app): Built with Gradio, and powered the Hugging Face Space.
