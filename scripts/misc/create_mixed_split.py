@@ -1,20 +1,14 @@
 # Script to create the mixed split
 #%%
-import sys
 from pathlib import Path
-from tqdm import tqdm
-from shutil import copy
 from sklearn.model_selection import train_test_split
 import numpy as np
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import list_files, write_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
+from vlm.utils.file_tools import list_files, write_json_file
+from vlm.data_processing.visual_tasks import IMAGE_EXTENSIONS
 
 # Create curated sets
-
+PROJECT_DIR = Path(__file__).parent.parent.parent
 SOURCE_DATA_PATH = PROJECT_DIR / "data/raw/riksarkivet"
 
 all_images = list_files(SOURCE_DATA_PATH, extensions=IMAGE_EXTENSIONS)

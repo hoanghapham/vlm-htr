@@ -1,17 +1,13 @@
 # Script to create the "split by source" (sbs) splilt
 #%%
-import sys
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import list_files, write_json_file
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
+from vlm.utils.file_tools import list_files, write_json_file
+from vlm.data_processing.visual_tasks import IMAGE_EXTENSIONS
 
 # Create curated sets
-
+PROJECT_DIR = Path(__file__).parent.parent.parent
 riks_path = PROJECT_DIR / "data/raw/riksarkivet"
 
 train_val_dirs = [
