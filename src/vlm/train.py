@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from logging import Logger
 import shutil
+import numpy as np
 
 import torch
 from torch.optim import Optimizer
@@ -417,3 +418,29 @@ def find_last_checkpoint(model_path: str | Path):
 
     return cp_paths[-1]
 
+
+
+def gen_split_indices(
+    total_samples: int, 
+    seed: int = 42, 
+    train_ratio: float = 0.7, 
+    val_ratio: float = 0.15, 
+    test_ratio: float = 0.15
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generate indices for train, val, and test sets."""
+    np.random.seed(seed)
+    all_indices = range(total_samples)
+
+    train_indices = np.random.choice(all_indices, size=int(train_ratio * total_samples), replace=False)
+    val_indices = np.random.choice(
+        [idx for idx in all_indices if idx not in train_indices], 
+        size = int(val_ratio * total_samples), 
+        replace = False
+    )
+    test_indices = np.random.choice(
+        [idx for idx in all_indices if idx not in np.concatenate([train_indices, val_indices])], 
+        size = max(total_samples - len(train_indices) - len(val_indices), int(test_ratio * total_samples)),
+        replace = False
+    )
+
+    return train_indices, val_indices, test_indices
