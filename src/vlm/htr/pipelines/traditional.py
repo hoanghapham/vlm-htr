@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from abc import ABC, abstractmethod
 
@@ -9,19 +8,16 @@ from shapely.geometry import Polygon
 from PIL.Image import Image as PILImage
 from tqdm import tqdm
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image, get_cover_bbox
-from src.data_types import Page, Region, Line, ODOutput
-from src.htr.utils import (
+from vlm.data_processing.visual_tasks import polygon_to_bbox_xyxy, bbox_xyxy_to_polygon, crop_image, get_cover_bbox
+from vlm.data_types import Page, Region, Line, ODOutput
+from vlm.htr.utils import (
     sort_consider_margins,
     correct_line_bbox_coords,
     correct_line_polygon_coords,
     merge_overlapping_bboxes,
     sort_page
 )
-from src.logger import CustomLogger
+from vlm.utils.logger import CustomLogger
 
 
 REMOTE_TROCR_MODEL_PATH   = "microsoft/trocr-base-handwritten"

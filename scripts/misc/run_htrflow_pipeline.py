@@ -1,6 +1,5 @@
 # Script to run the HTRFlow pipeline
 #%%
-import sys
 import yaml
 import time
 from pathlib import Path
@@ -9,11 +8,8 @@ from argparse import ArgumentParser
 from htrflow.pipeline.pipeline import Pipeline
 from htrflow.volume.volume import Collection
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import list_files, read_json_file
-from src.logger import CustomLogger
+from vlm.utils.file_tools import list_files, read_json_file
+from vlm.utils.logger import CustomLogger
 
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)
@@ -25,7 +21,8 @@ args = parser.parse_args()
 logger = CustomLogger("HTRFlow", log_to_local=True)
 
 # Parse args
-DATA_DIR       = Path(args.data_dir)
+PROJECT_DIR     = Path(__file__).parent.parent.parent
+DATA_DIR        = Path(args.data_dir)
 CONFIG_PATH     = Path(args.config_path)
 
 

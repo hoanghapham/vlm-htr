@@ -1,14 +1,9 @@
 # %%
-import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from argparse import ArgumentParser
-
 import yaml
-from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.yolo import polygon_to_yolo_format
+from vlm.utils.file_tools import read_json_file, write_list_to_text_file, normalize_name
+from vlm.data_processing.yolo import polygon_to_yolo_format
 from datasets import load_from_disk
 from tqdm import tqdm
 
@@ -27,6 +22,7 @@ SPLIT_TYPE      = args.split_type
 DEBUG           = args.debug == "true"
 
 dataset_name    = "inst_seg_lines_within_regions"
+PROJECT_DIR = Path(__file__).parent.parent.parent
 SOURCE_DATA_DIR = PROJECT_DIR / "data/processed/riksarkivet" / dataset_name
 YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/{SPLIT_TYPE}/{dataset_name}"
 

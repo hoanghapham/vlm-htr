@@ -1,5 +1,4 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -8,14 +7,11 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoProcessor
 from htrflow.evaluate import CER, WER, BagOfWords
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.logger import CustomLogger
-from src.data_processing.florence import FlorenceTask, FlorenceOCRDataset, predict
-from src.evaluation.utils import Ratio
-from src.train import load_checkpoint
-from src.file_tools import write_json_file, write_list_to_text_file
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.florence import FlorenceTask, FlorenceOCRDataset, predict
+from vlm.evaluation.utils import Ratio
+from vlm.train import load_checkpoint
+from vlm.utils.file_tools import write_json_file, write_list_to_text_file
 #%%
 
 parser = ArgumentParser()
@@ -45,6 +41,7 @@ DEBUG               = args.debug == "true"
 MAX_ITERS           = 2
 BATCH_SIZE          = int(args.batch_size)
 
+PROJECT_DIR = Path(__file__).parent.parent.parent
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME if args.output_dir is None else Path(args.output_dir)
 REMOTE_MODEL_PATH   = "microsoft/Florence-2-base-ft"

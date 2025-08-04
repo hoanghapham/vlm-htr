@@ -1,13 +1,9 @@
 #%%
-import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from argparse import ArgumentParser
 
-from src.data_processing.florence import FlorenceOCRDataset
-from src.logger import CustomLogger
+from vlm.data_processing.florence import FlorenceOCRDataset
+from vlm.utils.logger import CustomLogger
 
 parser = ArgumentParser()
 parser.add_argument("--data-dir", required=True)

@@ -2,21 +2,16 @@
 from htrflow.evaluate import CER, WER, BagOfWords, LineCoverage, RegionCoverage, read_xmls
 from pagexml.parser import parse_pagexml_file
 from pathlib import Path
-import sys
 import pandas as pd
 import unicodedata
 from tqdm import tqdm
 
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import list_files, read_json_file
+from vlm.utils.file_tools import list_files
 
 
 task = "hovratt_text_recognition"
 
-
+PROJECT_DIR = Path(__file__).parent.parent.parent
 groundtruth_dir = PROJECT_DIR / "data/hovratt/page_xmls"
 candidate_dir   = PROJECT_DIR / f"output/htrflow/{task}/page"
 

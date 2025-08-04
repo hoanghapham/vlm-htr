@@ -1,16 +1,13 @@
 # %%
-import sys
 import os
 import shutil
-from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-from argparse import ArgumentParser
-
 import yaml
-from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
+from argparse import ArgumentParser
+from pathlib import Path
 from tqdm import tqdm
+
+from vlm.utils.file_tools import read_json_file, write_list_to_text_file, normalize_name
+from vlm.data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
 
 parser = ArgumentParser()
 parser.add_argument("--split-type", default="sbs")
@@ -34,6 +31,7 @@ assert SPLIT_TYPE in supported_split_types, f"{SPLIT_TYPE} must be in: {supporte
 supported_tasks = ["page__region_od", "page__line_od", "region__line_od"]
 assert TASK in supported_tasks, f"{TASK} must be in: {supported_tasks}"
 
+PROJECT_DIR = Path(__file__).parent.parent.parent
 SOURCE_DATA_DIR = PROJECT_DIR / "data/raw/riksarkivet"
 YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/" / SPLIT_TYPE / TASK
 

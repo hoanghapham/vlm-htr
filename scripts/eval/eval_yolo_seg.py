@@ -1,5 +1,4 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -10,13 +9,11 @@ from PIL import Image
 from tqdm import tqdm
 from ultralytics import YOLO
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import list_files, write_json_file, read_lines, write_list_to_text_file
-from src.data_processing.visual_tasks import yolo_seg_to_coords, sort_polygons, IMAGE_EXTENSIONS
-from src.evaluation.visual_metrics import match_and_evaluate
-from src.logger import CustomLogger
+from vlm.utils.file_tools import list_files, write_json_file, read_lines, write_list_to_text_file
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.visual_tasks import sort_polygons, IMAGE_EXTENSIONS
+from vlm.data_processing.yolo import yolo_seg_to_polygon
+from vlm.evaluation.visual_metrics import match_and_evaluate
 #%%
 
 parser = ArgumentParser()
@@ -40,6 +37,7 @@ DATA_DIR            = Path(args.data_dir)
 MODEL_NAME          = args.model_name
 BATCH_SIZE          = int(args.batch_size)
 CHECKPOINT          = args.checkpoint
+PROJECT_DIR         = Path(__file__).parent.parent.parent
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if CHECKPOINT == "vanilla":
@@ -71,7 +69,7 @@ logger.info("Get annotations")
 for idx, (img_path, label_path) in enumerate(zip(img_paths, label_paths)):
     image = Image.open(img_path)
     label_lines = read_lines(label_path)
-    gt_polygons = [np.array(yolo_seg_to_coords(line, image.width, image.height)[1]) for line in label_lines]
+    gt_polygons = [np.array(yolo_seg_to_polygon(line, image.width, image.height)[1]) for line in label_lines]
     
     try:
         gt_polygons = sort_polygons(gt_polygons)

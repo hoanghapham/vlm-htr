@@ -1,13 +1,9 @@
 # Train YOLO for both object detection and segmentation tasks.
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
 from ultralytics import YOLO
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
 
 # Parser
 parser = ArgumentParser()
@@ -27,6 +23,7 @@ BASE_MODEL_PATH     = args.base_model_path
 MODEL_NAME          = args.model_name
 DATASET_CONFIG      = DATA_DIR / "config.yaml"
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+PROJECT_DIR         = Path(__file__).parent.parent.parent
 TRAINED_MODEL_DIR   = PROJECT_DIR / "models" / MODEL_NAME
 
 # Train configs

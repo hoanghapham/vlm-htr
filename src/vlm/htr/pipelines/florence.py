@@ -1,10 +1,6 @@
 #%%
 import os
-import sys
 from pathlib import Path
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
 
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoProcessor
@@ -12,11 +8,11 @@ from PIL.Image import Image as PILImage
 from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
 
-from src.logger import CustomLogger
-from src.data_processing.florence import predict, FlorenceTask
-from src.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy, crop_image, get_cover_bbox
-from src.data_types import Page, Region, Line, ODOutput
-from src.htr.utils import (
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.florence import predict, FlorenceTask
+from vlm.data_processing.visual_tasks import bbox_xyxy_to_polygon, polygon_to_bbox_xyxy, crop_image, get_cover_bbox
+from vlm.data_types import Page, Region, Line, ODOutput
+from vlm.htr.utils import (
     sort_page,
     correct_line_bbox_coords,
     correct_line_polygon_coords,

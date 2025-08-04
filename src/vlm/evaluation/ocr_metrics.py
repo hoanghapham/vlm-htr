@@ -1,13 +1,6 @@
-import sys
-from pathlib import Path
 from typing import Self
-
 from htrflow.evaluate import CER, WER, BagOfWords
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.data_types import Ratio
+from vlm.data_types import Ratio
 
 
 class OCRMetrics():

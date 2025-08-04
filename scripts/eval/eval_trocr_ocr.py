@@ -1,10 +1,5 @@
 #%%
-import sys
 from pathlib import Path
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from argparse import ArgumentParser
 
 import torch
@@ -13,12 +8,11 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from tqdm import tqdm
 from htrflow.evaluate import CER, WER, BagOfWords
 
-from src.train import load_checkpoint
-from src.data_processing.trocr import create_collate_fn
-from src.data_processing.utils import load_arrow_datasets
-from src.evaluation.utils import Ratio
-from src.file_tools import write_json_file, write_list_to_text_file
-from src.logger import CustomLogger
+from vlm.train import load_checkpoint
+from vlm.data_processing.trocr import create_collate_fn
+from vlm.evaluation.utils import Ratio
+from vlm.utils.file_tools import write_json_file, write_list_to_text_file, load_arrow_datasets
+from vlm.utils.logger import CustomLogger
 #%%
 
 parser = ArgumentParser()
@@ -48,6 +42,7 @@ DEBUG           = args.debug == "true"
 MAX_ITERS       = 5
 
 REMOTE_MODEL_PATH   = "microsoft/trocr-base-handwritten"
+PROJECT_DIR         = Path(__file__).parent.parent.parent
 LOCAL_MODEL_PATH    = PROJECT_DIR / "models/trained" / MODEL_NAME
 EVAL_DIR            = PROJECT_DIR / "evaluations" / MODEL_NAME
 DEVICE              = torch.device("cuda" if torch.cuda.is_available() else "cpu")

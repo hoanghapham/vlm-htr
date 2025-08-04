@@ -1,14 +1,10 @@
-import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-
 from typing import Dict, Any
 from pathlib import Path
 from shapely.geometry import Polygon
 from htrflow.utils.geometry import Bbox
 
-from src.file_tools import read_json_file, write_json_file
-from src.data_processing.utils import XMLParser
+from vlm.utils.file_tools import read_json_file, write_json_file, XMLParser
 
 
 class Line():

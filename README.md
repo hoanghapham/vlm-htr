@@ -14,7 +14,29 @@ The full thesis report can be accessed here:
 ## Requirements
 
 - Python version: 3.11.5
-- All requirements can be found in the `requirements.txt` file.
+- All requirements can be found in `requirements.txt` or `pyproject.toml`
+
+## Installation guide
+
+Run the following commands:
+
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create a virtual environment with uv
+uv venv --python 3.11
+
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Install packages (Recommended)
+uv sync
+
+# Or install using uv pip
+uv pip install -r requirements.txt
+```
+
 
 ## Comparison method
 

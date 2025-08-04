@@ -1,5 +1,4 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -7,14 +6,11 @@ import torch
 from ultralytics import YOLO
 from tqdm import tqdm
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import write_ndjson_file, write_json_file
-from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
-from src.data_processing.yolo import YOLOPageLineODDataset, YOLOPageRegionODDataset, YOLORegionLineODDataset
-from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
-from src.logger import CustomLogger
+from vlm.utils.file_tools import write_ndjson_file, write_json_file
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.visual_tasks import bbox_xyxy_to_polygon
+from vlm.data_processing.yolo import YOLOPageLineODDataset, YOLOPageRegionODDataset, YOLORegionLineODDataset
+from vlm.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 #%%
 
 parser = ArgumentParser()
@@ -42,6 +38,7 @@ TASK                = args.task
 BATCH_SIZE          = int(args.batch_size)
 CHECKPOINT          = args.checkpoint
 DEBUG               = args.debug == "true"
+PROJECT_DIR         = Path(__file__).parent.parent.parent
 OUTPUT_DIR          = PROJECT_DIR / "evaluations" / MODEL_NAME
 
 if CHECKPOINT == "vanilla":

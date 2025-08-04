@@ -1,16 +1,12 @@
 # Script to create symlinks for datasets created from the HTRDatasetBuilder
 #%%
 import os
-import sys
 from pathlib import Path
 
 from tqdm import tqdm
 from argparse import ArgumentParser
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.file_tools import read_json_file, normalize_name
+from vlm.utils.file_tools import read_json_file, normalize_name
 
 
 #%%
@@ -21,6 +17,7 @@ parser.add_argument("--dest-data-dir", required=True)
 parser.add_argument("--split-info-path", required=True)
 args = parser.parse_args()
 
+PROJECT_DIR     = Path(__file__).parent.parent.parent
 SOURCE_DATA_DIR = Path(args.source_data_dir)
 DEST_DATA_DIR   = Path(args.dest_data_dir)
 SPLIT_INFO_PATH = Path(args.split_info_path)
