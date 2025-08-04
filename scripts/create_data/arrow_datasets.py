@@ -1,16 +1,13 @@
 # Script to create arrow datasets that is caches locally. Possible usages: datasets of cropped lines, cropped regions etc...
 #%%
-import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
 
 from argparse import ArgumentParser
 from datasets import Dataset
 
-from src.data_processing.visual_tasks import HTRDatasetBuilder, IMAGE_EXTENSIONS
-from src.logger import CustomLogger
-from src.file_tools import list_files, write_json_file
+from vlm.data_processing.visual_tasks import HTRDatasetBuilder, IMAGE_EXTENSIONS
+from vlm.utils.logger import CustomLogger
+from vlm.utils.file_tools import list_files, write_json_file
 
 
 dataset_types = [

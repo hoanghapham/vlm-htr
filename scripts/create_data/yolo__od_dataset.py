@@ -1,15 +1,11 @@
 # %%
-import sys
 import os
 import shutil
-from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
 from argparse import ArgumentParser
 
 import yaml
-from src.file_tools import read_json_file, write_list_to_text_file, normalize_name
-from src.data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
+from vlm.utils.file_tools import read_json_file, write_list_to_text_file, normalize_name
+from vlm.data_processing.yolo import YOLOPageRegionODDataset, YOLOPageLineODDataset, YOLORegionLineODDataset
 from tqdm import tqdm
 
 parser = ArgumentParser()
