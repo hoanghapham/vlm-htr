@@ -1,6 +1,4 @@
-import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
 from logging import Logger
 import shutil
 import numpy as np
@@ -11,11 +9,11 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from transformers import PreTrainedModel
+from transformers.models import PreTrainedModel
 from peft.peft_model import PeftModel
 from tqdm import tqdm
 
-from src.file_tools import read_json_file, write_json_file
+from vlm.utils.file_tools import read_json_file, write_json_file
 
 
 STEP_IDX_SPACES = 10
@@ -245,7 +243,7 @@ class Trainer():
 
 # Helper functions
 
-def save_checkpoint(model: PreTrainedModel, optimizer: Optimizer, lr_scheduler: LRScheduler, 
+def save_checkpoint(model: PreTrainedModel | PeftModel, optimizer: Optimizer, lr_scheduler: LRScheduler, 
                     out_dir: str | Path, metrics: dict = None):
     """Save checkpoint to disk."""
     # Save model
@@ -308,7 +306,7 @@ def load_checkpoint(
 
 
 def load_best_checkpoint(
-    model: PreTrainedModel, 
+    model: PreTrainedModel | PeftModel, 
     model_path: str | Path, 
     optimizer: Optimizer = None, 
     lr_scheduler: LRScheduler = None,
@@ -344,7 +342,7 @@ def load_best_checkpoint(
 
 
 def load_last_checkpoint(
-    model: PreTrainedModel, 
+    model: PreTrainedModel | PeftModel, 
     model_path: str | Path, 
     optimizer: Optimizer = None,
     lr_scheduler: LRScheduler = None,
