@@ -1,0 +1,27 @@
+[project]
+name = "vlm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hoanghapham", email = "hoangha.20021992@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=4.0.0",
+    "htrflow>=0.2.6",
+    "peft>=0.17.0",
+    "pillow>=11.3.0",
+    "scikit-image>=0.25.2",
+    "scikit-learn>=1.7.1",
+    "scipy>=1.16.1",
+    "torch>=2.7.1",
+    "transformers[torch]>=4.54.1",
+]
+
+[project.scripts]
+vlm = "vlm:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
