@@ -1,21 +1,16 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
 import torch
+import time
 from PIL import Image
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-import time
-
-from src.file_tools import list_files
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
-from src.logger import CustomLogger
-from src.htr.pipelines.florence import FlorencePipeline
-from src.evaluation.utils import evaluate_multiple_pages, evaluate_one_page
+from vlm.utils.file_tools import list_files
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.visual_tasks import IMAGE_EXTENSIONS
+from vlm.htr.pipelines.florence import FlorencePipeline
+from vlm.evaluation.utils import evaluate_one_page
 
 
 # Setup
@@ -34,6 +29,7 @@ args = parser.parse_args()
 
 SPLIT_TYPE      = args.split_type
 BATCH_SIZE      = int(args.batch_size)
+PROJECT_DIR     = Path(__file__).parent.parent.parent
 TEST_DATA_DIR   = PROJECT_DIR / f"data/page/{SPLIT_TYPE}/test/"
 OUTPUT_DIR      = PROJECT_DIR / f"evaluations/pipeline_florence__{SPLIT_TYPE}__region_od__line_od__ocr"
 

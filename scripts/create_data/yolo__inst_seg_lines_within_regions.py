@@ -1,4 +1,5 @@
 # %%
+from pathlib import Path
 from argparse import ArgumentParser
 import yaml
 from vlm.utils.file_tools import read_json_file, write_list_to_text_file, normalize_name
@@ -21,6 +22,7 @@ SPLIT_TYPE      = args.split_type
 DEBUG           = args.debug == "true"
 
 dataset_name    = "inst_seg_lines_within_regions"
+PROJECT_DIR = Path(__file__).parent.parent.parent
 SOURCE_DATA_DIR = PROJECT_DIR / "data/processed/riksarkivet" / dataset_name
 YOLO_DATA_DIR   = PROJECT_DIR / f"data/yolo/{SPLIT_TYPE}/{dataset_name}"
 

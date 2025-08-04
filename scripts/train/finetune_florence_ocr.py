@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
 from src.data_processing.florence import FlorenceOCRDataset, create_collate_fn
-from src.train import Trainer
+from src.vlm.train import Trainer
 from src.logger import CustomLogger
 
 

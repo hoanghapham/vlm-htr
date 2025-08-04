@@ -14,7 +14,7 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel, get_schedule
 
 from src.data_processing.trocr import create_collate_fn
 from src.data_processing.utils import load_arrow_datasets
-from src.train import Trainer
+from src.vlm.train import Trainer
 from src.logger import CustomLogger
 
 

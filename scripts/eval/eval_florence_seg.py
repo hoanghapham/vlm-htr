@@ -1,5 +1,4 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -8,15 +7,12 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoProcessor
 import pandas as pd
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.florence import FlorenceTask, FlorenceSingleLineSegDataset, predict
 
-from src.logger import CustomLogger
-from src.data_processing.florence import FlorenceTask, FlorenceSingleLineSegDataset, predict
-
-from src.train import load_checkpoint
-from src.file_tools import write_json_file, write_ndjson_file
-from src.evaluation.visual_metrics import polygon_to_binary_mask, compute_seg_metrics
+from vlm.train import load_checkpoint
+from vlm.utils.file_tools import write_json_file, write_ndjson_file
+from vlm.evaluation.visual_metrics import polygon_to_binary_mask, compute_seg_metrics
 #%%
 
 parser = ArgumentParser()

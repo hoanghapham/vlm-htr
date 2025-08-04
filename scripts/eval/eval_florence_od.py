@@ -1,5 +1,4 @@
 #%%
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 
@@ -7,15 +6,12 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoProcessor
 
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.logger import CustomLogger
-from src.data_processing.florence import FlorenceTask, FlorencePageTextODDataset, FlorenceRegionLineODDataset, predict
-from src.data_processing.visual_tasks import bbox_xyxy_to_polygon
-from src.train import load_checkpoint
-from src.file_tools import write_json_file, write_ndjson_file
-from src.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
+from vlm.utils.logger import CustomLogger
+from vlm.data_processing.florence import FlorenceTask, FlorencePageTextODDataset, FlorenceRegionLineODDataset, predict
+from vlm.data_processing.visual_tasks import bbox_xyxy_to_polygon
+from vlm.train import load_checkpoint
+from vlm.utils.file_tools import write_json_file, write_ndjson_file
+from vlm.evaluation.visual_metrics import compute_bbox_precision_recall_fscore, compute_polygons_region_coverage
 #%%
 
 parser = ArgumentParser()

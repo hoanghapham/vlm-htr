@@ -1,7 +1,6 @@
 # Script to create arrow datasets that is caches locally. Possible usages: datasets of cropped lines, cropped regions etc...
 #%%
 from pathlib import Path
-
 from argparse import ArgumentParser
 from datasets import Dataset
 
