@@ -6,7 +6,7 @@ import pandas as pd
 import unicodedata
 from tqdm import tqdm
 
-from vlm.utils.file_tools import list_files,
+from vlm.utils.file_tools import list_files
 
 
 task = "hovratt_text_recognition"

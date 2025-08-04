@@ -112,6 +112,9 @@ def read_text_file(input_file: Path | str) -> str:
 
 
 def write_text_file(text: str, output_path: Path | str) -> None:
+    if isinstance(output_path, str):
+        output_path = Path(output_path)
+
     if not output_path.parent.exists():
         output_path.parent.mkdir(parents=True)
 
@@ -120,6 +123,9 @@ def write_text_file(text: str, output_path: Path | str) -> None:
 
 
 def write_list_to_text_file(lst: list[str], output_path: Path | str, linebreak=True) -> None:
+    if isinstance(output_path, str):
+        output_path = Path(output_path)
+        
     if not output_path.parent.exists():
         output_path.parent.mkdir(parents=True)
         

@@ -1,6 +1,6 @@
 from typing import Self
 from htrflow.evaluate import CER, WER, BagOfWords
-from src.vlm.data_types import Ratio
+from vlm.data_types import Ratio
 
 
 class OCRMetrics():
