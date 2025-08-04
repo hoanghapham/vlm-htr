@@ -1,9 +1,3 @@
-import sys
-from pathlib import Path
-
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from copy import deepcopy
 import numpy as np
 from typing import Sequence
@@ -11,8 +5,9 @@ from PIL.Image import Image as PILImage
 from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
 from htrflow.utils.layout import estimate_printspace, is_twopage as check_twopage, get_region_location
-from src.evaluation.visual_metrics import compute_bbox_iou
-from src.data_types import Page, Region, Line
+
+from vlm.evaluation.visual_metrics import compute_bbox_iou
+from vlm.data_types import Page, Region, Line
 
 
 # Code from https://github.com/AI-Riksarkivet/htrflow/blob/main/src/htrflow/postprocess/reading_order.py, with modifications
