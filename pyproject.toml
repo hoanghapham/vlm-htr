@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "hoanghapham", email = "hoangha.20021992@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "datasets>=4.0.0",
     "htrflow>=0.2.6",
