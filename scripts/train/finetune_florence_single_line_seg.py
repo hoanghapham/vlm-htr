@@ -1,10 +1,6 @@
 # Feed florence a single line image and try to segment the text from the background. 
 #%%
-import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from argparse import ArgumentParser
 
 import torch
@@ -13,9 +9,9 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.data_processing.florence import create_collate_fn, FlorenceSingleLineSegDataset, FlorenceTask
-from src.vlm.train import Trainer
-from src.logger import CustomLogger
+from vlm.data_processing.florence import create_collate_fn, FlorenceSingleLineSegDataset, FlorenceTask
+from vlm.train import Trainer
+from vlm.utils.logger import CustomLogger
 
 
 #%%
@@ -48,8 +44,8 @@ MAX_TRAIN_STEPS     = int(args.max_train_steps)
 LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 DEBUG               = args.debug == "true"
-
-MODEL_OUT_DIR = PROJECT_DIR / "models" / MODEL_NAME
+PROJECT_DIR         = Path(__file__).parent.parent.parent
+MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 
 if not MODEL_OUT_DIR.exists():

@@ -1,10 +1,6 @@
 # Train Florence-2 for the OCR task
 #%%
-import sys
 from pathlib import Path
-PROJECT_DIR = Path(__file__).parent.parent.parent
-sys.path.append(str(PROJECT_DIR))
-
 from argparse import ArgumentParser
 
 import torch
@@ -13,9 +9,9 @@ from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoModelForCausalLM, AutoProcessor, get_scheduler
 
-from src.data_processing.florence import FlorenceOCRDataset, create_collate_fn
-from src.vlm.train import Trainer
-from src.logger import CustomLogger
+from vlm.data_processing.florence import FlorenceOCRDataset, create_collate_fn
+from vlm.train import Trainer
+from vlm.utils.logger import CustomLogger
 
 
 #%%
@@ -50,7 +46,7 @@ LOGGING_INTERVAL    = int(args.logging_interval)
 DATA_DIR            = Path(args.data_dir)
 USER_PROMPT         = args.user_prompt  # Can be used as the custom question
 DEBUG               = args.debug == "true"
-
+PROJECT_DIR         = Path(__file__).parent.parent.parent
 MODEL_OUT_DIR       = PROJECT_DIR / "models" / MODEL_NAME
 
 if not MODEL_OUT_DIR.exists():
