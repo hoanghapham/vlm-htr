@@ -20,6 +20,5 @@ YOLO11/*
 .python-version
 .env
 .DS_Store
-*.lock
 core.*
 *.pt
