@@ -1,14 +1,11 @@
 
-import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from abc import ABC, abstractmethod
 from typing import Iterable
 
-from src.data_processing.visual_tasks import IMAGE_EXTENSIONS
-from src.file_tools import list_files
-from src.data_processing.utils import XMLParser
+from vlm.data_processing.visual_tasks import IMAGE_EXTENSIONS
+from vlm.utils.file_tools import list_files, XMLParser
 
 
 class BaseImgXMLDataset(ABC):

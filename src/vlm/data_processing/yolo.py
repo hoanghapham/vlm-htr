@@ -1,13 +1,10 @@
 
-import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 from PIL import Image
-
 from shapely.geometry import Polygon
-from src.data_processing.visual_tasks import crop_image, bbox_xyxy_to_polygon
-from src.data_processing.base_datasets import BaseImgXMLDataset
+
+from vlm.data_processing.visual_tasks import crop_image, bbox_xyxy_to_polygon
+from vlm.data_processing.base_datasets import BaseImgXMLDataset
 
 
 # Conversion between normal format and YOLO

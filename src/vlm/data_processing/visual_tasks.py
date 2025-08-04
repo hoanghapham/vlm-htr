@@ -1,8 +1,8 @@
-import io, os, sys
+import io, os
 from pathlib import Path, PurePath
 from glob import glob
-sys.path.append(str(Path(__file__).parent.parent.parent))
 
+import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
 from datasets import (
@@ -19,7 +19,6 @@ from datasets import (
 from PIL import Image as PILImage
 from htrflow.utils.geometry import Bbox
 from shapely.geometry import Polygon
-import xml.etree.ElementTree as ET
 
 
 IMAGE_EXTENSIONS = [
