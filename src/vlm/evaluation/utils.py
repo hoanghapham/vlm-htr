@@ -1,14 +1,9 @@
 
-import sys
 from pathlib import Path
 
-PROJECT_DIR = Path(__file__).parent.parent
-sys.path.append(str(PROJECT_DIR))
-
-from src.data_processing.utils import XMLParser
-from src.evaluation.ocr_metrics import compute_ocr_metrics, OCRMetrics
-from src.file_tools import write_text_file, write_json_file, read_json_file
-from src.data_types import Page, Ratio
+from vlm.utils.file_tools import XMLParser, write_text_file, write_json_file, read_json_file
+from vlm.evaluation.ocr_metrics import compute_ocr_metrics, OCRMetrics
+from vlm.data_types import Page, Ratio
 
 
 def read_metric_dict(metric_dict_path: str | Path, ) -> OCRMetrics:

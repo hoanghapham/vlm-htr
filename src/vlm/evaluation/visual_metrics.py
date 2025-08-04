@@ -1,7 +1,3 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from skimage.segmentation import find_boundaries
@@ -13,7 +9,7 @@ from htrflow.evaluate import Ratio
 from htrflow.utils.geometry import Bbox 
 from PIL import Image, ImageDraw
 
-from src.evaluation.utils import Ratio
+from vlm.evaluation.utils import Ratio
 
 
 def compute_bbox_iou(bbox1: Bbox, bbox: Bbox):
