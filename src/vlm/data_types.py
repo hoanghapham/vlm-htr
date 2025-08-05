@@ -65,12 +65,16 @@ class Page():
         return getattr(self, key)
     
     @classmethod
-    def from_json(cls, json_path):
-        data = read_json_file(json_path)
+    def from_dict(cls, data: dict):
         regions = [Region.from_dict(region) for region in data["regions"]]
         lines = [Line.from_dict(line) for line in data["lines"]]
         path = data["path"]
         return Page(regions=regions, lines=lines, path=path)
+
+    @classmethod
+    def from_json(cls, json_path: str):
+        data = read_json_file(json_path)
+        return cls.from_dict(data)
 
     def to_json(self, json_path):
         write_json_file(self.dict, json_path)
