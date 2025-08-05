@@ -237,7 +237,7 @@ class FlorencePipeline():
         self.batch_size      = batch_size
 
         if logger is None:
-            self.logger = CustomLogger(f"pipeline__{pipeline_type}", log_to_local=True, log_path=PROJECT_DIR / "logs")
+            self.logger = CustomLogger(f"pipeline__{pipeline_type}", log_to_local=False)
         else:
             self.logger = logger
         
